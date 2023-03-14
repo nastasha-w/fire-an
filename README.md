@@ -3,7 +3,7 @@ code and scripts for finding main halos, making histograms and 2D
 projected maps, and analysing those products in FIRE simulations
 
 main functions:
-----------------------------------
+---------------
 TODO
 
 warning:

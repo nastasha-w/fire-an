@@ -2,6 +2,7 @@
 import os
 
 import mainfunc.makemap as mm
+import simlists as sl
 
 def tryout_ionmap(opt=1):
     outdir = '/projects/b1026/nastasha/tests/start_fire/map_tests/'
@@ -943,5 +944,114 @@ def tryout_ionmap(opt=1):
 
         mm.massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                    pixsize_pkpc=3., axis='z', outfilen=outfilen,
+                   center='shrinksph', norm='pixsize_phys',
+                   maptype=maptype, maptype_args=maptype_args)
+
+def run_ionmap_xyz(opt=0):
+    # version number depends on code edits; some indices might have
+    # been run with previous versions
+    _outfilen = ('coldens_{qt}_{sc}_snap{sn}_shrink-sph-cen_BN98'
+                 '_2rvir{depl}_{los}-proj_v3.hdf5')
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    checkfileflag = False
+    if opt >= 0 and opt < 924:
+        # m13sr: 924 indices
+        ind = opt - 0
+        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        checkfileflag = True
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        loss = ['x', 'y', 'z']
+        simnames = sl.m13_sr_all1 # len 8
+        snaps = sl.snaplists['m13_sr'] # len 6
+    elif opt >= 924 and opt < 1500:
+        # m13hr: 576 indices
+        ind = opt - 0
+        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        checkfileflag = True
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        loss = ['x', 'y', 'z']
+        simnames = sl.m13_hr_all1 # len 8
+        snaps = sl.snaplists['m13_hr'] # len 6
+    elif opt >= 1500 and opt < 1788:
+        # m13hr: 288 indices
+        ind = opt - 0
+        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        checkfileflag = True
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        loss = ['x', 'y', 'z']
+        simnames = sl.m12_sr_all1 # len 4
+        snaps = sl.snaplists['m12_sr'] # len 6
+    elif opt >= 1788 and opt < 2940:
+        # m13hr: 1152 indices
+        ind = opt - 0
+        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        checkfileflag = True
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        loss = ['x', 'y', 'z']
+        simnames = sl.m12_hr_all1 # len 16
+        snaps = sl.snaplists['m12_hr'] # len 6
+        
+        
+    simi = ind // (len(snaps) * len(ions) * len(loss))
+    snpi = (ind % (len(snaps) * len(ions) * len(loss))) \
+           // (len(ions) * len(loss))
+    ioni = (ind % (len(ions) * len(loss))) // len(loss)
+    losi = ind % len(loss)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    ion = ions[ioni]
+    los = loss[losi]
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+    #print(dirpath)
+
+    if ion == 'Mass':
+        maptype = 'Mass'
+        maptype_argss = [{}]
+    else:
+        maptype = 'ion'
+        if ion == 'H1':
+            _maptype_args = {'ps20depletion': False, 
+                                'ionfrac-method': 'sim'}
+        else:
+            _maptype_args = {'ps20depletion': False}
+        _maptype_args.update({'ion': ion})
+        maptype_argss = [_maptype_args.copy()] 
+
+    for maptype_args in maptype_argss:
+        depl = ''
+        if maptype == 'ion':
+            qt = maptype_args['ion']
+            if 'ionfrac-method' in maptype_args:
+                if maptype_args['ionfrac-method'] == 'sim':
+                    depl = '_ionfrac-fromsim'
+                else:
+                    _depl = maptype_args['ps20depletion']
+                    if _depl:
+                        depl = '_ps20-depl'
+            else:
+                _depl = maptype_args['ps20depletion']
+                if _depl:
+                    depl = '_ps20-depl'
+        elif maptype == 'Metal':
+            qt = maptype_args['element']
+        elif maptype == 'Mass':
+            qt = 'gas-mass'
+
+        outfilen = outdir + _outfilen.format(sc=simname, sn=snapnum, 
+                                             depl=depl, qt=qt, los=los)
+        if checkfileflag:
+            if os.path.isfile(outfilen):
+                msg = 'For opt {}, output file already exists:\n{}'
+                print(msg.format(opt, outfilen))
+                print('Not running this map again')
+                return None
+
+        mm.massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
+                   pixsize_pkpc=3., axis=los, outfilen=outfilen,
                    center='shrinksph', norm='pixsize_phys',
                    maptype=maptype, maptype_args=maptype_args)

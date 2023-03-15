@@ -2,6 +2,7 @@
 import numpy as np
 
 import mainfunc.haloprop as hp
+import simlists as sl
 
 def run_halodata(opt):
     # test cases
@@ -59,6 +60,40 @@ def run_halodata(opt):
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
+    # redo runs after truncation/saturation cumsum bug
+    elif opt >= 60 and opt < 126:
+        ind = opt - 60
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        simnames = sl.m13_sr_all1 # len 11
+        snaps = sl.snaplists['m13_sr'] # len 6
+        # might as well; extra overdensities are cheap
+        meandef = ('BN98', '200c', '200m', '500c', '500m', 
+                   '2500c', '2500m', '178c', '178m', '100c', '100m')
+    elif opt >= 126 and opt < 174:
+        ind = opt - 126
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        # might as well; extra overdensities are cheap
+        meandef = ('BN98', '200c', '200m', '500c', '500m', 
+                   '2500c', '2500m', '178c', '178m', '100c', '100m')
+        simnames = sl.m13_hr_all1 # len 8
+        snaps = sl.snaplists['m13_hr'] # len 6
+    elif opt >= 174 and opt < 198:
+        ind = opt - 174
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        # might as well; extra overdensities are cheap
+        meandef = ('BN98', '200c', '200m', '500c', '500m', 
+                   '2500c', '2500m', '178c', '178m', '100c', '100m')
+        simnames = sl.m12_sr_all1 # len 4
+        snaps = sl.snaplists['m12_sr'] # len 6
+    elif opt >= 198 and opt < 294:
+        ind = opt - 198
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        # might as well; extra overdensities are cheap
+        meandef = ('BN98', '200c', '200m', '500c', '500m', 
+                   '2500c', '2500m', '178c', '178m', '100c', '100m')
+        simnames = sl.m12_hr_all1 # len 16
+        snaps = sl.snaplists['m12_hr'] # len 6
+
     simi = ind // len(snaps)
     snapi = ind % len(snaps)
     simname = simnames[simi]
@@ -70,3 +105,4 @@ def run_halodata(opt):
     dirpath = '/'.join([_dirpath, dp2, simname]) 
     
     hp.gethalodata_shrinkingsphere(dirpath, snapshot, meandef=meandef)
+        

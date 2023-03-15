@@ -7,8 +7,8 @@ import h5py
 import os
 import numpy as np
 
-import units_fire as uf
-import make_maps_opts_locs as ol
+import readfire.units_fire as uf
+import utils.opts_locs as ol
 
 # can add cases for python 2/3
 def isstr(object): # should be python 2/3 robust

@@ -2,8 +2,6 @@
 File handed down to me; removed EAGLE-specific parameters
 '''
 
-import numpy as np
-
 # constants
 pi               = 3.1415927 #pie
 gamma            = 1.66666666667 # monatomic gas
@@ -25,7 +23,7 @@ t_cmb0           = 2.728 #cgs
 sec_per_megayear = 3.155e+13 #correct
 sec_per_year     = 31550000.0 #correct
 thompson         = 6.65245e-25 #cgs
-z_solar          = 0.012663729 # seems about right
+#z_solar          = 0.012663729 # seems about right
 #stefan           = 7.5657e-15 # !!!! 1e-10 * cgs value
 ev_to_erg        = 1.60217646e-12 #correct
 

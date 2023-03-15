@@ -6,7 +6,7 @@ Created on Wed Feb 14 16:39:35 2018
 @author: wijers
 """
 
-import make_maps_v3_master as m3
+import utils.projection as m3
 import numpy as np
 import os
 import ctypes as ct

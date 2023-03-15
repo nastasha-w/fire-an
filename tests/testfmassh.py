@@ -13,7 +13,9 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gsp
 import matplotlib as mpl
 
-import calcfmassh as cfh
+from importlib import reload
+
+import ionrad.calcfmassh as cfh
 reload(cfh) # testing -> keep up to date
 
 ## input test values

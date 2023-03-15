@@ -13,204 +13,8 @@ import mpl_toolkits.axes_grid1 as axgrid
 import matplotlib.lines as mlines
 import matplotlib.legend_handler as mlh
 
-# defaults
+# default
 fontsize = 12
-
-### array operations and interpolation
-
-def getminmax2d(bins, edges, axis=None, log=True, pixdens=False): 
-    # axis = axis to sum over; None -> don't sum over any axes 
-    # now works for histgrams of general dimensions
-    if axis is None:
-        imgtoplot = bins
-    else:
-        imgtoplot = np.sum(bins, axis=axis)
-    if pixdens:
-        if axis is None:
-            naxis = range(len(edges))
-        else:
-            if not hasattr(axis, '__len__'):
-                saxis = [axis]
-            else:
-                saxis = axis
-             # axes not to sum over
-            naxis = list(set(range(len(edges))) - set(saxis))
-        naxis.sort() 
-        numdims = len(naxis)
-         # if bins are log, the log sizes are used 
-         # and the enclosed log density is minimised
-        binsizes = [np.diff(edges[axisi]) for axisi in naxis]
-        baseinds = list((np.newaxis,)*numdims)
-        normmatrix = np.prod([(binsizes[ind])[tuple(baseinds[:ind]
-                                                    + [slice(None,None,None)]
-                                                    + baseinds[ind+1:])
-                                              ] 
-                              for ind in range(numdims)])
-        imgtoplot /= normmatrix
-        del normmatrix
-    finite = np.isfinite(imgtoplot)
-    if log:
-        imin = np.min(imgtoplot[np.logical_and(finite, imgtoplot > 0)])
-        imax = np.max(imgtoplot[np.logical_and(finite, imgtoplot > 0)])
-        imin = np.log10(imin)
-        imax = np.log10(imax)
-    else:
-        imin = np.min(imgtoplot[np.isfinite(imgtoplot)])
-        imax = np.max(imgtoplot[np.isfinite(imgtoplot)])
-    return imin, imax
-
-def percentiles_from_histogram(histogram, edgesaxis, axis=-1, 
-        percentiles=np.array([0.1, 0.25, 0.5, 0.75, 0.9])):
-    '''
-    get percentiles from the histogram along axis
-    edgesaxis are the bin edges along that same axis
-    histograms can be weighted by something: this function just solves
-    cumulative distribution == percentiles
-    '''
-    percentiles = np.array(percentiles)
-    if not np.all(percentiles >= 0.) and np.all(percentiles <= 1.):
-        raise ValueError('Input percentiles shoudl be fractions in the range [0, 1]')
-    cdists = np.cumsum(histogram, axis=axis, dtype=np.float) 
-    sel = list((slice(None, None, None),) * len(histogram.shape))
-    sel2 = np.copy(sel)
-    sel[axis] = -1
-    sel2[axis] = np.newaxis
-    # normalised cumulative dist: divide by total along axis
-    cdists /= (cdists[tuple(sel)])[tuple(sel2)] 
-    # bin-edge corrspondence: at edge 0, cumulative value is zero
-    # histogram values are counts in cells 
-    # -> hist bin 0 is what is accumulated between edges 0 and 1
-    # cumulative sum: counts in cells up to and including the current one: 
-    # if percentile matches cumsum in cell, 
-    # the percentile value is it's right edge -> edge[cell index + 1]
-    # effectively, if the cumsum is prepended by zeros, 
-    # we get a hist bin matches edge bin matching
-
-    oldshape1 = list(histogram.shape)[:axis] 
-    oldshape2 = list(histogram.shape)[axis + 1:]
-    newlen1 = int(np.prod(oldshape1))
-    newlen2 = int(np.prod(oldshape2))
-    axlen = histogram.shape[axis]
-    cdists = cdists.reshape((newlen1, axlen, newlen2))
-    cdists = np.append(np.zeros((newlen1, 1, newlen2)), cdists, axis=1)
-    # should already be true, but avoids fp error issues
-    cdists[:, -1, :] = 1.
-
-    leftarr  = cdists[np.newaxis, :, :, :] <= \
-        percentiles[:, np.newaxis, np.newaxis, np.newaxis]
-    rightarr = cdists[np.newaxis, :, :, :] >= \
-        percentiles[:, np.newaxis, np.newaxis, np.newaxis]
-    
-    leftbininds = np.array([[[np.max(
-                                   np.where(leftarr[pind, ind1, :, ind2])[0])
-                               for ind2 in range(newlen2)] 
-                               for ind1 in range(newlen1)] 
-                               for pind in range(len(percentiles))])
-    # print leftarr.shape
-    # print rightarr.shape
-    rightbininds = np.array([[[np.min(
-                                   np.where(rightarr[pind, ind1, :, ind2])[0])
-                               for ind2 in range(newlen2)] 
-                               for ind1 in range(newlen1)] 
-                               for pind in range(len(percentiles))])
-    # if left and right bins are the same, effictively just choose one
-    # if left and right bins are separated by more than one (plateau 
-    # edge), this will give the middle of the plateau
-    lweights = np.array([[[(cdists[ind1, rightbininds[pind, ind1, ind2],
-                                   ind2] \
-                             - percentiles[pind]) \
-                            / (cdists[ind1, rightbininds[pind, ind1, ind2],
-                                      ind2] \
-                               - cdists[ind1, leftbininds[pind, ind1, ind2],
-                                        ind2]) \
-                            if rightbininds[pind, ind1, ind2] \
-                                != leftbininds[pind, ind1, ind2] \
-                            else 1.
-                           for ind2 in range(newlen2)] 
-                           for ind1 in range(newlen1)] 
-                           for pind in range(len(percentiles))])
-                
-    outperc = lweights * edgesaxis[leftbininds] \
-              + (1. - lweights) * edgesaxis[rightbininds]
-    outshape = (len(percentiles),) + tuple(oldshape1 + oldshape2)
-    outperc = outperc.reshape(outshape)
-    return outperc
-
-def linterpsolve(xvals, yvals, xpoint):
-    '''
-    'solves' a monotonic function described by xvals and yvals by 
-    linearly interpolating between the points above and below xpoint
-    xvals, yvals: 1D arrays
-    xpoint: float
-    '''
-    if np.all(np.diff(xvals) >= 0.):
-        incr = True
-    elif np.all(np.diff(xvals) <= 0.):
-        incr = False
-    else:
-        raise ValueError('linterpsolve only works for monotonic functions')
-    ind1 = np.where(xvals <= xpoint)[0]
-    ind2 = np.where(xvals >= xpoint)[0]
-    if len(ind2) == 0 or len(ind1) == 0:
-        raise ValueError('xpoint is outside the bounds of xvals')
-    if incr:
-        ind1 = np.max(ind1)
-        ind2 = np.min(ind2)
-    else:
-        ind1 = np.min(ind1)
-        ind2 = np.max(ind2)
-    if ind1 == ind2:
-        ypoint = yvals[ind1]
-    else:
-        w = (xpoint - xvals[ind1]) / (xvals[ind2] - xvals[ind1])
-        ypoint = yvals[ind2] * w + yvals[ind1] * (1. - w)
-    return ypoint
-
-def find_intercepts(yvals, xvals, ypoint):
-    '''
-    'solves' a monotonic function described by xvals and yvals by linearly 
-    interpolating between the points above and below ypoint 
-    xvals, yvals: 1D arrays
-    ypoint: float
-    Does not distinguish between intersections separated by less than 2 xvals points
-    '''
-    if not (np.all(np.diff(xvals) < 0.) or np.all(np.diff(xvals) > 0.)):
-        print('linterpsolve only works for monotonic x values')
-        return None
-    zerodiffs = yvals - ypoint
-    leqzero = np.where(zerodiffs <= 0.)[0]
-    if len(leqzero) == 0:
-        return np.array([])
-    elif len(leqzero) == 1:
-        edges = [[leqzero[0], leqzero[0]]]
-    else:
-        segmentedges = np.where(np.diff(leqzero) > 1)[0] + 1
-        if len(segmentedges) == 0: # one dip below zero -> edges are intercepts
-            edges = [[leqzero[0], leqzero[-1]]]
-        else:
-            parts = [leqzero[: segmentedges[0]] if si == 0 else \
-                     leqzero[segmentedges[si - 1] : segmentedges[si]] if si < len(segmentedges) else\
-                     leqzero[segmentedges[si - 1] :] \
-                     for si in range(len(segmentedges) + 1)]
-            edges = [[part[0], part[-1]] for part in parts]
-    intercepts = [[linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], xvals[ed[0]-1: ed[0] + 1], 0.),\
-                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],   xvals[ed[1]: ed[1] + 2], 0.)]  \
-                  if ed[0] != 0 and ed[1] != len(yvals) - 1 else \
-                  [None,\
-                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],   xvals[ed[1]: ed[1] + 2], 0.)] \
-                  if ed[1] != len(yvals) - 1 else \
-                  [linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], xvals[ed[0]-1: ed[0] + 1], 0.),\
-                   None]  \
-                  if ed[0] != 0 else \
-                  [None, None]
-                 for ed in edges]
-    intercepts = [i for i2 in intercepts for i in i2]
-    if intercepts[0] is None:
-        intercepts = intercepts[1:]
-    if intercepts[-1] is None:
-        intercepts = intercepts[:-1]
-    return np.array(intercepts)
-
 
 def handleinfedges(hist, setmin=-100., setmax=100.):
     for ei in range(len(hist['edges'])):
@@ -227,16 +31,15 @@ def handleinfedges_dct(edges, setmin=-100., setmax=100.):
             edges[ei][-1] = setmax
 
 ### small plot helpers
-def setticks(ax, fontsize, color='black', labelbottom=True, top=True,\
-             labelleft=True, labelright=False, right=True, labeltop=False,\
+def setticks(ax, fontsize, color='black', labelbottom=True, top=True,
+             labelleft=True, labelright=False, right=True, labeltop=False,
              left=True, bottom=True):
     ax.minorticks_on()
-    ax.tick_params(labelsize=fontsize, direction='in', right=right, top=top,\
-                   left=left, bottom=bottom,\
-                   axis='both', which='both', color=color,\
-                   labelleft=labelleft, labeltop=labeltop,\
+    ax.tick_params(labelsize=fontsize, direction='in', right=right, top=top,
+                   left=left, bottom=bottom,
+                   axis='both', which='both', color=color,
+                   labelleft=labelleft, labeltop=labeltop,
                    labelbottom=labelbottom, labelright=labelright)
-
 
 
 ### functions to make actual plots

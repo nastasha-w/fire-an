@@ -10,7 +10,7 @@ simulation defaults.
 import numpy as np
 import h5py
 
-import constants_and_units as c 
+import utils.constants_and_units as c 
 
 # setup from the internets
 class UnitsNotFoundError(Exception):
@@ -175,13 +175,16 @@ class Units:
         # check presence
         alldone = self._check_baseunits_present()
         if not alldone:
-            missing = {attr if not hasattr(self, attr) else None \
+            missing = {attr if not hasattr(self, attr) else None 
                        for attr in self.reqlist}
             missing -= {None}
             # ad-hoc handling of missing values
-            # issue with the m12i_ress7100 test; seems ok to assume for cosmo volumes
+            # issue with the m12i_ress7100 test; 
+            # seems ok to assume for cosmo volumes
             if 'cosmoexp' in missing:
-                print('warning: assuming cosmologically expanding volume (cosmoexp = True)')
+                msg = ('warning: assuming cosmologically expanding volume'
+                       ' (cosmoexp = True)')
+                print(msg)
                 self.cosmoexp = True
                 missing -= {'cosmoexp'}
             if len(missing) > 0:
@@ -213,7 +216,7 @@ class Units:
             field = '/'.join(field.split('/')[1:])
         
         if 'Metallicity' in field or 'SmoothedMetallicity' in field or\
-           'ElementAbundance' in field:
+               'ElementAbundance' in field:
             # absolute mass fractions in FIRE and EAGLE. Smoothed option is for
             # compatibility, but meaningless in non-SPH runs.
             return 1.

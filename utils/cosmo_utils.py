@@ -11,7 +11,7 @@ loaded without the entire read_Eagle machinery
 import numpy as np
 import numbers as num # for instance checking
 
-import opts_locs as ol # needed for some ion data
+import utils.opts_locs as ol # needed for some ion data
 import utils.constants_and_units as c
 
 def comoving_distance_cm(cosmopars=None): # assumes Omega_k = 0

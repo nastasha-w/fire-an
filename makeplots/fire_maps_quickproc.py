@@ -19,12 +19,12 @@ import matplotlib.lines as mlines
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 
-import tol_colors as tc
+import makeplots.tol_colors as tc
 
-import make_maps_opts_locs as ol
-import eagle_constants_and_units as c
-import cosmo_utils as cu
-import plot_utils as pu
+import utils.opts_locs as ol
+import utils.constants_and_units as c
+import utils.cosmo_utils as cu
+import makeplots.plot_utils as pu
 
 def hasnan_map(filen):
     with h5py.File(filen, 'r') as f:

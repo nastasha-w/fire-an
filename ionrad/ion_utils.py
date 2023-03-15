@@ -7,7 +7,26 @@ import string
 import h5py
 import scipy.interpolate as spint 
 
-import opts_locs as ol
+import utils.opts_locs as ol
+import utils.constants_and_units as c
+
+atomw_u_dct = \
+    {'Hydrogen':  c.atomw_H,
+     'Helium':    c.atomw_He,
+     'Carbon':    c.atomw_C,
+     'Nitrogen':  c.atomw_N,
+     'Oxygen':    c.atomw_O,
+     'Neon':      c.atomw_Ne,
+     'Magnesium': c.atomw_Mg,
+     'Silicon':   c.atomw_Si,
+     'Sulfur':    c.atomw_S,
+     'Sulphur':   c.atomw_S,
+     'Calcium':   c.atomw_Ca,
+     'Iron':      c.atomw_Fe}
+
+def elt_atomw_cgs(element):
+    element = string.capwords(element)
+    return atomw_u_dct[element] * c.u
 
 class Linetable_PS20:
     '''

@@ -1,7 +1,6 @@
 
 import h5py
 import numpy as np
-import os
 
 import matplotlib.collections as mcol
 import matplotlib.gridspec as gsp
@@ -9,268 +8,9 @@ import matplotlib.patches as mpatch
 import matplotlib.patheffects as mppe
 import matplotlib.pyplot as plt
 
-import mainfunc.makemap as mm 
 import makeplots.plot_utils as pu
 import utils.constants_and_units as c
 
-# hard to do a true test, but check that projected masses and centering
-# sort of make sense
-def tryout_massmap(opt=1, center='AHFsmooth'):
-    outdir = 'ls'
-    _outfilen = 'mass_pt{pt}_{sc}_snap{sn}_ahf-cen_2rvir_v1.hdf5'
-    if opt == 1:
-        parttypes = [0, 1, 4]
-        dirpath = '/projects/b1026/snapshots/metal_diffusion/m12i_res7100/'
-        simcode = 'metal-diffusion-m12i-res7100'
-        snapnum = 600
-    elif opt == 2:
-        parttypes = [0, 1, 4]
-        dirpath = '/projects/b1026/snapshots/metal_diffusion/m12i_res7100/'
-        simcode = 'metal-diffusion-m12i-res7100'
-        snapnum = 399
-    elif opt == 3:
-        parttypes = [0, 1, 4]
-        dirpath = '/projects/b1026/snapshots/metal_diffusion/m12i_res7100/'
-        simcode = 'metal-diffusion-m12i-res7100'
-        snapnum = 196
-
-    for pt in parttypes:
-        outfilen = outdir + _outfilen.format(pt=pt, sc=simcode, 
-                                             sn=snapnum)
-        mm.massmap(dirpath, snapnum, radius_rvir=2., particle_type=pt,
-                   pixsize_pkpc=3., axis='z', outfilen=outfilen,
-                   center=center)
-        
-def tryout_wholezoom(index):
-    outdir = '/projects/b1026/nastasha/tests/start_fire/map_tests/'
-
-    if index == 0:
-        dirpath = '/projects/b1026/snapshots/fire3/m13h206_m3e5/' + \
-               'm13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1' + \
-               '_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000/' 
-        simname = 'm13h206_m3e5__' + \
-                  'm13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1' + \
-               '_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'                     
-        snapnum = 27  
-        outfilen_template = 'mass_pt{pt}_{sc}_snap{sn}_axis-{ax}_' + \
-                            'wholezoom_v1.hdf5'
-        _temp = outdir + outfilen_template 
-        outfilens = {'outfilen_gas': _temp.format(pt=0, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'outfilen_DM': _temp.format(pt=1, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'outfilen_stars': _temp.format(pt=4, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'outfilen_BH': _temp.format(pt=5, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),                            
-                    }
-
-    mm.massmap_wholezoom(dirpath, snapnum, pixsize_pkpc=3.,
-                         **outfilens)
-
-def hasnan_map(filen):
-    with h5py.File(filen, 'r') as f:
-        if 'map' not in f:
-            print('skipping {}'.format(filen))
-            return False # don't flag anything in a file loop
-        map_ = f['map'][:]
-        if np.any(np.isnan(map_)):
-            print('NaN values in map {}'.format(filen))
-            return True
-        else:
-            return False
-
-def checkdir_nanmap(dirn):
-    filens = os.listdir(dirn)
-    filens = [filen for filen in filens if filen.endswith('.hdf5')]
-    anynan = False
-    for filen in filens:
-        anynan |= hasnan_map(dirn + filen)
-    return anynan
-
-def checkcenter_massmap(filen_template, savename=None, mincol=None,
-                        center_simunits=None, Rvir_simunits=None):
-    '''
-    quick plot of the mass map in the file
-    '''
-
-    filens = {ax: filen_template.format(ax=ax) for ax in ['x', 'y', 'z']}
-    
-    fig = plt.figure(figsize=(8., 8.))
-    grid = gsp.GridSpec(nrows=2, ncols=2, hspace=0.2, wspace=0.2, 
-                        width_ratios=[1., 1.])
-    axes = {}
-    axes['z'] = fig.add_subplot(grid[0, 0]) 
-    axes['y'] = fig.add_subplot(grid[0, 1])
-    axes['x'] = fig.add_subplot(grid[1, 0])
-    cax = fig.add_subplot(grid[1, 1])
-    fontsize = 12
-
-    axlabels = ['{} [sim. units: ckpc/h]'. format(_ax) for _ax in 'XYZ']
-    
-    massmaps = {}
-    extents = {}
-    xlabels = {}
-    ylabels = {}
-    xinds = {}
-    yinds = {}
-    vmin = np.inf
-    vmax = -np.inf
-    for ax in axes:
-        filen = filens[ax]
-        with h5py.File(filen, 'r') as f:
-            _map = f['map'][:]
-            vmin = min(vmin, f['map'].attrs['minfinite'])
-            vmax = max(vmax, f['map'].attrs['max'])
-            
-            # error in file creation -- no actual conversion to cm
-            region_simunits = f['Header/inputpars'].attrs['mapped_region_cm']
-            #coords_to_CGS = f['Header/inputpars'].attrs['coords_toCGS']
-            # region_simunits = region_cm / coords_to_CGS
-
-            #box_cm = f['Header/inputpars'].attrs['diameter_used_cm']
-            cosmopars = {key: val for key, val in \
-                        f['Header/inputpars/cosmopars'].attrs.items()}
-            _ax1 = f['Header/inputpars'].attrs['Axis1']
-            _ax2 = f['Header/inputpars'].attrs['Axis2']
-            _ax3 = f['Header/inputpars'].attrs['Axis3']
-            if _ax3 == 2:
-                xax = _ax1
-                yax = _ax2
-            elif _ax3 == 0:
-                xax = _ax2
-                yax = _ax1
-                _map = _map.T
-            elif _ax3 == 1:
-                xax = _ax2
-                yax = _ax1
-                _map = _map.T
-           
-            extent = (region_simunits[xax][0], region_simunits[xax][1],
-                      region_simunits[yax][0], region_simunits[yax][1])
-            massmaps[ax] = _map
-            extents[ax] = extent
-            xlabels[ax] = axlabels[xax]
-            ylabels[ax] = axlabels[yax]
-            xinds[ax] = xax
-            yinds[ax] = yax
-    print('redshift: ', cosmopars['z'])
-
-    if mincol is None:
-        cmap = 'viridis'
-    else:
-        cmap = pu.paste_cmaps(['gist_yarg', 'viridis'], [vmin, mincol, vmax])
-    extend = 'neither' if np.min(map) == vmin else 'min'
-    
-    for axn in axes:
-        ax = axes[axn]
-        ax.set_xlabel(xlabels[axn], fontsize=fontsize)
-        ax.set_ylabel(ylabels[axn], fontsize=fontsize)
-
-        img = ax.imshow(massmaps[axn].T, origin='lower', 
-                        interpolation='nearest', vmin=vmin,
-                        vmax=vmax, cmap=cmap, extent=extents[axn])
-        ax.tick_params(axis='both', labelsize=fontsize-1)
-        
-        if center_simunits is not None:
-            _cen = [center_simunits[xinds[axn]], center_simunits[yinds[axn]]]
-            ax.scatter([_cen[0]], [_cen[1]], marker='.', color='red',
-                        s=10)
-            if Rvir_simunits is not None:
-                patches = [mpatch.Circle(_cen, Rvir_simunits)]
-                collection = mcol.PatchCollection(patches)
-                collection.set(edgecolor=['red'], facecolor='none', 
-                               linewidth=1.5)
-                ax.add_collection(collection)
-                ax.text(1.05 * 2**-0.5 * Rvir_simunits, 
-                        1.05 * 2**-0.5 * Rvir_simunits, 
-                        '$R_{\\mathrm{vir}}$',
-                        color='red', fontsize=fontsize)
-    
-    cbar = plt.colorbar(img, cax=cax, extend=extend, orientation='horizontal',
-                        aspect=10)
-    clabel = 'surface density $[\\log_{10} \\mathrm{g}\\,\\mathrm{cm}^{-2}]$'
-    cax.set_xlabel(clabel, fontsize=fontsize)
-    cax.tick_params(labelsize=fontsize-1)
-    
-    if savename is not None:
-        plt.savefig(savename, bbox_inches='tight')
-
-
-def run_checkcenter_massmap(index, center=None, rvir=None,
-                            masstype='gas'):
-    outdir = '/projects/b1026/nastasha/tests/start_fire/map_tests/'
-    cen = center
-    mincols = {'gas': -5.,
-               'DM': -5.,
-               'stars': -7.,
-               'BH': None}
-    if index == 0:
-        dirpath = '/projects/b1026/snapshots/fire3/m13h206_m3e5/' + \
-               'm13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1' + \
-               '_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000/' 
-        simname = 'm13h206_m3e5__' + \
-                  'm13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1' + \
-               '_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'                     
-        snapnum = 27  
-        outfilen_template = 'mass_pt{pt}_{sc}_snap{sn}_axis-{ax}_' + \
-                            'wholezoom_v1.hdf5'
-        _temp = outdir + outfilen_template 
-        mapfilens = {'gas': _temp.format(pt=0, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'DM': _temp.format(pt=1, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'stars': _temp.format(pt=4, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),
-                     'BH': _temp.format(pt=5, sc=simname, 
-                                                 sn=snapnum, ax='{ax}'),                            
-                    }
-        cen =  [48414.20743443, 49480.35333529, 48451.20700497]
-    mapfile_template = mapfilens[masstype]
-    
-    checkcenter_massmap(mapfile_template, savename=None, 
-                        mincol=mincols[masstype],
-                        center_simunits=cen, Rvir_simunits=rvir)
-    
-
-def masstest_map(filens):
-    '''
-    files for all parttypes
-    '''
-    
-    # mass in g will overflow 
-    enclmass = np.float64(0.)
-    for filen in filens:
-        with h5py.File(filen, 'r') as f:
-            map = 10**f['map'][:]
-
-            box_cm = f['Header/inputpars'].attrs['diameter_used_cm']
-            cosmopars = {key: val for key, val in \
-                         f['Header/inputpars/cosmopars'].attrs.items()}
-            #print(cosmopars)
-            halopath = 'Header/inputpars/halodata'
-            rvir_ckpcoverh = f[halopath].attrs['Rvir_ckpcoverh']
-            mvir_msunoverh = np.float64(f[halopath].attrs['Mvir_Msunoverh'])
-            pixsize_pkpc = f['Header/inputpars'].attrs['pixsize_pkpc']
-            rvir_pkpc = rvir_ckpcoverh * cosmopars['a'] / cosmopars['h']
-            xax = f['Header/inputpars'].attrs['Axis1']
-            yax = f['Header/inputpars'].attrs['Axis2']
-            box_pkpc = box_cm / (1e-3 * c.cm_per_mpc)
-            xcminmax = (-0.5 * box_pkpc[xax] + 0.5 * pixsize_pkpc, 
-                        0.5 * box_pkpc[xax] - 0.5 * pixsize_pkpc)
-            ycminmax = (-0.5 * box_pkpc[yax] + 0.5 * pixsize_pkpc,
-                        0.5 * box_pkpc[yax] - 0.5 * pixsize_pkpc)
-            npix_x = map.shape[0]
-            npix_y = map.shape[1]
-            pixdist2_pkpc = np.linspace(xcminmax[0], xcminmax[1], npix_x)**2 +\
-                            np.linspace(ycminmax[0], ycminmax[1], npix_y)**2
-            mapsel = pixdist2_pkpc < rvir_pkpc**2
-            pixarea_cm = (pixsize_pkpc * 1e-3 * c.cm_per_mpc)**2
-            partmass = np.float64(np.sum(map[mapsel])) * pixarea_cm
-            enclmass += partmass
-    halomass_g = mvir_msunoverh * c.solar_mass / cosmopars['h']
-    print('Found Mvir (AHF) = {:.3e} g'.format(halomass_g))
-    print('Found enclosed mass in projection = {:.3e} g'.format(enclmass))
 
 def test_ionsum_and_Z_maps():
     
@@ -657,3 +397,177 @@ def test_ionsum_and_Z_maps():
     ax.set_ylim(miny * 0.95, maxy * 1.1)
     
     plt.savefig(outfilen, bbox_inches='tight')
+
+def check_h1maps():
+    '''
+    specific sanity test comparing total H, H I from the PS20 tables,
+    and H I from the FIRE NeutralHydrogenAbundance field
+    '''
+
+    mapdir = '/Users/nastasha/ciera/tests/fire_start/h1_sim_test/'
+    mapf_Htot = ('coldens_Hydrogen_m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr'
+                 '_crdiffc690_sdp1e10_gacc31_fa0.5_snap500_shrink-sph-cen'
+                 '_BN98_2rvir_v2.hdf5')
+    mapf_H1sim = ('coldens_H1-sim_m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr'
+                  '_crdiffc690_sdp1e10_gacc31_fa0.5_snap500_shrink-sph-cen'
+                  '_BN98_2rvir_v2.hdf5')
+    mapf_H1PS20 = ('coldens_H1-PS20_m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr'
+                   '_crdiffc690_sdp1e10_gacc31_fa0.5_snap500_shrink-sph-cen'
+                   '_BN98_2rvir_v2.hdf5')
+
+    maps = {}
+    extents = {}
+    rvirs = {}
+    vmin = np.inf
+    vmax = -np.inf
+    mapkeys = ['htot', 'h1sim', 'h1ps20']
+    maptitles = {'htot': '$\\mathrm{N}(\\mathrm{H})$',
+                 'h1sim': '$\\mathrm{N}(\\mathrm{H I})$, FIRE',
+                 'h1ps20': '$\\mathrm{N}(\\mathrm{H I})$, PS20 table',
+                 }
+    fractitles = {'h1sim': ('$\\mathrm{N}(\\mathrm{H I}) \\,/\\,'
+                           ' \\mathrm{N}(\\mathrm{H})$, FIRE'), 
+                  'h1ps20': ('$\\mathrm{N}(\\mathrm{H I}) \\,/\\,'
+                             ' \\mathrm{N}(\\mathrm{H})$, PS20 tables'),
+                  }
+
+    for mapkey, mapf in zip(mapkeys, 
+                            [mapf_Htot, mapf_H1sim, mapf_H1PS20]):
+        with h5py.File(mapdir + mapf, 'r') as f:
+            _map = f['map'][:]
+            _vmin = f['map'].attrs['minfinite']
+            _vmax = f['map'].attrs['max']
+            print(mapf, _vmin, _vmax)
+
+            box_cm = f['Header/inputpars'].attrs['diameter_used_cm']
+            cosmopars = {key: val for key, val in \
+                        f['Header/inputpars/cosmopars'].attrs.items()}
+            #print(cosmopars)
+            if 'Rvir_ckpcoverh' in f['Header/inputpars/halodata'].attrs:
+                rvir_ckpcoverh = f['Header/inputpars/halodata'].attrs['Rvir_ckpcoverh']
+                rvir_pkpc = rvir_ckpcoverh * cosmopars['a'] / cosmopars['h']
+            elif 'Rvir_cm' in f['Header/inputpars/halodata'].attrs:
+                rvir_cm = f['Header/inputpars/halodata'].attrs['Rvir_cm']
+                rvir_pkpc = rvir_cm / (c.cm_per_mpc * 1e-3)
+            xax = f['Header/inputpars'].attrs['Axis1']
+            yax = f['Header/inputpars'].attrs['Axis2']
+            box_pkpc = box_cm / (1e-3 * c.cm_per_mpc)
+            extent = (-0.5 * box_pkpc[xax], 0.5 * box_pkpc[xax],
+                      -0.5 * box_pkpc[yax], 0.5 * box_pkpc[yax])
+            
+            maps[mapkey] = _map
+            extents[mapkey] = extent
+            rvirs[mapkey] = rvir_pkpc
+            vmin = min(vmin, _vmin)
+            vmax = max(vmax, _vmax)
+    
+    mincol = 13.6
+    if mincol > vmin and mincol < vmax:
+        cmap = pu.paste_cmaps(['gist_yarg', 'viridis'], [vmin, mincol, vmax])
+    else:
+        cmap = 'virdis'
+    anyzero = np.min([np.min(maps[key]) for key in maps]) == vmin
+    extend = 'neither' if anyzero else 'min'
+
+    fig = plt.figure(figsize=(8.5, 5.))
+    grid = gsp.GridSpec(nrows=2, ncols=5, hspace=0.2, wspace=0.2, 
+                        width_ratios=[1., 5., 5., 5., 1.])
+    mapaxes = [fig.add_subplot(grid[0, 1+ i]) for i in range(3)]
+    mapcax = fig.add_subplot(grid[0, 4])
+    fracaxes = [fig.add_subplot(grid[1, 2 + i]) for i in range(2)]
+    fraccax = fig.add_subplot(grid[1, 4])
+    diffax = fig.add_subplot(grid[1, 1])
+    diffcax = fig.add_subplot(grid[1, 0])
+    fontsize = 12
+    
+    # should be same for all three maps
+    xlabel = ['X', 'Y', 'Z'][xax] + ' [pkpc]'
+    ylabel = ['X', 'Y', 'Z'][yax] + ' [pkpc]'
+
+    for mi, mapkey in enumerate(mapkeys):
+        ax = mapaxes[mi]
+        if mi == 0:
+            ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.set_title(maptitles[mapkey], fontsize=fontsize)
+
+        img = ax.imshow(maps[mapkey].T, origin='lower', 
+                       interpolation='nearest', 
+                       vmin=vmin, vmax=vmax, cmap=cmap, 
+                       extent=extents[mapkey]
+                        )
+        ax.tick_params(axis='both', labelsize=fontsize-1,
+                       labelleft=mi == 0, labelbottom=False)
+
+        patches = [mpatch.Circle((0., 0.), rvir_pkpc)]
+        collection = mcol.PatchCollection(patches)
+        collection.set(edgecolor=['red'], facecolor='none', linewidth=1.5)
+        ax.add_collection(collection)
+        if mi == 0:
+            ax.text(1.05 * 2**-0.5 * rvir_pkpc, 1.05 * 2**-0.5 * rvir_pkpc, 
+                   '$R_{\\mathrm{vir}}$',
+                    color='red', fontsize=fontsize)
+    plt.colorbar(img, cax=mapcax, extend=extend, orientation='vertical') 
+    mapcax.set_ylabel('$\\log_{10} \\, \\mathrm{N} \\; [\\mathrm{cm}^{-2}]$',
+                      fontsize=fontsize) 
+
+    fmaps = {'h1sim': maps['h1sim'] - maps['htot'],
+             'h1ps20': maps['h1ps20'] - maps['htot']
+             }
+    fvmin = np.min([np.min(fmaps[fkey][np.isfinite(fmaps[fkey])])\
+                    for fkey in fmaps])
+    fvmax = np.min([np.max(fmaps[fkey][np.isfinite(fmaps[fkey])])\
+                    for fkey in fmaps])
+    anyzero = np.min([np.min(fmaps[fkey]) for fkey in fmaps]) == fvmin
+    extend = 'neither' if anyzero else 'min'
+    fcmap = 'afmhot'
+    
+    for mi, mapkey in enumerate(['h1sim', 'h1ps20']):
+        ax = fracaxes[mi]
+        ax.set_xlabel(xlabel, fontsize=fontsize)
+        #if mi == 0:
+        #    ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.set_title(fractitles[mapkey], fontsize=fontsize)
+
+        img = ax.imshow(fmaps[mapkey].T, origin='lower', 
+                        interpolation='nearest', 
+                        vmin=fvmin, vmax=fvmax, cmap=fcmap, 
+                        extent=extents[mapkey]
+                        )
+        ax.tick_params(axis='both', labelsize=fontsize-1, 
+                       labelleft=False, labelbottom=True)
+
+        patches = [mpatch.Circle((0., 0.), rvir_pkpc)]
+        collection = mcol.PatchCollection(patches)
+        collection.set(edgecolor=['red'], facecolor='none', linewidth=1.5)
+        ax.add_collection(collection)
+    plt.colorbar(img, cax=fraccax, extend=extend, orientation='vertical')
+    fraccax.set_ylabel('$\\log_{10} \\, \\mathrm{N}(\\mathrm{H I}) \\,/\\,'
+                       ' \\mathrm{N}(\\mathrm{H})$', fontsize=fontsize) 
+    
+    ax = diffax
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_title('FIRE / PS20', fontsize=fontsize)
+    diffmap = fmaps['h1sim'] - fmaps['h1ps20']
+    vmax = np.max(np.abs(diffmap[np.isfinite(diffmap)]))
+    vmin = -1. * vmax
+    img = ax.imshow(diffmap.T, origin='lower', 
+                    interpolation='nearest', 
+                    vmin=vmin, vmax=vmax, cmap='RdBu', 
+                    extent=extents['h1sim']
+                    )
+    ax.tick_params(axis='both', labelsize=fontsize-1,
+                   labelleft=False)
+    patches = [mpatch.Circle((0., 0.), rvir_pkpc)]
+    collection = mcol.PatchCollection(patches)
+    collection.set(edgecolor=['red'], facecolor='none', linewidth=1.5)
+    ax.add_collection(collection)
+    plt.colorbar(img, cax=diffcax, extend='neither', orientation='vertical')
+    diffcax.set_ylabel('$\\Delta \\, \\log_{10} \\,'
+                       ' \\mathrm{N}(\\mathrm{H I})$', fontsize=fontsize) 
+    diffcax.yaxis.set_label_position('left')
+    diffcax.yaxis.tick_left()
+
+    outdir = '/Users/nastasha/ciera/tests/fire_start/h1_sim_test/'
+    savename = outdir + 'mapcomp_H_H1-sim_H1-PS20.pdf'
+    if savename is not None:
+        plt.savefig(savename, bbox_inches='tight')

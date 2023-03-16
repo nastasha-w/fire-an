@@ -26,6 +26,7 @@ To run, for example, `run.py`, options are:
   ```
   specifying a an absolute or relative path to `run.py` from your 
   current directory.
+  
 This is basically an issue of the different scripts in different 
 directories needing to be able to find each other. Running from the
 directory above `fire_an` adds that directory to `PYTHONPATH`, like 

@@ -1,6 +1,4 @@
 
-import numpy as np
-
 import mainfunc.haloprop as hp
 import simlists as sl
 

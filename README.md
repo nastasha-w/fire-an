@@ -12,7 +12,7 @@ To run, for example, `run.py`, options are:
   (This will raise an error because `run.py` only takes postive integer
   arguments, but it also won't accidentally start an hour-long process
   on a login node.)
-- or add the directory above fire_an (e.g. `foo`) to PYTHONPATH:
+- or add the directory above fire_an (e.g. `foo`) to `PYTHONPATH`:
   ```
   export PYTHONPATH="/path/to/foo/:${PYTHONPATH}"
   ```
@@ -26,7 +26,7 @@ To run, for example, `run.py`, options are:
   ```
   specifying a an absolute or relative path to `run.py` from your 
   current directory.
-  
+
 This is basically an issue of the different scripts in different 
 directories needing to be able to find each other. Running from the
 directory above `fire_an` adds that directory to `PYTHONPATH`, like 

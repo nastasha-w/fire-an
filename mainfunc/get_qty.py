@@ -3,7 +3,7 @@
 import numpy as np
 import string
 
-from ionrad import Linetable_PS20, atomw_u_dct, elt_atomw_cgs
+from ionrad.ion_utils import Linetable_PS20, atomw_u_dct, elt_atomw_cgs
 import utils.constants_and_units as c
 import utils.opts_locs as ol
 

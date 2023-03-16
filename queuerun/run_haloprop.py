@@ -59,32 +59,37 @@ def run_halodata(opt):
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
     # redo runs after truncation/saturation cumsum bug
-    elif opt >= 60 and opt < 126:
+    # and add new ICs
+    elif opt >= 60 and opt < 150:
+        # m13-sr, 90 indices
         ind = opt - 60
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
-        simnames = sl.m13_sr_all1 # len 11
+        simnames = sl.m13_sr_all1 # len 15
         snaps = sl.snaplists['m13_sr'] # len 6
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
-    elif opt >= 126 and opt < 174:
-        ind = opt - 126
+    elif opt >= 150 and opt < 162:
+        # m13-hr, 12 indices
+        ind = opt - 150
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
-        simnames = sl.m13_hr_all1 # len 8
+        simnames = sl.m13_hr_all1 # len 2
         snaps = sl.snaplists['m13_hr'] # len 6
-    elif opt >= 174 and opt < 198:
-        ind = opt - 174
+    elif opt >= 162 and opt < 186:
+        # m12-sr, 24 indices
+        ind = opt - 162
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
         simnames = sl.m12_sr_all1 # len 4
         snaps = sl.snaplists['m12_sr'] # len 6
-    elif opt >= 198 and opt < 294:
-        ind = opt - 198
+    elif opt >= 186 and opt < 282:
+        # m12-hr, 96 indices
+        ind = opt - 186
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 

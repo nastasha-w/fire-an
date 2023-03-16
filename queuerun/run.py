@@ -151,6 +151,14 @@ def fromcommandline(index):
         print(path)
         print(snapshot)
         print(res)
+    elif index >= 2030 and index < 2264:
+        rhp.run_halodata(index - 2030 + 60)
+        # all 3model m12/m13 runs that got to z=0.5
+        # from Lindsey's spreadsheet
+        # 2030 - 2119: m13-SR (90 inds)
+        # 2120 - 2131: m13-HR (12 inds) 
+        # 2132 - 2156: m12-SR (24 inds)
+        # 2156 - 2252: m12-HR (96 inds)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

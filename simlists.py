@@ -5,6 +5,7 @@ convenient lists of simulations to avoid copying lists too often
 import makeplots.tol_colors as tc
 
 # clean: ICs for each noBH/AGN-noCR/AGN-CR run, snapshots down to z=0.5
+# 15 IC + phys
 m13_nobh_clean1 = [
     'm13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
@@ -44,12 +45,11 @@ m12_agncr_clean1 = [
 # rest: all other sims in the noBH/AGN-noCR/AGN-CR suites. 
 # ICs are not complete sets for physics models.
 # must have run to redshift 0.5
+# 22 IC + phys
 m13_nobh_rest1 = [
     'm13h002_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm13h007_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm13h029_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
-    'm13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
-    'm13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm13h223_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm13h236_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
 ]
@@ -95,13 +95,13 @@ m13_hr_clean1 = m13_agncr_clean1.copy() # len 2
 m12_sr_clean1 = m12_agncr_clean1.copy() # len 3
 m12_hr_clean1 = m12_nobh_clean1 + m12_agnnocr_clean1 # len 6
 
-m13_sr_rest1 = m13_nobh_rest1 + m13_agnnocr_rest1 # len 7
-m13_hr_rest1 = m13_agncr_rest1.copy() # len 6
+m13_sr_rest1 = m13_nobh_rest1 + m13_agnnocr_rest1 # len 11
+m13_hr_rest1 = m13_agncr_rest1.copy() # len 0
 m12_sr_rest1 = m12_agncr_rest1.copy() # len 1
 m12_hr_rest1 = m12_nobh_rest1 + m12_agnnocr_rest1 # len 10
 
-m13_sr_all1 = m13_sr_clean1 + m13_sr_rest1 # len 11
-m13_hr_all1 = m13_hr_clean1 + m13_hr_rest1 # len 8
+m13_sr_all1 = m13_sr_clean1 + m13_sr_rest1 # len 15
+m13_hr_all1 = m13_hr_clean1 + m13_hr_rest1 # len 2
 m12_sr_all1 = m12_sr_clean1 + m12_sr_rest1 # len 4
 m12_hr_all1 = m12_hr_clean1 + m12_hr_rest1 # len 16
 

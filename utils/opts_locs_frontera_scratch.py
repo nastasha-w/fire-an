@@ -26,6 +26,8 @@ hsml_dir = pre + 'code/proj-an-c/HsmlAndProject_OMP/'
 emtab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1_lines.hdf5' 
 iontab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1.hdf5'
 simdir_fire = '/scratch3/01799/phopkins/fire3_suite_done/'
+dir_halodata = frontera_work + 'halodata/'
+filen_halocenrvir = dir_halodata + 'cen_rvir.hdf5'
 
 kernel_list = ['C2','gadget']
 # desngb = 58 read out from sample hdf5 file (RunTimePars)

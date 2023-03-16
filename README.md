@@ -16,16 +16,15 @@ To run, for example, `run.py`, options are:
   ```
   export PYTHONPATH="/path/to/foo/:${PYTHONPATH}"
   ```
-  and then either run 
+  and then, from anywhere, run: 
   ```
   python -m fire_an.queuerun.run -3
   ```
-  from whereever, or run
+  or specify an absolute or relative path to `run.py` from your 
+  current directory:
   ```
   python /path/to/fire_an/queuerun/run.py -3
   ```
-  specifying a an absolute or relative path to `run.py` from your 
-  current directory.
 
 This is basically an issue of the different scripts in different 
 directories needing to be able to find each other. Running from the

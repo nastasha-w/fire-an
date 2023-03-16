@@ -1,7 +1,7 @@
 
 import numpy as np
 
-import mainfunc.makehist as mh
+import fire_an.mainfunc.makehist as mh
 
 def tryout_hist(index):
     outdir = '/projects/b1026/nastasha/tests/start_fire/hist_tests/'

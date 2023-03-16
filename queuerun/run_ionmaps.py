@@ -1,8 +1,8 @@
 
 import os
 
-import mainfunc.makemap as mm
-import simlists as sl
+import fire_an.mainfunc.makemap as mm
+import fire_an.simlists as sl
 
 def tryout_ionmap(opt=1):
     outdir = '/projects/b1026/nastasha/tests/start_fire/map_tests/'

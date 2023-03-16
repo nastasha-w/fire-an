@@ -6,8 +6,8 @@ import numpy as np
 import ctypes as ct
 import h5py
 
-import utils.constants_and_units as c
-import utils.opts_locs as ol
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.opts_locs as ol
 
 def project(NumPart, Ls, Axis1, Axis2, Axis3, box3, periodic, npix_x, npix_y,
             kernel, dct, tree, ompproj=True, projmin=None, projmax=None):

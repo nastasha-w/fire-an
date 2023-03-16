@@ -16,11 +16,11 @@ except ModuleNotFoundError:
            ' Rockstar halo data read-in will fail.')
     print(msg)
 
-import readfire.readin_fire_data as rf
-import utils.constants_and_units as c
-import utils.cosmo_utils as cu
-import utils.math_utils as mu
-import utils.opts_locs as ol
+import fire_an.readfire.readin_fire_data as rf
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
+import fire_an.utils.math_utils as mu
+import fire_an.utils.opts_locs as ol
 
 
 

@@ -9,9 +9,9 @@ Created on Wed Oct 31 13:26:12 2018
 import numpy as np
 import h5py
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gsp
-import matplotlib as mpl
+import fire_an.matplotlib.pyplot as plt
+import fire_an.matplotlib.gridspec as gsp
+import fire_an.matplotlib as mpl
 
 from importlib import reload
 

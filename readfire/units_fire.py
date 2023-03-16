@@ -10,7 +10,7 @@ simulation defaults.
 import numpy as np
 import h5py
 
-import utils.constants_and_units as c 
+import fire_an.utils.constants_and_units as c 
 
 # setup from the internets
 class UnitsNotFoundError(Exception):

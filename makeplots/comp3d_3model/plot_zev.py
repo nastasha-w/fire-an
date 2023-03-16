@@ -15,10 +15,10 @@ import matplotlib.colors as mcolors
 import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 
-import makeplots.plot_utils as pu
-import makeplots.tol_colors as tc
-import utils.constants_and_units as c
-import utils.opts_locs as ol
+import fire_an.makeplots.plot_utils as pu
+import fire_an.makeplots.tol_colors as tc
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.opts_locs as ol
 
 def plot3dprof_zev_weightvalgrid(filen_template, fillkw_weights, fillkw_vals,
                                  fillkw_z, figtitle=None, outname=None):

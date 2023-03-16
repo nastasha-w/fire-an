@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 
-import mainfunc.haloprop as hp
-import tests.test_haloprops as th
-import tests.test_maps as tm
-import tests.test_readfire as trf
-import tests.test_ionbal as tib
-import queuerun.run_ionmaps as rim
-import queuerun.run_hists as rhs
-import queuerun.run_haloprop as rhp
+import fire_an.mainfunc.haloprop as hp
+import fire_an.tests.test_haloprops as th
+import fire_an.tests.test_maps as tm
+import fire_an.tests.test_readfire as trf
+import fire_an.tests.test_ionbal as tib
+import fire_an.queuerun.run_ionmaps as rim
+import fire_an.queuerun.run_hists as rhs
+import fire_an.queuerun.run_haloprop as rhp
 
 
 def fromcommandline(index):

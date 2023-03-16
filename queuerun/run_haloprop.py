@@ -1,6 +1,6 @@
 
-import mainfunc.haloprop as hp
-import simlists as sl
+import fire_an.mainfunc.haloprop as hp
+import fire_an.simlists as sl
 
 def run_halodata(opt):
     # test cases

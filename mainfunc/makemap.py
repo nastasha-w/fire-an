@@ -1,11 +1,11 @@
 import h5py
 import numpy as np
 
-import mainfunc.get_qty as gq
-import mainfunc.haloprop as hp
-import readfire.readin_fire_data as rf
-import utils.constants_and_units as c
-from utils.projection import project
+import fire_an.mainfunc.get_qty as gq
+import fire_an.mainfunc.haloprop as hp
+import fire_an.readfire.readin_fire_data as rf
+import fire_an.utils.constants_and_units as c
+from fire_an.utils.projection import project
 
 # AHF: sorta tested (enclosed 2D mass wasn't too far above Mvir)
 # Rockstar: untested draft

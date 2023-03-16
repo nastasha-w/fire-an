@@ -7,8 +7,8 @@ import matplotlib.gridspec as gsp
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 
-import makeplots.plot_utils as pu
-import utils.constants_and_units as c
+import fire_an.makeplots.plot_utils as pu
+import fire_an.utils.constants_and_units as c
 
 def plotcomp_mass_ion_BH_noBH(fnmass_noBH='', fnion_noBH='',
                               fnmass_BH='', fnion_BH='',

@@ -5,11 +5,11 @@ import numpy as np
 import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 
-from ionrad.ion_utils import Linetable_PS20
-import mainfunc.get_qty as gq
-import makeplots.plot_utils as pu
-import readfire.readin_fire_data as rf
-import utils.constants_and_units as c
+from fire_an.ionrad.ion_utils import Linetable_PS20
+import fire_an.mainfunc.get_qty as gq
+import fire_an.makeplots.plot_utils as pu
+import fire_an.readfire.readin_fire_data as rf
+import fire_an.utils.constants_and_units as c
 
 
 

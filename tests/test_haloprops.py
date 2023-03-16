@@ -8,11 +8,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gsp
 
-import mainfunc.haloprop as hp
-import makeplots.tol_colors as tc
-import readfire.readin_fire_data as rf
-import utils.constants_and_units as c
-import utils.cosmo_utils as cu
+import fire_an.mainfunc.haloprop as hp
+import fire_an.makeplots.tol_colors as tc
+import fire_an.readfire.readin_fire_data as rf
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
 
 
 def test_mainhalodata_units_ahf(opt=1, dirpath=None, snapnum=None,

@@ -3,7 +3,7 @@
 import h5py
 import numpy as np
 
-import readfire.readin_fire_data as rf
+import fire_an.readfire.readin_fire_data as rf
 
 
 def checkfields_units(dirpath, snapnum, *args, numpart=100, 

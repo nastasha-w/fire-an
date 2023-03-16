@@ -9,9 +9,9 @@ import matplotlib.patches as mpatch
 import matplotlib.patheffects as mppe
 import matplotlib.pyplot as plt
 
-import mainfunc.makemap as mm 
-import makeplots.plot_utils as pu
-import utils.constants_and_units as c
+import fire_an.mainfunc.makemap as mm 
+import fire_an.makeplots.plot_utils as pu
+import fire_an.utils.constants_and_units as c
 
 # hard to do a true test, but check that projected masses and centering
 # sort of make sense

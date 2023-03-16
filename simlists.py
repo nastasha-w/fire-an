@@ -2,7 +2,7 @@
 convenient lists of simulations to avoid copying lists too often
 '''
 
-import makeplots.tol_colors as tc
+import fire_an.makeplots.tol_colors as tc
 
 # clean: ICs for each noBH/AGN-noCR/AGN-CR run, snapshots down to z=0.5
 # 15 IC + phys

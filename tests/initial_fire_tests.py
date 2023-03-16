@@ -8,9 +8,9 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
-import readfire.readin_fire_data as rfd
-import utils.projection as m3
-import makeplots.plot_utils as pu
+import fire_an.readfire.readin_fire_data as rfd
+import fire_an.utils.projection as m3
+import fire_an.makeplots.plot_utils as pu
 
 # snapshot 50: redshift 0.5; hopefully enough to make a-scaling errors clear
 firedata_test = '/projects/b1026/snapshots/AGN_suite/fiducial_jet/m12i_res57000/output/snapshot_050.hdf5'

@@ -4,10 +4,10 @@ import h5py
 import numpy as np
 import os
 
-import mainfunc.get_qty as gq
-import mainfunc.haloprop as hp
-import readfire.readin_fire_data as rf
-import utils.constants_and_units as c
+import fire_an.mainfunc.get_qty as gq
+import fire_an.mainfunc.haloprop as hp
+import fire_an.readfire.readin_fire_data as rf
+import fire_an.utils.constants_and_units as c
 
 
 def getaxbins(minfinite, maxfinite, bin, extendmin=True, extendmax=True):

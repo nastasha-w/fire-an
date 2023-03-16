@@ -1,8 +1,8 @@
 
 import numpy as np
 
-import utils.constants_and_units as c
-import utils.cosmo_utils as cu
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
 
 class CoordinateWranger:
     def __init__(self, snapobj, center_cm, rotmatrix=None,

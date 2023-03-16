@@ -9,11 +9,11 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 
-import makeplots.get_2dprof as gpr
-import makeplots.tol_colors as tc
-import utils.constants_and_units as c
-import utils.cosmo_utils as cu
-import utils.opts_locs as ol
+import fire_an.makeplots.get_2dprof as gpr
+import fire_an.makeplots.tol_colors as tc
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
+import fire_an.utils.opts_locs as ol
 
 
 def plot_radprof_m12i_CR_comp(smallrange=True):

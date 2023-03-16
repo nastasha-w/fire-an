@@ -3,8 +3,8 @@
 
 import numpy as np
 
-from ionrad.ion_utils import Linetable_PS20
-import mainfunc.makehist as mh
+from fire_an.ionrad.ion_utils import Linetable_PS20
+import fire_an.mainfunc.makehist as mh
 
 
 def run_hist(opt):

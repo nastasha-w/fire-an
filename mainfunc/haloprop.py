@@ -200,7 +200,7 @@ def calchalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
     del masses, r2, rorder
     dens_targets = [target / toCGS_m * toCGS_c**3 for target in \
                     dens_targets_cgs]
-    dens2_order = (cmass2 := np.cumsum(masses_order)**2) \
+    dens2_order = (np.cumsum(masses_order)**2) \
                   / ((4. * np.pi / 3)**2 * r2_order**3)
     # plotting sqrt dens2_order vs. sqrt r2_order, dens_targets -> 
     # intersect at ~200 ckpc/h at z=2.8 for the m13 guinea pig
@@ -246,6 +246,7 @@ def calchalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
             msol = 4. * np.pi / 3. * rsol**3 * dens_target
             rsols_cgs.append(rsol * toCGS_c)
             msols_cgs.append(msol * toCGS_m)
+            print(f'Found solution {dti}; r: {rsol}, m:{msol}')
         else:
             # technically a solution, but there will be some 
             # particle noise; smoothing?
@@ -365,9 +366,12 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
         newcalc = True
     
     if newcalc:
+        print('Calculating halo data...')
         halodat, todoc = calchalodata_shrinkingsphere(path, snapshot, 
                                                       meandef=meandef)
+        print('Halo data calculated.')
         filen = fdir + f'temp_cen_rvir_{uuid.uuid1()}.hdf5'
+        print('Saving data to file {filen}')
         if os.path.isfile(filen):
             msg = f'Temporary center/Rvir file {filen} already exists'
             raise RuntimeError(msg)
@@ -399,6 +403,7 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                 vgrp = cengrp.create_group(gn)
                 vgrp.attrs.create('Rvir_cm', rv)
                 vgrp.attrs.create('Mvir_g', mv)
+        print(f'Saved new halo data.')
         return halodat, todoc
 
 def adddata_cenrvir(rmtemp=False):

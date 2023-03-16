@@ -55,7 +55,7 @@ def fillin_firemaps_frontera_seqinds(**kwargs):
     '''
     templatefilen = sdir + 'template_slurm_frontera_autolauncher.sh'
     # standard format to document, jobname for batch queue submission
-    outfilen = sdir + 'slurm_firemaps_{st}_to_{ls}_{jobname}.sh'
+    outfilen = sdir + 'slurm_run_{st}_to_{ls}_{jobname}.sh'
     defaults = {'PYFILL_TIME_HHMMSS': '01:00:00',
                 'PYFILL_PARTITION': 'flex'}
     keys_req = ['PYFILL_JOBNAME',

@@ -198,9 +198,9 @@ def rho_NFW(r, Mh, delta=200, ref='rhocrit', z=0.,
     elif not isinstance(c, num.Number):
         raise ValueError('Value %s for c is not a valid option'%(c))
     if ref == 'rhocrit':
-        rho_ref = rhocrit(z, cosmopars=cosmopars)
+        rho_ref = rhocrit(cosmopars=cosmopars)
     elif ref == 'rhom':
-        rho_ref = rhom(z, cosmopars=cosmopars)
+        rho_ref = rhom(cosmopars=cosmopars)
     else:
         raise ValueError('Value %s for ref is not a valid option'%(ref))
     Redge = (Mh * 3. / (4. * np.pi * delta * rho_ref)) ** (1. / 3.)
@@ -211,9 +211,9 @@ def rho_NFW(r, Mh, delta=200, ref='rhocrit', z=0.,
 
 def Rhalo(Mh, delta=200, ref='rhocrit', z=0., cosmopars=None):
     if ref == 'rhocrit':
-        rho_ref = rhocrit(z, cosmopars=cosmopars)
+        rho_ref = rhocrit(cosmopars=cosmopars)
     elif ref == 'rhom':
-        rho_ref = rhom(z, cosmopars=cosmopars)
+        rho_ref = rhom(cosmopars=cosmopars)
     else:
         raise ValueError(f'Value {ref} for ref is not a valid option')
     Redge = (Mh * 3. / (4. * np.pi * delta * rho_ref)) ** (1. / 3.)
@@ -236,17 +236,19 @@ def getmeandensity(meandef, cosmopars):
         # x = 1 - Omega(z) = 1 - Omega_0 * (1 + z)^3 / E(z)^2
         # E(z) = H(z) / H(z=0)
         # 
-        _Ez = Hubble(cosmopars['z'], cosmopars=cosmopars) \
+        _Ez = Hubble(cosmopars=cosmopars) \
             / (cosmopars['h'] * c.hubble)
         _x = cosmopars['omegam'] * (1. + cosmopars['z'])**3 / _Ez**2 - 1.
         _Deltac = 18. * np.pi**2 + 82. * _x - 39. * _x**2
-        meandens = _Deltac * rhocrit(cosmopars['z'], cosmopars=cosmopars)
+        meandens = _Deltac * rhocrit(cosmopars=cosmopars)
     elif meandef.endswith('c'):
         overdens = float(meandef[:-1])
-        meandens = overdens * rhocrit(cosmopars['z'], cosmopars=cosmopars)
+        meandens = overdens * rhocrit(cosmopars=cosmopars)
     elif meandef.endswith('m'):
         overdens = float(meandef[:-1])
-        cosmo_meandens = rhocrit(0., cosmopars=cosmopars) \
+        _csm = cosmopars.copy()
+        _csm['z'] = 0.
+        cosmo_meandens = rhocrit(cosmopars=_csm) \
                          * cosmopars['omegam'] * (1. + cosmopars['z'])**3
         meandens = cosmo_meandens * overdens
     return meandens

@@ -139,8 +139,7 @@ class CoordinateWranger:
                                  * self.snapobj.cosmopars.a \
                                  / self.snapobj.cosmopars.h \
                                  * c.cm_per_mpc / self.toCGS_coords_simxyz \
-                                 * cu.Hubble(self.cosmopars['z'], 
-                                             cosmopars=self.cosmopars)
+                                 * cu.Hubble(cosmopars=self.cosmopars)
             self.vel_simxyx += 0.5 * self.vboxsize_simu
             self.vel_simxyz %= self.vboxsize_simu
             self.vel_simxyx -= 0.5 * self.vboxsize_simu

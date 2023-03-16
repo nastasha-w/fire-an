@@ -63,7 +63,7 @@ m13_agncr_rest1 = [
     ('m13h009_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'), 
     ('m13h029_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
-     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m13h037_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'), 
     ('m13h236_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
@@ -146,3 +146,14 @@ ics_m13 = ['m13h113', 'm13h206', 'm13h002', 'm13h007', 'm13h009',
            'm13h029', 'm13h037', 'm13h236']
 m13_iccolors = {ic: _iccolors[i] for i, ic in enumerate(ics_m13)}
 m13_iccolors['h02'] = m13_iccolors['h002']
+
+_physcolors = tc.tol_cset('bright')
+physcolors = {'AGN-CR': _physcolors.green,
+              'AGN-noCR': _physcolors.red,
+              'noBH': _physcolors.blue,
+              }
+
+physlinestyles = {'AGN-CR': 'dotted',
+                  'AGN-noCR': 'dashed',
+                  'noBH': 'solid',
+                  }

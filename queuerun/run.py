@@ -155,8 +155,17 @@ def fromcommandline(index):
         # from Lindsey's spreadsheet
         # 2030 - 2119: m13-SR (90 inds)
         # 2120 - 2131: m13-HR (12 inds) 
-        # 2132 - 2156: m12-SR (24 inds)
+        # 2132 - 2155: m12-SR (24 inds)
         # 2156 - 2252: m12-HR (96 inds)
+    elif index >= 2264 and index < 5594:
+        rim.run_ionmap_xyz(index - 2264)
+        # all 3model m12/m13 runs that got to z=0.5
+        # from Lindsey's spreadsheet
+        # z = 1.0 - 0.5, Mass, Ne8, Neon, O6, Mg10
+        # 2264 - 3613: m13-SR (1350 inds)
+        # 3614 - 3793: m13-HR ( 180 inds) 
+        # 3794 - 4153: m12-SR ( 360 inds) 
+        # 4154 - 5593: m12-HR (1440 inds)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

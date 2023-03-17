@@ -156,7 +156,7 @@ def fromcommandline(index):
         # 2030 - 2119: m13-SR (90 inds)
         # 2120 - 2131: m13-HR (12 inds) 
         # 2132 - 2155: m12-SR (24 inds)
-        # 2156 - 2252: m12-HR (96 inds)
+        # 2156 - 2251: m12-HR (96 inds)
     elif index >= 2264 and index < 5594:
         rim.run_ionmap_xyz(index - 2264)
         # all 3model m12/m13 runs that got to z=0.5

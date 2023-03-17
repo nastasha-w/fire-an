@@ -11,17 +11,18 @@ m13_nobh_clean1 = [
     'm13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
 ]
 m13_agnnocr_clean1 = [
-    ('m13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
-     '_gacc31_fa0.5_fcr1e-3_vw3000'),
-    ('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
-     '_gacc31_fa0.5_fcr1e-3_vw3000'),
-]
-m13_agncr_clean1 = [
     ('m13h113_m3e4_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e-4_gacc31'
      '_fa0.5'),
     ('m13h206_m3e4_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp3e-4_gacc31'
      '_fa0.5'),
 ]
+m13_agncr_clean1 = [
+    ('m13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'),
+]
+
 
 m12_nobh_clean1 = [
     'm12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
@@ -90,13 +91,13 @@ m12_agncr_rest1 = [
 ]
 
 ## run sets:
-m13_sr_clean1 = m13_nobh_clean1 + m13_agnnocr_clean1 # len 4
-m13_hr_clean1 = m13_agncr_clean1.copy() # len 2
+m13_sr_clean1 = m13_nobh_clean1 + m13_agncr_clean1 # len 4
+m13_hr_clean1 = m13_agnnocr_clean1.copy() # len 2
 m12_sr_clean1 = m12_agncr_clean1.copy() # len 3
 m12_hr_clean1 = m12_nobh_clean1 + m12_agnnocr_clean1 # len 6
 
-m13_sr_rest1 = m13_nobh_rest1 + m13_agnnocr_rest1 # len 11
-m13_hr_rest1 = m13_agncr_rest1.copy() # len 0
+m13_sr_rest1 = m13_nobh_rest1 + m13_agncr_rest1 # len 11
+m13_hr_rest1 = m13_agnnocr_rest1.copy() # len 0
 m12_sr_rest1 = m12_agncr_rest1.copy() # len 1
 m12_hr_rest1 = m12_nobh_rest1 + m12_agnnocr_rest1 # len 10
 

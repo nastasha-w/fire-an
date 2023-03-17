@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import os
 import pandas as pd
+import sys
 import uuid
 
 import matplotlib.pyplot as plt # debugging
@@ -371,7 +372,7 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                                                       meandef=meandef)
         print('Halo data calculated.')
         filen = fdir + f'temp_cen_rvir_{uuid.uuid1()}.hdf5'
-        print('Saving data to file {filen}')
+        print(f'Saving data to file {filen}')
         if os.path.isfile(filen):
             msg = f'Temporary center/Rvir file {filen} already exists'
             raise RuntimeError(msg)
@@ -620,3 +621,17 @@ def mainhalodata_AHFsmooth(path, snapnum):
     for prop in props:
         out[outprops[prop]] = df[prop][i]
     return out
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
+        if mode == '--addstored':
+            if len(sys.argv) > 2:
+                rmtemp = bool(sys.argv[2])
+            else:
+                rmtemp = False
+            adddata_cenrvir(rmtemp=rmtemp)
+        else:
+            raise ValueError(f'Invalid mode {mode}')
+    else:
+        print('No actions specified')

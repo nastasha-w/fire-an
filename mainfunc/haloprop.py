@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import os
 import pandas as pd
+import sys
 import uuid
 
 import matplotlib.pyplot as plt # debugging
@@ -620,3 +621,17 @@ def mainhalodata_AHFsmooth(path, snapnum):
     for prop in props:
         out[outprops[prop]] = df[prop][i]
     return out
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
+        if mode == '--addstored':
+            if len(sys.argv) > 2:
+                rmtemp = bool(sys.argv[2])
+            else:
+                rmtemp = False
+            adddata_cenrvir(rmtemp=rmtemp)
+        else:
+            raise ValueError(f'Invalid mode {mode}')
+    else:
+        print('No actions specified')

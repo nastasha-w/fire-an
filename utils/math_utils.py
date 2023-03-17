@@ -30,23 +30,23 @@ def linterpsolve(xvals, yvals, xpoint):
         ypoint = yvals[ind2] * w + yvals[ind1] * (1. - w)
     return ypoint
 
-def find_intercepts(yvals, xvals, ypoint):
+def find_intercepts(yvals, xvals, ypoint, xydct=None):
     '''
-    'solves' a monotonic function described by xvals and yvals by 
-    linearly interpolating between the points above and below ypoint
-
-    Parameters:
-    -----------
-    xvals: 1D float array
-    yvals: 1D float array, same length as xvals
+    'solves' a monotonic function described by xvals and yvals by
+    linearly interpolating between the points above and below ypoint 
+    xvals, yvals: 1D arrays
     ypoint: float
-        point at which to find x solutions
-
-    Does not distinguish between intersections separated by fewer
-    than 2 xvals points
+    Does not distinguish between intersections separated by less than 2
+    xvals points
     '''
+    if xvals is None:
+        xvals = xydct['x']
+    if yvals is None:
+        yvals = xydct['y']
+
     if not (np.all(np.diff(xvals) <= 0.) or np.all(np.diff(xvals) >= 0.)):
-        raise ValueError('linterpsolve only works for monotonic x values')
+        print('linterpsolve only works for monotonic x values')
+        return None
     zerodiffs = yvals - ypoint
     leqzero = np.where(zerodiffs <= 0.)[0]
     if len(leqzero) == 0:
@@ -55,30 +55,24 @@ def find_intercepts(yvals, xvals, ypoint):
         edges = [[leqzero[0], leqzero[0]]]
     else:
         segmentedges = np.where(np.diff(leqzero) > 1)[0] + 1
-        # one dip below zero -> edges are intercepts
-        if len(segmentedges) == 0: 
+        if len(segmentedges) == 0: # one dip below zero -> edges are intercepts
             edges = [[leqzero[0], leqzero[-1]]]
         else:
-            parts = [leqzero[: segmentedges[0]] 
-                     if si == 0 else 
+            parts = [leqzero[: segmentedges[0]] if si == 0 else \
                      leqzero[segmentedges[si - 1] : segmentedges[si]] 
-                     if si < len(segmentedges) else
-                     leqzero[segmentedges[si - 1] :] 
+                     if si < len(segmentedges) else\
+                     leqzero[segmentedges[si - 1] :] \
                      for si in range(len(segmentedges) + 1)]
             edges = [[part[0], part[-1]] for part in parts]
-    intercepts = [[linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], 
-                                xvals[ed[0]-1: ed[0] + 1], 0.),
-                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],
-                                xvals[ed[1]: ed[1] + 2], 0.)]
-                  if ed[0] != 0 and ed[1] != len(yvals) - 1 else
-                  [None,
-                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],
-                                xvals[ed[1]: ed[1] + 2], 0.)]
-                  if ed[1] != len(yvals) - 1 else 
-                  [linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], 
-                                xvals[ed[0]-1: ed[0] + 1], 0.),
-                   None]
-                  if ed[0] != 0 else
+    intercepts = [[linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], xvals[ed[0]-1: ed[0] + 1], 0.),\
+                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],   xvals[ed[1]: ed[1] + 2], 0.)]  \
+                  if ed[0] != 0 and ed[1] != len(yvals) - 1 else \
+                  [None,\
+                   linterpsolve(zerodiffs[ed[1]: ed[1] + 2],   xvals[ed[1]: ed[1] + 2], 0.)] \
+                  if ed[1] != len(yvals) - 1 else \
+                  [linterpsolve(zerodiffs[ed[0]-1: ed[0] + 1], xvals[ed[0]-1: ed[0] + 1], 0.),\
+                   None]  \
+                  if ed[0] != 0 else \
                   [None, None]
                  for ed in edges]
     intercepts = [i for i2 in intercepts for i in i2]

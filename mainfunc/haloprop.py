@@ -33,9 +33,9 @@ class NoStoredMatchError(Exception):
             self.message = None
     def __str__(self):
         if self.message is not None:
-            return 'NoStoredMatchErrorr: {0} '.format(self.message)
+            return 'NoStoredMatchError: {0} '.format(self.message)
         else:
-            return 'NoStoredMatchErrorr'
+            return 'NoStoredMatchError'
 
 
 # seems to work for at least one halo 

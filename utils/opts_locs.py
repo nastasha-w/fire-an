@@ -15,18 +15,18 @@ import fire_an.utils.constants_and_units as c
 ############################
 #    setup and functions   #
 ############################
-frontera_work = '/work2/08466/tg877653/frontera/'
-frontera_scratch = '/scratch1/08466/tg877653/'
-pre = frontera_scratch
+pre = '/Users/nastasha/'
 
 c_interpfile  = pre + 'code/proj-an-c/interp2d/interp.so'
 c_gridcoarser = '' #'/home/wijers/gridcoarser/gridcoarser.so'
 c_halomask    = '' #'/home/wijers/halomaps/gethalomap.so'
 hsml_dir = pre + 'code/proj-an-c/HsmlAndProject_OMP/'
-emtab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1_lines.hdf5' 
-iontab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1.hdf5'
-simdir_fire = '/scratch3/01799/phopkins/fire3_suite_done/'
-dir_halodata = frontera_work + 'halodata/'
+emtab_sylvia_ssh = pre + ('phd/tables/lineem/lines_sp20/UVB_dust1_CR1_G1'
+                          '_shield1_lines.hdf5') 
+iontab_sylvia_ssh = pre + ('phd/tables/ionbal/lines_sp20/'
+                           'UVB_dust1_CR1_G1_shield1.hdf5')
+simdir_fire = ''
+dir_halodata = '/Users/nastasha/ciera/halodata_fire/'
 filen_halocenrvir = dir_halodata + 'cen_rvir.hdf5'
 
 kernel_list = ['C2','gadget']

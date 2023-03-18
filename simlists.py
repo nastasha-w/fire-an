@@ -144,7 +144,7 @@ ics_m12 = ['m12f', 'm12i', 'm12m', 'm12b', 'm12c', 'm12r', 'm12q', 'm12w',
            'm12z']
 m12_iccolors = {ic: _iccolors[i] for i, ic in enumerate(ics_m12)}
 ics_m13 = ['m13h113', 'm13h206', 'm13h002', 'm13h007', 'm13h009',
-           'm13h029', 'm13h037', 'm13h236']
+           'm13h029', 'm13h037', 'm13h223', 'm13h236']
 m13_iccolors = {ic: _iccolors[i] for i, ic in enumerate(ics_m13)}
 m13_iccolors['m13h02'] = m13_iccolors['m13h002']
 

@@ -304,8 +304,8 @@ def plotMz_burchett_etal_2019_model3():
     agncr = m12_agncr + m13_agncr
     ics = [filen.split('_')[0] for filen in snapfiles]
     snaplabels = [ic + ' noBH' if filen in nobh else
-                  ic + 'AGN-noCR' if filen in agnnocr else
-                  ic + 'AGN-CR' if filen in agncr else
+                  ic + ' AGN-noCR' if filen in agnnocr else
+                  ic + ' AGN-CR' if filen in agncr else
                   None
                   for filen, ic in zip(snapfiles, ics)]
     firedataf = ol.filen_halocenrvir
@@ -342,7 +342,11 @@ def plotMz_burchett_etal_2019_model3():
             fireradii.append(_lsr)
             firecens.append(_lfc)
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5.5, 5.))
+    fig = plt.figure(figsize=(5.5, 7.))
+    grid = gsp.GridSpec(nrows=2, ncols=1,
+                        height_ratios=[5., 2.], hspace=0.25)
+    ax = fig.add_subplot(grid[0, 0])
+    lax = fig.add_subplot(grid[1, 0])
     fontsize = 12
     # Burchett et al. data
     z_bur = data_bur['zgal']
@@ -350,10 +354,11 @@ def plotMz_burchett_etal_2019_model3():
     isul = data_bur['log_N_Ne8_isUL']
     ax.scatter(z_bur[isul], m_bur[isul], marker='o', linestyle='None',
                edgecolor='black', facecolor='none', label='Bur.+19 (UL)',
-               s=40)
+               s=40, zorder=5)
     ax.scatter(z_bur[np.logical_not(isul)], m_bur[np.logical_not(isul)], 
                marker='o', linestyle='None', edgecolor='black', 
-               facecolor='black', label='Bur.+19', s=40)
+               facecolor='black', label='Bur.+19', s=40, 
+               zorder=5)
     
     mass_minmax = {'m13': (np.inf, -np.inf),
                    'm12': (np.inf, -np.inf)}
@@ -364,20 +369,27 @@ def plotMz_burchett_etal_2019_model3():
     m13ics_used = set()
     m12ics_used = set()
     physmodels_used = set()
-    for snaplabel, firemass, fireredshift \
-            in zip(snaplabels[::-1], firemasses[::-1], fireredshifts[::-1]):
+    for snapfile, snaplabel, firemass, fireredshift \
+            in zip(snapfiles[::-1], snaplabels[::-1], firemasses[::-1],
+                   fireredshifts[::-1]):
         hlabel, plabel = snaplabel.split(' ')
         if hlabel.startswith('m13'):
-            color = sl.m13_iccolors(hlabel)
+            color = sl.m13_iccolors[hlabel]
             m13ics_used.add(hlabel)
         elif hlabel.startswith('m12'):
-            color = sl.m12_iccolors(hlabel)
+            color = sl.m12_iccolors[hlabel]
             m12ics_used.add(hlabel)
         linestyle = sl.physlinestyles[plabel]
         physmodels_used.add(plabel)
+        if snapfile in sl.buglist1:
+            marker = 'x'
+            ms = 5
+        else:
+            marker = 'o'
+            ms = 3
         ax.plot(fireredshift, firemass, color=color,
                 linestyle=linestyle, linewidth=1.5,
-                marker='o', markersize=4)
+                marker=marker, markersize=ms)
         for key in mass_minmax:
             if snaplabel.startswith(key):
                 _prev = mass_minmax[key]
@@ -416,7 +428,7 @@ def plotMz_burchett_etal_2019_model3():
     
     m13ics_used = sorted(list(m13ics_used))
     m12ics_used = sorted(list(m12ics_used))
-    physmodels_used = sorted(list(m12ics_used))
+    physmodels_used = sorted(list(physmodels_used))
     _handles, _ = ax.get_legend_handles_labels()
     handles1 = [mlines.Line2D((), (), linewidth=1.5, 
                               linestyle=sl.physlinestyles[key],
@@ -432,9 +444,12 @@ def plotMz_burchett_etal_2019_model3():
                               label=key, linestyle='solid', marker='o',
                               markersize=4)\
                 for key in m13ics_used]
-    handles = _handles + handles1 + handles2 + handles3
+    handles = _handles + handles1
     ax.legend(handles=handles, fontsize=fontsize - 1, handlelength=2.0)
-
+    lhandles = handles2 + handles3
+    lax.axis('off')
+    lax.legend(handles=lhandles, loc='upper center',
+               bbox_to_anchor=(0.5, 1.0), fontsize=fontsize, ncols=3)
     outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
     outfilen = outdir + 'mass_z_selection_model3.pdf'
     plt.savefig(outfilen, bbox_inches='tight')

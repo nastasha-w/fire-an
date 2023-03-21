@@ -149,14 +149,23 @@ def fromcommandline(index):
         print(path)
         print(snapshot)
         print(res)
-    elif index >= 2030 and index < 2264:
+    elif index >= 2030 and index < 2252:
         rhp.run_halodata(index - 2030 + 60)
         # all 3model m12/m13 runs that got to z=0.5
         # from Lindsey's spreadsheet
         # 2030 - 2119: m13-SR (90 inds)
         # 2120 - 2131: m13-HR (12 inds) 
-        # 2132 - 2156: m12-SR (24 inds)
-        # 2156 - 2252: m12-HR (96 inds)
+        # 2132 - 2155: m12-SR (24 inds)
+        # 2156 - 2251: m12-HR (96 inds)
+    elif index >= 2252 and index < 5582:
+        rim.run_ionmap_xyz(index - 2252)
+        # all 3model m12/m13 runs that got to z=0.5
+        # from Lindsey's spreadsheet
+        # z = 1.0 - 0.5, Mass, Ne8, Neon, O6, Mg10
+        # 2252 - 3601: m13-SR (1350 inds)
+        # 3602 - 3781: m13-HR ( 180 inds) 
+        # 3782 - 4141: m12-SR ( 360 inds) 
+        # 4142 - 5581: m12-HR (1440 inds)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

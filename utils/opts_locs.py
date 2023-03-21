@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
-
 ############################
 #    setup and functions   #
 ############################
@@ -29,16 +27,17 @@ desngb = 58
 # files.
 # matches Wiersema, Schaye, Theuns et al. 2009 table 1 values
 solar_abunds_ea = {'calcium':  6.435500108636916E-5,
-                'carbon':   0.002066543558612466,
-                'helium':   0.2805553376674652,
-                'hydrogen': 0.706497848033905,
-                'iron':     0.0011032151523977518,
-                'magnesium':5.907064187340438E-4,
-                'neon':     0.0014144604792818427,
-                'nitrogen': 8.356256294064224E-4,
-                'oxygen':   0.00549262436106801,
-                'silicon':  6.825873861089349E-4,
-                'sulfur':  4.0898521547205746E-4}
+                   'carbon':   0.002066543558612466,
+                   'helium':   0.2805553376674652,
+                   'hydrogen': 0.706497848033905,
+                   'iron':     0.0011032151523977518,
+                   'magnesium':5.907064187340438E-4,
+                   'neon':     0.0014144604792818427,
+                   'nitrogen': 8.356256294064224E-4,
+                   'oxygen':   0.00549262436106801,
+                   'silicon':  6.825873861089349E-4,
+                   'sulfur':  4.0898521547205746E-4}
 
-Zsun_ea = 0.0127 # Wiersma, Schaye,Theuns et al. (2009), consistent with Serena's tables
+# Wiersma, Schaye,Theuns et al. (2009), consistent with Serena's tables
+Zsun_ea = 0.0127 
 

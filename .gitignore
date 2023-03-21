@@ -1,4 +1,4 @@
-## custom (files used to run specfic options from the command line)
+## custom 
 ./utils/opts_locs.py
 
 ## backups and queueing

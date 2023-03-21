@@ -954,39 +954,39 @@ def run_ionmap_xyz(opt=0):
                  '_2rvir{depl}_{los}-proj_v3.hdf5')
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
     checkfileflag = False
-    if opt >= 0 and opt < 792:
-        # m13sr: 792 indices
+    if opt >= 0 and opt < 1350:
+        # m13sr: 1350 indices
         ind = opt - 0
         outdir = '/scratch1/08466/tg877653/output/maps/set3/'
         checkfileflag = True
-        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
-        simnames = sl.m13_sr_all1 # len 11
+        simnames = sl.m13_sr_all1 # len 15
         snaps = sl.snaplists['m13_sr'] # len 6
-    elif opt >= 792 and opt < 1368:
-        # m13hr: 576 indices
-        ind = opt - 792
+    elif opt >= 1350 and opt < 1530:
+        # m13hr: 180 indices
+        ind = opt - 1350
         outdir = '/scratch1/08466/tg877653/output/maps/set3/'
         checkfileflag = True
-        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
-        simnames = sl.m13_hr_all1 # len 8
+        simnames = sl.m13_hr_all1 # len 2
         snaps = sl.snaplists['m13_hr'] # len 6
-    elif opt >= 1368 and opt < 1656:
-        # m13hr: 288 indices
-        ind = opt - 1368
+    elif opt >= 1530 and opt < 1890:
+        # m12sr: 360 indices
+        ind = opt - 1530
         outdir = '/scratch1/08466/tg877653/output/maps/set3/'
         checkfileflag = True
-        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
         simnames = sl.m12_sr_all1 # len 4
         snaps = sl.snaplists['m12_sr'] # len 6
-    elif opt >= 1656 and opt < 2808:
-        # m13hr: 1152 indices
-        ind = opt - 1656
+    elif opt >= 1890 and opt < 3330:
+        # m12hr: 1440 indices
+        ind = opt - 1890
         outdir = '/scratch1/08466/tg877653/output/maps/set3/'
         checkfileflag = True
-        ions = ['Mass', 'O6', 'Ne8', 'Mg10']
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
         simnames = sl.m12_hr_all1 # len 16
         snaps = sl.snaplists['m12_hr'] # len 6
@@ -1012,11 +1012,15 @@ def run_ionmap_xyz(opt=0):
     if ion == 'Mass':
         maptype = 'Mass'
         maptype_argss = [{}]
+    elif ion in ['Hydrogen', 'Helium', 'Carbon', 'Nitrogen', 'Oxygen',
+                 'Neon', 'Magnesium', 'Silicon', 'Iron']:
+        maptype = 'Metal'
+        maptype_argss = [{'element': ion, 'density': False}]
     else:
         maptype = 'ion'
         if ion == 'H1':
             _maptype_args = {'ps20depletion': False, 
-                                'ionfrac-method': 'sim'}
+                             'ionfrac-method': 'sim'}
         else:
             _maptype_args = {'ps20depletion': False}
         _maptype_args.update({'ion': ion})

@@ -372,7 +372,7 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                                                       meandef=meandef)
         print('Halo data calculated.')
         filen = fdir + f'temp_cen_rvir_{uuid.uuid1()}.hdf5'
-        print('Saving data to file {filen}')
+        print(f'Saving data to file {filen}')
         if os.path.isfile(filen):
             msg = f'Temporary center/Rvir file {filen} already exists'
             raise RuntimeError(msg)

@@ -972,6 +972,7 @@ def run_ionmap_xyz(opt=0):
         loss = ['x', 'y', 'z']
         simnames = sl.m13_hr_all1 # len 2
         snaps = sl.snaplists['m13_hr'] # len 6
+        checkfileflag = True
     elif opt >= 1530 and opt < 1890:
         # m12sr: 360 indices
         ind = opt - 1530

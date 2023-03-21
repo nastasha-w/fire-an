@@ -957,7 +957,7 @@ def run_ionmap_xyz(opt=0):
     if opt >= 0 and opt < 1350:
         # m13sr: 1350 indices
         ind = opt - 0
-        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        outdir = '/scratch1/08466/tg877653/output/maps/set3_model3/'
         checkfileflag = True
         ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
@@ -966,7 +966,7 @@ def run_ionmap_xyz(opt=0):
     elif opt >= 1350 and opt < 1530:
         # m13hr: 180 indices
         ind = opt - 1350
-        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        outdir = '/scratch1/08466/tg877653/output/maps/set3_model3/'
         checkfileflag = True
         ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
@@ -975,7 +975,7 @@ def run_ionmap_xyz(opt=0):
     elif opt >= 1530 and opt < 1890:
         # m12sr: 360 indices
         ind = opt - 1530
-        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        outdir = '/scratch1/08466/tg877653/output/maps/set3_model3/'
         checkfileflag = True
         ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']
@@ -984,7 +984,7 @@ def run_ionmap_xyz(opt=0):
     elif opt >= 1890 and opt < 3330:
         # m12hr: 1440 indices
         ind = opt - 1890
-        outdir = '/scratch1/08466/tg877653/output/maps/set3/'
+        outdir = '/scratch1/08466/tg877653/output/maps/set3_model3/'
         checkfileflag = True
         ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
         loss = ['x', 'y', 'z']

@@ -697,18 +697,35 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
                  'shrink-sph-cen_BN98_2rvir_{pax}-proj_v3.hdf5')
         simnames_all = sl.m12_hr_all1 + sl.m12_sr_all1 \
                        + sl.m13_hr_all1 + sl.m13_sr_all1
-
-        snapnums = sl.snaplists['m12_hr'] * len(sl.m12_hr_all1) \
-                   + sl.snaplists['m12_sr'] * len(sl.m12_sr_all1) \
-                   + sl.snaplists['m13_hr'] * len(sl.m13_hr_all1) \
-                   + sl.snaplists['m13_sr'] * len(sl.m13_sr_all1)
-        _qfills = ['gas-mass', 'Neon', 'Ne8', 'O6', 'Mg10']
-        qtyfillss = [[{'qty': val} for val in _qfills]] * len(simnames)
+        simlists = []
+        iclab = []
+        for simname in simnames_all:
+            ic = simname.split('_')[0]
+            if ic in iclab:
+                si = np.where([ic == _ic for _ic in iclab])[0][0]
+                simsets[si].append(simname)
+            else:
+                iclab.append(ic)
+                simsets.append([simname])
+        all_hr = sl.m12_hr_all1 + sl.m12_sr_all1
+        all_sr = sl.m12_sr_all1 + sl.m13_sr_all1
+        zfillsets = [[[{'snapnum': snap} for snap in sl.snaps_hr]
+                      if simname in all_hr else 
+                      [{'snapnum': snap} for snap in sl.snaps_sr]
+                      if simname in all_sr else 
+                      None
+                      for simname in simlist] 
+                     for simlist in simlists]
+        physlabels = [['AGN-CR' if 'MHDCRspec1' in simname
+                        else 'noBH' if 'sdp1e10' in simname
+                        else 'AGN-noCR'
+                        for simname in simlists]
+                       for simlist in simlists]
         _afills = ['x', 'y', 'z']
-        paxfillss = [[{'pax': val} for val in _afills]] * len(simnames)
-        _qtylab = ['Gas', 'Neon', 'Ne VIII', 'O VI', 'Mg X']
-        qtylabelss = [_qtylab] * len(simnames)
-        _qtyclab = [('$\\log_{10} \\, \\Sigma(\\mathrm{gas})'
+        paxfills = [[{'pax': val} for val in _afills]]
+        qtys = ['gas-mass', 'Neon', 'Ne8', 'O6', 'Mg10']
+        qtylabs = ['Gas', 'Neon', 'Ne VIII', 'O VI', 'Mg X']
+        qtyylabs = [('$\\log_{10} \\, \\Sigma(\\mathrm{gas})'
                      ' \\; [\\mathrm{g}\\,\\mathrm{cm}^{-2}]$'),
                     ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Neon})'
                      ' \\; [\\mathrm{cm}^{-2}]$'),
@@ -719,27 +736,28 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
                     ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Mg\\, X})'
                      ' [\\mathrm{cm}^{-2}]$')
                    ]
-        qtyclabelss = [_qtyclab] * len(simnames)
-        outname = ('comp_map_2dprof_projax_gas_Ne_Ne8_O6_Mg10_{ic}'
-                   '_{phys}_{snap}.pdf')
-    
-    for simname, snapnum, qtyfills, paxfills, qtyclabels, qtylabels \
-            in zip(simnames, snapnums, qtyfillss, paxfillss, 
-                   qtyclabelss, qtylabelss):
-        filen_template = fdir + ftemp.format(simname=simname, snapnum=snapnum)
-        ic = simname.split('_')[0]
-        physmodel = 'AGN-CR' if 'MHDCRspec1' in simname \
-                    else 'noBH' if 'sdp1e10' in simname \
-                    else 'AGN-noCR'
-        title = f'{ic} {physmodel}, snapshot {snapnum}'
-        if simname in sl.buglist1:
+        outname = ('comp_2dprof_z_phys_projax_{qty}_{ic}.pdf')
+        simlists_ext = [[{'simname': simn} for simn in siml] 
+                       for siml in simlists] * len(qtys)
+        zfills_ext = zfillsets * len(qtys)
+        physlabels_ext = physlabels * len(qtys)
+        ics_ext = iclab * len(qtys)
+        paxfills_ext = paxfills * len(zfills_ext)
+        qtylabels_ext = [lab for lab in qtylabs for i in range(len(simlists))]
+        ylabels_ext = [lab for lab in qtyylabs for i in range(len(simlists))]
+        qtys_ext = [lab for lab in qtys for i in range(len(simlists))]
+
+    for (simfills, qty, ylabel, qtylabel, paxfills, zfills, physlabels, ic) \
+            in zip(simlists_ext, qtys_ext, ylabels_ext, qtylabels_ext,
+                   paxfills_ext, zfills_ext, physlabels_ext, ics_ext):
+        filen_template = fdir + ftemp.format(qty=qty)
+        title = f'{ic}, z=0.5-1.0, {qtylabel}'
+        if np.any([sd['simname'] in sl.buglist1 for sd in simfills]):
             title = title + ', possible bug'
-        title = title + '\n' + simname
-        _outname = outdir + outname.format(ic=ic, phys=physmodel, 
-                                           snap=snapnum)
+        title = title + '\n' 
+        title += '\n'.join([sn['simname'] for sn in simfills])
+        _outname = outdir + outname.format(ic=ic, qty=qty)
 
-
-
-    plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
-                             physfills, physlabels, title=None, 
-                             outname=None, ylabel=None)
+        plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
+                                simfills, physlabels, title=title, 
+                                outname=_outname, ylabel=ylabel)

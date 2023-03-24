@@ -702,6 +702,7 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
+
 def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
 
     if fileset == 'set3_model3':
@@ -779,3 +780,340 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
                                 simfills, physlabels, title=title, 
                                 outname=_outname, ylabel=ylabel)
         plt.close() # don't overload memory with too many plots
+
+# to avoid the previous 'annoying long nested loop' issue
+def gethalodct_phys_haloset(temp, afill, zfill, pfill):
+    fills = afill.copy()
+    fills.update(zfill)
+    fills.update(pfill)
+    filen = temp.format(**fills)
+    with h5py.File(filen, 'r') as f:
+        cosmopars = {key: val for key, val in \
+            f['Header/inputpars/cosmopars'].attrs.items()}
+        hdpath = 'Header/inputpars/halodata'
+        mvir_msun = f[hdpath].attrs['Mvir_g']
+        if 'Rvir_ckpcoverh' in f[hdpath].attrs:
+            rvir_ckpcoverh = f[hdpath].attrs['Rvir_ckpcoverh']
+            rvir_pkpc = rvir_ckpcoverh * cosmopars['a'] \
+                        / cosmopars['h']
+        elif 'Rvir_cm' in f[hdpath].attrs:
+            rvir_cm = f[hdpath].attrs['Rvir_cm']
+            rvir_pkpc = rvir_cm / (c.cm_per_mpc * 1e-3)
+        pax = f['Header/inputpars'].attrs['Axis3']
+    mvir_msun /= c.solar_mass
+    outdct = {'mv': mvir_msun, 'rv': rvir_pkpc,
+              'a3': pax, 'z': cosmopars['z'],
+              'fn': filen}
+    return outdct
+
+def plotcomp_phys_haloset(filen_template, paxfills, zfills,
+                          physfills, iclabels, physlabels, title=None,
+                          outname=None, ylabel=None):
+    '''
+    in each panel, redshift- and projection-axis-combined profiles
+    are shown. Different panels show different ICs, different plots
+    are for different halo sets (m12/m13) and projected quantities.
+
+    Parameters:
+    -----------
+    filen_template_phys: str
+        file name, used to make individual file names with .format.
+        Should include the full path.
+    paxfills: list of dicts
+        the keyword/value sets usable with .format to make the file
+        names for different projection axes.
+    physfills: list of lists of dicts
+        like paxfills, but the keywords and values produce file names
+        for different physics models. The outer list corresponds to
+        different panels (ICs), inner lists are different physics for
+        the same ICs.
+    zfills: list of lists of lists of dicts (I know...)
+        like paxfills, but these keywords and values give files for 
+        different redshifts. The outer list layer is index-matched
+        to the panels the middle lists are index-matched to the 
+        different physics in each panel, and the innermost lists of
+        dicts should give redshifts for each different physics model
+        which are the same or very close. 
+    iclabels: list of str
+        the labels for the different ICs (panels). Index-matched to
+        the outer list of the physfills.
+    physlabels: list of lists of str
+        the labels for the different physics models. Index-matched to
+        physfills.
+    title: str or None
+        figure title, if any.
+    ylabel: str or None
+        y axis label, if any.
+    outname: str
+        file to save the image to. Should include the full path.
+    
+    '''
+    
+    # axes outer to inner: projection axis, physics, redshift
+    mapprops = [[[[gethalodct_z_pax_phys(filen_template, afill, zfill, pfill)
+                   for afill in paxfills] # proj. axis
+                  for zfill in zflist2] # redshift
+                 for zflist2, pfill in zip(zflist1, pflist)] # phys.
+                for zflist1, pflist in zip(zfills, physfills)] # ICS
+                
+    rvirs = [[[[l4['rv'] for l4 in l3]for l3 in l2] for l2 in l1] 
+             for l1 in mapprops]
+    mvirs = [[[[l4['mv'] for l4 in l3] for l3 in l2] for l2 in l1] 
+             for l1 in mapprops]
+    axis3s = [[[[l4['a3'] for l4 in l3] for l3 in l2] for l2 in l1] 
+              for l1 in mapprops]
+    redshifts = [[[[l4['z'] for l4 in l3] for l3 in l2] for l2 in l1] 
+                 for l1 in mapprops]
+    filens = [[[[l4['fn'] for l4 in l3] for l3 in l2] for l2 in l1] 
+                 for l1 in mapprops]
+    ## axes outer to inner: projection axis, physics, redshift
+    # should not depend on projection axis
+    if not np.all([np.all([np.all([[rvirs[i][j][k][0] == rvirs[i][j][k][l]
+                      for l in range(paxfills)]
+                     for k in range(len(zfills[i][j]))])
+                    for j in range(len(physfills[i]))])
+                   for i in range(len(physfills))]):
+        msg = ('Different projection axes (innermost index) list different'
+               f'virial radii [pkpc]:\n{rvirs}')
+        raise ValueError(msg)
+    if not np.all([np.all([np.all([[mvirs[i][j][k][0] == mvirs[i][j][k][l]
+                      for l in range(paxfills)]
+                     for k in range(len(zfills[i][j]))])
+                    for j in range(len(physfills[i]))])
+                   for i in range(len(physfills))]):
+        msg = ('Different projection axes (innermost index) list different'
+               f'virial masses [Msun]:\n{mvirs}')
+        raise ValueError(msg)
+    if not np.all([np.all([np.all([[axis3s[0][0][0][l] == axis3s[i][j][k][l]
+                      for l in range(paxfills)]
+                     for k in range(len(zfills[i][j]))])
+                    for j in range(len(physfills[i]))])
+                   for i in range(len(physfills))]):
+        msg = ('Different phys/redshifts list different'
+               f'projection axes (all but innermost axis):\n{axis3s}')
+        raise ValueError(msg)
+    if not np.all([np.all([np.all([[np.isclose(redshifts[0][0][k][0],
+                                               redshifts[i][j][k][l],
+                                               rtol=1e-2, atol=1e-3)
+                      for l in range(paxfills)]
+                     for k in range(len(zfills[i][j]))])
+                    for j in range(len(physfills[i]))])
+                   for i in range(len(physfills))]):
+        msg = ('Different ics/phys/proj. ax list different'
+               f'redshifts (all but 3rd index):\n{redshifts}')
+        raise ValueError(msg)
+    
+    npanels = len(physfills)
+    ncols_max = 4
+    if npanels <= ncols_max:
+        ncols = npanels
+        nrows = 1
+        lax_below = True
+    elif npanels % ncols_max == 0:
+        ncols = ncols_max
+        nrows = npanels // ncols
+        lax_below = True
+    else:
+        ncols = ncols_max
+        nrows = (npanels - 1) // ncols + 1
+        lax_below = False
+    panelsize = 3.
+    laxheight = panelsize 
+    hspace = 0.
+    wspace = 0.
+    ncols_legend = (ncols - npanels % ncols)
+    if lax_below:
+        width_ratios = [panelsize] * (ncols)
+        height_ratios = [panelsize] * (nrows) + [laxheight]
+        width = sum(width_ratios) \
+                * (1. + (len(width_ratios) - 1.) / len(width_ratios) * wspace)
+        height = sum(height_ratios) \
+                * (1. + (len(height_ratios) - 1.) / len(height_ratios) * hspace)
+        fig = plt.figure(figsize=(width, height))
+        grid = gsp.GridSpec(nrows=nrows + 1, ncols=ncols, hspace=hspace, 
+                            wspace=wspace, width_ratios=width_ratios,
+                            height_ratios=height_ratios)
+        axes = [fig.add_subplot(grid[i // ncols, i % ncols]) \
+                for i in range(npanels)]
+        lax = fig.add_subplot(grid[nrows, :])
+    else:
+        width_ratios = [panelsize] * (ncols)
+        height_ratios = [panelsize] * (nrows)
+        width = sum(width_ratios) \
+                * (1. + (len(width_ratios) - 1.) / len(width_ratios) * wspace)
+        height = sum(height_ratios) \
+                * (1. + (len(height_ratios) - 1.) / len(height_ratios) * hspace)
+        fig = plt.figure(figsize=(width, height))
+        grid = gsp.GridSpec(nrows=nrows + 1, ncols=ncols, hspace=hspace, 
+                            wspace=wspace, width_ratios=width_ratios,
+                            height_ratios=height_ratios)
+        axes = [fig.add_subplot(grid[i // ncols, i % ncols]) \
+                for i in range(npanels)]
+        lax = fig.add_subplot(grid[nrows, npanels % ncols + 1:])
+    
+    mapprops = [[[[gethalodct_z_pax_phys(filen_template, afill, zfill, pfill)
+                   for afill in paxfills] # proj. axis
+                  for zfill in zflist2] # redshift
+                 for zflist2, pfill in zip(zflist1, pflist)] # phys.
+                for zflist1, pflist in zip(zfills, physfills)] # ICS
+    phys_used = set()
+    pcolors = sl.physcolors.copy()
+    pv = ['perc-0.1', 'perc-0.5', 'perc-0.9']
+    alpha = 0.3
+    for ici in range(npanels):
+        lby = ici % ncols == 0
+        lbx = ici >= npanels - ncols
+        ax = axes[ici]
+        ax.set_xscale('log')
+        ax.tick_params(labelsize=fontsize - 1, direction='in',
+                       top=True, right=True, labelleft=lby,
+                       labelbottom=lbx, which='both')
+        ax.grid(True)
+        ax.text(0.98, 0.98, iclabels[ici], fontsize=fontsize,
+                transform=ax.transAxes, horizontalalignment='right',
+                verticalalignment='top')
+        if lby and ylabel is not None:
+            ax.set_ylabel(ylabel, fontsize=fontsize)
+        if lbx:
+            ax.set_xlabel('$\\mathrm{r}_{\\perp} \\; [\\mathrm{pkpc}]$',
+                          fontsize=fontsize)
+        for pi, plab in enumerate(physlabels[ici]):
+            color = pcolors[plab]
+            phys_used.add(plab)
+            _rvs = [rv for l1 in rvirs[ici][pi] for rv in l1]
+            rvmin = np.min(_rvs)
+            rvmax = np.amx(_rvs)
+            ax.axhspan(rvmin, rvmax, alpha=0.2, color='gray')
+            
+            _fns = [fn for l1 in filens[ici][pi] for fn in l1]
+            rbins = np.linspace(0., 2. * rvmin, 50)
+            rc = 0.5 * (rbins[:-1] + rbins[1:])
+            plo, pmed, phi = g2d.get_profile_massmap(_fns, rbins, 
+                                                     rbin_units='pkpc',
+                                                     profiles=pv)
+            ax.plot(rc, pmed, color=color, linestyle='solid',
+                    linewidth=1.5)
+            ax.fill_between(rc, plo, phi, color=color, alpha=alpha)
+
+    # sync axis ranges
+    xlims = [ax.get_xlim() for ax in axes]
+    xmin = np.min(xlims)
+    xmax = np.max(xlims)
+    [ax.set_xlim((xmin, xmax)) for ax in axes]
+    ylims = [ax.get_ylim() for ax in axes]
+    ymin = np.min(ylims)
+    ymax = np.max(ylims)
+    ymin = max(ymin, ymax - 5.)
+    [ax.set_ylim((ymin, ymax)) for ax in axes]
+
+
+    lax.axis('off')
+    line = [[(0, 0)]]
+    phys_used = sorted(list(phys_used))
+    cvals = [pcolors[key] for key in phys_used]
+    lcs = mcol.LineCollection(line * len(pcolors), linestyle='solid', 
+                              linewidth=1.5, colors=cvals)
+    phandles = [lcs,
+                mpatch.Patch(label='perc. 10-90', linewidth=0.5, 
+                             color='gray', alpha=alpha)
+                ]
+    plabels = ['median', '10-90%']
+    phandles += [mlines.Line2D((), (), linewidth=2., linestyle='solid',
+                              label=physlab, 
+                              color=pcolors[physlab])
+                 for physlab in phys_used]
+    plabels += physlabels
+    lax.legend(phandles, plabels, 
+               fontsize=fontsize, ncol=ncols_legend,
+               handler_map={type(lcs): pu.HandlerDashedLines()},
+               bbox_to_anchor=(0.5, 0.7), loc='upper center')
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+def plotsetcomp_phys_haloset(fileset='set3_model3'):
+
+    if fileset == 'set3_model3':
+         # quest
+        outdir = '/projects/b1026/nastasha/imgs/2dcomp_set3_model3/'
+        fdir = '/projects/b1026/nastasha/maps/set3_model3/'
+        ftemp = ('coldens_{qty}_{{simname}}_snap{{snapnum}}_'
+                 'shrink-sph-cen_BN98_2rvir_{{pax}}-proj_v3.hdf5')
+        simnames_all = [sl.m12_hr_all1 + sl.m12_sr_all1] \
+                       + [sl.m13_hr_all1 + sl.m13_sr_all1]
+        simgrouplabels = ['m12 haloes', 'm13 haloes']
+        simgroups = []
+        iclabelss = []
+        for simgroup in simnames_all:
+            simlists = []
+            iclab = []
+            for simname in simnames_all:
+                ic = simname.split('_')[0]
+                if ic in iclab:
+                    si = np.where([ic == _ic for _ic in iclab])[0][0]
+                    simlists[si].append(simname)
+                else:
+                    iclab.append(ic)
+                    simlists.append([simname])
+            simgroups.append(simlist)
+            iclabelss.append(iclab)
+
+        all_hr = sl.m12_hr_all1 + sl.m13_hr_all1
+        all_sr = sl.m12_sr_all1 + sl.m13_sr_all1
+        zfillsets = [[[[{'snapnum': snap} for snap in sl.snaps_hr]
+                       if simname in all_hr else 
+                       [{'snapnum': snap} for snap in sl.snaps_sr]
+                       if simname in all_sr else 
+                       None
+                       for simname in simlist] 
+                      for simlist in simlists]
+                     for simlist in simgroups]
+        physlabels = [[['AGN-CR' if 'MHDCRspec1' in simname
+                         else 'noBH' if 'sdp1e10' in simname
+                         else 'AGN-noCR'
+                         for simname in simlist]
+                        for simlist in simlists]
+                       for simlist in simgroups]
+        _afills = ['x', 'y', 'z']
+        paxfills = [[{'pax': val} for val in _afills]]
+        qtys = ['gas-mass', 'Neon', 'Ne8', 'O6', 'Mg10']
+        qtylabs = ['Gas', 'Neon', 'Ne VIII', 'O VI', 'Mg X']
+        qtyylabs = [('$\\log_{10} \\, \\Sigma(\\mathrm{gas})'
+                     ' \\; [\\mathrm{g}\\,\\mathrm{cm}^{-2}]$'),
+                    ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Neon})'
+                     ' \\; [\\mathrm{cm}^{-2}]$'),
+                    ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne\\, VIII})'
+                     ' [\\mathrm{cm}^{-2}]$'),
+                    ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{O\\, VI})'
+                     ' [\\mathrm{cm}^{-2}]$'),
+                    ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Mg\\, X})'
+                     ' [\\mathrm{cm}^{-2}]$')
+                   ]
+        outname = ('comp_2dprof_phys_{qty}_{sglab}.pdf')
+        simlists_ext = [[[{'simname': simn} for simn in siml] 
+                         for siml in simlists] for simlists in simgroups] \
+                       * len(qtys)
+        iclab_ext = [[(l2[0]['simname'].split('/')[-1]).split('_')[0]
+                       for l2 in l1] for l1 in simlists_ext]
+        zfills_ext = zfillsets * len(qtys)
+        physlabels_ext = physlabels * len(qtys)
+        icset_ext = iclab * len(qtys)
+        paxfills_ext = paxfills * len(zfills_ext)
+        qtylabels_ext = [lab for lab in qtylabs 
+                         for i in range(len(simgroups))]
+        ylabels_ext = [lab for lab in qtyylabs for i in range(len(simgroups))]
+        qtys_ext = [lab for lab in qtys for i in range(len(simgroups))]
+
+    for (simfills, qty, ylabel, qtylabel, paxfills, zfills, physlabels, 
+            icset, iclabs) \
+            in zip(simlists_ext, qtys_ext, ylabels_ext, qtylabels_ext,
+                   paxfills_ext, zfills_ext, physlabels_ext, icset_ext,
+                   iclab_ext):
+        filen_template = fdir + ftemp.format(qty=qty)
+        title = f'{icset}, z=0.5-1.0, {qtylabel}'
+        _outname = outdir + outname.format(ic=icset, qty=qty)
+
+        plotcomp_phys_haloset(filen_template, simfills, zfills,
+                              physfills, iclabs, physlabels, title=title,
+                              outname=_outname, ylabel=ylabel)
+        plt.show() # don't overload memory with too many plots
+        break

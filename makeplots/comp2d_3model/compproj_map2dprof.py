@@ -2,14 +2,17 @@
 import h5py
 import matplotlib.collections as mcol
 import matplotlib.gridspec as gsp
+import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
 
 import fire_an.makeplots.get_2dprof as g2d
+import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
+import fire_an.utils.math_utils as mu
 
 
 def plotcomp_projax(filen_template, qtyfills, paxfills,
@@ -330,6 +333,7 @@ def gethalodct_z_pax_phys(temp, afill, zfill, pfill):
     mvir_msun /= c.solar_mass
     outdct = {'mv': mvir_msun, 'rv': rvir_pkpc,
               'a3': pax, 'z': cosmopars['z']}
+    return outdct
 
 def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                              physfills, physlabels, title=None, 
@@ -399,7 +403,8 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
         msg = ('Different phys/redshifts list different'
                f'projection axes (inner 2 indices):\n{axis3s}')
         raise ValueError(msg)
-    if not np.all([[[np.isclose(redshifts[0][0][k], redshifts[i][j][k])
+    if not np.all([[[np.isclose(redshifts[0][0][k], redshifts[i][j][k],
+                                rtol=1e-2, atol=1e-3)
                      for k in range(len(zfills))]
                     for j in range(len(physfills))]
                    for i in range(len(paxfills))]):
@@ -407,7 +412,7 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                f'redshifts (outer 2 indices):\n{redshifts}')
         raise ValueError(msg)
     redshifts = redshifts[0][0]
-    inds_zslotihi = np.argsort(redshifts)
+    inds_zslotohi = np.argsort(redshifts)
     
     fontsize = 12
     ncols = len(paxfills)
@@ -426,8 +431,8 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     grid = gsp.GridSpec(nrows=nrows + 2, ncols=ncols + 1, hspace=hspace, 
                         wspace=wspace, width_ratios=width_ratios,
                         height_ratios=height_ratios)
-    maxes = [[fig.add_subplot(grid[j, i]) \
-              for i in range(nrows)] for j in range(ncols)]
+    maxes = [[fig.add_subplot(grid[i, j]) \
+              for j in range(ncols)] for i in range(nrows)]
     allphaxes = [fig.add_subplot(grid[nrows, j]) \
                  for j in range(ncols)]
     alla3axes = [fig.add_subplot(grid[i, ncols]) \
@@ -436,14 +441,15 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     alax = fig.add_subplot(grid[nrows + 1, -1])
     plax = fig.add_subplot(grid[nrows + 1, 0])
     zlax = fig.add_subplot(grid[nrows + 1, 1:-1])
-
-    nlines = len(zfills)
-    _colors = tc.tol_cmap('rainbow_discrete', nlines)
-    zcolors = _colors(np.linspace(1. / nlines, 1. - 1. / nlines, nlines))
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    nz = len(zfills[0])
+    _colors = tc.tol_cmap('rainbow_discrete', nz)
+    zcolors = _colors(np.linspace(1. / nz, 1. - 1. / nz, nz))[::-1]
     pcolors = sl.physcolors
     alpha = 0.3
     _cset = tc.tol_cset('vibrant')
-    acolors = [cset.blue, cset.teal, cset.orange, cset.red, cset.magenta]
+    acolors = [_cset.blue, _cset.teal, _cset.orange, _cset.red, _cset.magenta]
 
     rvmin = np.min(rvirs)
     rbins = np.linspace(0., 2. * rvmin, 50.)
@@ -458,34 +464,35 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
             _fills.update(afill)
             ax = maxes[pi][a3i]
             ax.tick_params(labelsize=fontsize - 1., direction='in',
-                           top=True, left=True, which='both')
+                           top=True, left=True, which='both',
+                           labelbottom=False, labelleft=(a3i == 0))
             ax.grid(True)
             if a3i == 0 and ylabel is not None:
                 ax.set_ylabel(ylabel, fontsize=fontsize)
-            if phi == 0:
-                collabel = 'XYZ'[axis3s[a3i][phi][0]] '-proj.'
+            if pi == 0:
+                collabel = 'XYZ'[axis3s[a3i][pi][0]] + '-proj.'
                 ax.set_title(collabel, fontsize=fontsize)
             if a3i == 0:
-                mvmin = np.min(mvir[0][pi])
-                mvmax = np.max(mvir[0][pi])
-                mlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathmr{vir}}'
-                          '\\, / \\, \\mathrm{M}_{\\odot} ='
+                mvmin = np.min(mvirs[0][pi])
+                mvmax = np.max(mvirs[0][pi])
+                mlabel = ('$\\log \\, \\mathrm{M}_{\\mathrm{vir}}'
+                          '/ \\mathrm{M}_{\\odot} ='
                           f'{np.log10(mvmin):.1f} \\endash '
                           f'{np.log10(mvmax):.1f}$')
                 ax.text(0.98, 0.98, mlabel, fontsize=fontsize - 1, 
-                        transform=ax.transAxes, horizontalalignment='top',
-                        verticalalignment='right')
+                        transform=ax.transAxes, horizontalalignment='right',
+                        verticalalignment='top')
             fns = []
-            for zi in inds_zslotihi:
-                zfill = zfills[zi]
+            for zi in inds_zslotohi:
+                zfill = zfills[pi][zi]
                 color = zcolors[zi]
-                fill = _fill.copy()
-                fill.update(zfill)
-                fn = filen_template(**fills)
+                fills = _fills.copy()
+                fills.update(zfill)
+                fn = filen_template.format(**fills)
                 fns.append(fn)
-                plo, pmed, phi = get_profile_massmap(fn, rbins, 
-                                                     rbin_units='pkpc',
-                                                     profiles=pv)
+                plo, pmed, phi = g2d.get_profile_massmap(fn, rbins, 
+                                                         rbin_units='pkpc',
+                                                         profiles=pv)
                 ax.plot(rc, pmed, color=color, linestyle='solid',
                         linewidth=1.5)
                 ax.plot(rc, plo, color=color, linestyle='dashed',
@@ -493,12 +500,12 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                 ax.plot(rc, phi, color=color, linestyle='dashed',
                         linewidth=1.5)
                 rv = rvirs[a3i][pi][zi]
-                yp_med = pu.linterpsolve(rc, pmed, rv)
-                ax.scatter([rv], [yp_med], marker='o', c=color, s=60)
+                yp_med = mu.linterpsolve(rc, pmed, rv)
+                ax.scatter([rv], [yp_med], marker='o', c=[color], s=60)
             
-            plo, pmed, phi = get_profile_massmap(fns, rbins, 
-                                                 rbin_units='pkpc',
-                                                 profiles=pv)
+            plo, pmed, phi = g2d.get_profile_massmap(fns, rbins, 
+                                                     rbin_units='pkpc',
+                                                     profiles=pv)
             ax.plot(rc, pmed, color='black', linestyle='solid',
                     linewidth=1.5)
             ax.fill_between(rc, plo, phi, color='black', alpha=alpha)
@@ -514,37 +521,39 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
             fns_all = fns_all + fns
             
         # compare all z proj. ax differences
-        
         _ax.tick_params(labelsize=fontsize - 1., direction='in',
                         top=True, left=True, which='both',
                         labelbottom=False, labelleft=False)
         _ax.grid(True)
         _ax.text(0.98, 0.98, 'all z', fontsize=fontsize,
-                 transform=ax.transAxes, horizontalalignment='right',
+                 transform=_ax.transAxes, horizontalalignment='right',
                  verticalalignment='top')
-        if phi == 0:
+        if pi == 0:
             collabel = 'all proj.'
             _ax.set_title(collabel, fontsize=fontsize)
-        _ax.text(1.05, 0.05, physlabels[pi], fontsize=fontsize,
+        _ax.text(1.05, 0.5, physlabels[pi], fontsize=fontsize,
                  transform=_ax.transAxes, horizontalalignment='left',
                  verticalalignment='center', rotation=90.)
-        plo, pmed, phi = get_profile_massmap(fns_all, rbins, 
-                                             rbin_units='pkpc',
-                                             profiles=pv)
+        plo, pmed, phi = g2d.get_profile_massmap(fns_all, rbins, 
+                                                 rbin_units='pkpc',
+                                                 profiles=pv)
         _ax.plot(rc, pmed, color='black', linestyle='solid',
                  linewidth=1.5)
         _ax.fill_between(rc, plo, phi, color='black', alpha=alpha)
     
     fns_phys = {key: [] for key in physlabels}
     for a3i, afill in enumerate(paxfills):
-        ax = alla3xes[a3i]
+        ax = allphaxes[a3i]
         ax.set_xlabel('$\\mathrm{r}_{\\perp}\\;[\\mathrm{pkpc}]$',
                       fontsize=fontsize)
-        __fills = afills.copy()
+        __fills = afill.copy()
         ax.tick_params(labelsize=fontsize - 1., direction='in',
                        top=True, left=True, which='both',
                        labelbottom=True, labelleft=a3i == 0)
         ax.grid(True)
+        ax.text(0.98, 0.98, 'all z', fontsize=fontsize,
+                transform=ax.transAxes, horizontalalignment='right',
+                verticalalignment='top')
         if a3i == 0 and ylabel is not None:
             ax.set_ylabel(ylabel, fontsize=fontsize)
         for pi, pfill in enumerate(physfills):
@@ -552,15 +561,15 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
             _fills.update(pfill)
             color = pcolors[physlabels[pi]]
             fns = []
-            for zi in inds_zslotihi:
-                zfill = zfills[zi]
-                fill = _fill.copy()
-                fill.update(zfill)
-                fn = filen_template(**fills)
+            for zi in inds_zslotohi:
+                zfill = zfills[pi][zi]
+                fills = _fills.copy()
+                fills.update(zfill)
+                fn = filen_template.format(**fills)
                 fns.append(fn)
-            plo, pmed, phi = get_profile_massmap(fns, rbins, 
-                                                 rbin_units='pkpc',
-                                                 profiles=pv)
+            plo, pmed, phi = g2d.get_profile_massmap(fns, rbins, 
+                                                     rbin_units='pkpc',
+                                                     profiles=pv)
             ax.plot(rc, pmed, color=color, linestyle='solid',
                     linewidth=1.5)
             ax.fill_between(rc, plo, phi, color=color, alpha=alpha)
@@ -574,7 +583,7 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                     top=True, left=True, which='both',
                     labelbottom=True, labelleft=False)
     ax.grid(True)
-    ax.text(1.05, 0.05, physlabels[phi], fontsize=fontsize,
+    ax.text(1.05, 0.5, 'all phys.', fontsize=fontsize,
             transform=ax.transAxes, horizontalalignment='left',
             verticalalignment='center', rotation=90.)
     ax.text(0.98, 0.98, 'all z, proj.', fontsize=fontsize,
@@ -583,13 +592,17 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     for plabel in physlabels:
         color = pcolors[plabel]
         fns = fns_phys[plabel]
-        plo, pmed, phi = get_profile_massmap(fns, rbins, 
-                                             rbin_units='pkpc',
-                                             profiles=pv)
+        plo, pmed, phi = g2d.get_profile_massmap(fns, rbins, 
+                                                 rbin_units='pkpc',
+                                                 profiles=pv)
         ax.plot(rc, pmed, color=color, linestyle='solid',
                 linewidth=1.5)
         ax.fill_between(rc, plo, phi, color=color, alpha=alpha)
     
+    allcombax.set_xscale('log')
+    [ax.set_xscale('log') for ax in alla3axes]
+    [ax.set_xscale('log') for ax in allphaxes]
+    [ax.set_xscale('log') for l1 in maxes for ax in l1]
     #sync ax ranges
     ymin, ymax = allcombax.get_ylim()
     xmin, xmax = allcombax.get_xlim()
@@ -601,6 +614,7 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     xlims += [ax.get_xlim() for l1 in maxes for ax in l1]
     ymin = min(ymin, np.min([yl[0] for yl in ylims]))
     ymax = max(ymax, np.max([yl[1] for yl in ylims]))
+    ymin = max(ymin, ymax - 5.)
     xmin = min(xmin, np.min([xl[0] for xl in xlims]))
     xmax = max(xmax, np.max([xl[1] for xl in xlims]))
     allcombax.set_ylim((ymin, ymax))
@@ -632,20 +646,20 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     zhandles += [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
                               label=f'$z={redshifts[zi]:.1f}$', 
                               color=zcolors[zi])
-                 for zi in inds_zslotihi]
-    zlabels += [f'$z={redshifts[zi]:.1f}$' for zi in inds_zslotih]
+                 for zi in inds_zslotohi]
+    zlabels += [f'$z={redshifts[zi]:.1f}$' for zi in inds_zslotohi]
     zlax.legend(zhandles, zlabels, 
-                fontsize=fontsize, ncols=(ncols - 1),
-                handler_map={type(lc): pu.HandlerDashedLines()},
-                bbox_to_anchor=(0.5, 1.0), loc='upper center',
+                fontsize=fontsize, ncol=(ncols - 1),
+                handler_map={type(lcs): pu.HandlerDashedLines()},
+                bbox_to_anchor=(0.5, 0.2), loc='upper center',
                 title='redshift comp.', title_fontsize=fontsize)
     
     alax.axis('off')
     line = [[(0, 0)]]
-    lcs = mcol.LineCollection(line * len(acolors), linestyle='solid', 
-                              linewidth=1.5, colors=acolors)
-    lcd = mcol.LineCollection(line * len(acolors), linestyle='dashed', 
-                              linewidth=1.5, colors=acolors)
+    lcs = mcol.LineCollection(line * len(paxfills), linestyle='solid', 
+                              linewidth=1.5, colors=acolors[:len(paxfills)])
+    lcd = mcol.LineCollection(line * len(paxfills), linestyle='dashed', 
+                              linewidth=1.5, colors=acolors[:len(paxfills)])
     ahandles = [lcs, lcd,
                 mlines.Line2D((), (), linestyle='solid', linewidth=1.5,
                               label='all med.', color='black'),
@@ -659,15 +673,16 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                  for a3i in np.arange(3)]
     alabels += [f'{"XYZ"[a3i]}-proj.' for a3i in np.arange(3)]
     alax.legend(ahandles, alabels, 
-                fontsize=fontsize, ncols=1,
-                handler_map={type(lc): pu.HandlerDashedLines()},
-                bbox_to_anchor=(1.0, 0.65), loc='upper right',
+                fontsize=fontsize, ncol=1,
+                handler_map={type(lcs): pu.HandlerDashedLines()},
+                bbox_to_anchor=(1.0, 0.2), loc='upper right',
                 title='proj. ax comp.', title_fontsize=fontsize)
     
     plax.axis('off')
     line = [[(0, 0)]]
+    cvals = [pcolors[key] for key in pcolors]
     lcs = mcol.LineCollection(line * len(pcolors), linestyle='solid', 
-                              linewidth=1.5, colors=pcolors)
+                              linewidth=1.5, colors=cvals)
     phandles = [lcs,
                 mpatch.Patch(label='all perc. 10-90', linewidth=0.5, 
                              color='gray', alpha=alpha)
@@ -675,13 +690,13 @@ def plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
     plabels = ['median', '10-90%']
     phandles += [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
                               label=physlab, 
-                              color=pcolor[physlab])
+                              color=pcolors[physlab])
                  for physlab in physlabels]
     plabels += physlabels
     plax.legend(phandles, plabels, 
-                fontsize=fontsize, ncols=1,
-                handler_map={type(lc): pu.HandlerDashedLines()},
-                bbox_to_anchor=(0.0, 0.65), loc='upper left',
+                fontsize=fontsize, ncol=1,
+                handler_map={type(lcs): pu.HandlerDashedLines()},
+                bbox_to_anchor=(0.0, 0.2), loc='upper left',
                 title='physics comp.', title_fontsize=fontsize)
     
     if outname is not None:
@@ -693,8 +708,8 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
          # quest
         outdir = '/projects/b1026/nastasha/imgs/2dcomp_set3_model3/'
         fdir = '/projects/b1026/nastasha/maps/set3_model3/'
-        ftemp = ('coldens_{{qty}}_{simname}_snap{snapnum}_'
-                 'shrink-sph-cen_BN98_2rvir_{pax}-proj_v3.hdf5')
+        ftemp = ('coldens_{qty}_{{simname}}_snap{{snapnum}}_'
+                 'shrink-sph-cen_BN98_2rvir_{{pax}}-proj_v3.hdf5')
         simnames_all = sl.m12_hr_all1 + sl.m12_sr_all1 \
                        + sl.m13_hr_all1 + sl.m13_sr_all1
         simlists = []
@@ -703,11 +718,11 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
             ic = simname.split('_')[0]
             if ic in iclab:
                 si = np.where([ic == _ic for _ic in iclab])[0][0]
-                simsets[si].append(simname)
+                simlists[si].append(simname)
             else:
                 iclab.append(ic)
-                simsets.append([simname])
-        all_hr = sl.m12_hr_all1 + sl.m12_sr_all1
+                simlists.append([simname])
+        all_hr = sl.m12_hr_all1 + sl.m13_hr_all1
         all_sr = sl.m12_sr_all1 + sl.m13_sr_all1
         zfillsets = [[[{'snapnum': snap} for snap in sl.snaps_hr]
                       if simname in all_hr else 
@@ -719,7 +734,7 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
         physlabels = [['AGN-CR' if 'MHDCRspec1' in simname
                         else 'noBH' if 'sdp1e10' in simname
                         else 'AGN-noCR'
-                        for simname in simlists]
+                        for simname in simlist]
                        for simlist in simlists]
         _afills = ['x', 'y', 'z']
         paxfills = [[{'pax': val} for val in _afills]]
@@ -738,7 +753,7 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
                    ]
         outname = ('comp_2dprof_z_phys_projax_{qty}_{ic}.pdf')
         simlists_ext = [[{'simname': simn} for simn in siml] 
-                       for siml in simlists] * len(qtys)
+                        for siml in simlists] * len(qtys)
         zfills_ext = zfillsets * len(qtys)
         physlabels_ext = physlabels * len(qtys)
         ics_ext = iclab * len(qtys)
@@ -752,12 +767,15 @@ def plotsetcomp_zev_projax_phys(fileset='set3_model3'):
                    paxfills_ext, zfills_ext, physlabels_ext, ics_ext):
         filen_template = fdir + ftemp.format(qty=qty)
         title = f'{ic}, z=0.5-1.0, {qtylabel}'
+        print('running ', title)
         if np.any([sd['simname'] in sl.buglist1 for sd in simfills]):
             title = title + ', possible bug'
         title = title + '\n' 
-        title += '\n'.join([sn['simname'] for sn in simfills])
+        title += '\n'.join([f'{plab}: {sn["simname"]}' 
+                            for plab, sn in zip(physlabels, simfills)])
         _outname = outdir + outname.format(ic=ic, qty=qty)
 
         plotcomp_zev_projax_phys(filen_template, paxfills, zfills,
                                 simfills, physlabels, title=title, 
                                 outname=_outname, ylabel=ylabel)
+        plt.close() # don't overload memory with too many plots

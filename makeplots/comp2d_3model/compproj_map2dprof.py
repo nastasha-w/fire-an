@@ -850,7 +850,8 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
     '''
     
     # axes outer to inner: projection axis, physics, redshift
-    mapprops = [[[[gethalodct_z_pax_phys(filen_template, afill, zfill, pfill)
+    mapprops = [[[[gethalodct_phys_haloset(filen_template, afill, zfill, 
+                                           pfill)
                    for afill in paxfills] # proj. axis
                   for zfill in zflist2] # redshift
                  for zflist2, pfill in zip(zflist1, pflist)] # phys.
@@ -869,7 +870,7 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
     ## axes outer to inner: projection axis, physics, redshift
     # should not depend on projection axis
     if not np.all([np.all([np.all([[rvirs[i][j][k][0] == rvirs[i][j][k][l]
-                      for l in range(paxfills)]
+                      for l in range(len(paxfills))]
                      for k in range(len(zfills[i][j]))])
                     for j in range(len(physfills[i]))])
                    for i in range(len(physfills))]):
@@ -877,7 +878,7 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
                f'virial radii [pkpc]:\n{rvirs}')
         raise ValueError(msg)
     if not np.all([np.all([np.all([[mvirs[i][j][k][0] == mvirs[i][j][k][l]
-                      for l in range(paxfills)]
+                      for l in range(len(paxfills))]
                      for k in range(len(zfills[i][j]))])
                     for j in range(len(physfills[i]))])
                    for i in range(len(physfills))]):
@@ -885,7 +886,7 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
                f'virial masses [Msun]:\n{mvirs}')
         raise ValueError(msg)
     if not np.all([np.all([np.all([[axis3s[0][0][0][l] == axis3s[i][j][k][l]
-                      for l in range(paxfills)]
+                      for l in range(len(paxfills))]
                      for k in range(len(zfills[i][j]))])
                     for j in range(len(physfills[i]))])
                    for i in range(len(physfills))]):
@@ -895,7 +896,7 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
     if not np.all([np.all([np.all([[np.isclose(redshifts[0][0][k][0],
                                                redshifts[i][j][k][l],
                                                rtol=1e-2, atol=1e-3)
-                      for l in range(paxfills)]
+                      for l in range(len(paxfills))]
                      for k in range(len(zfills[i][j]))])
                     for j in range(len(physfills[i]))])
                    for i in range(len(physfills))]):
@@ -944,22 +945,18 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
         height = sum(height_ratios) \
                 * (1. + (len(height_ratios) - 1.) / len(height_ratios) * hspace)
         fig = plt.figure(figsize=(width, height))
-        grid = gsp.GridSpec(nrows=nrows + 1, ncols=ncols, hspace=hspace, 
+        grid = gsp.GridSpec(nrows=nrows, ncols=ncols, hspace=hspace, 
                             wspace=wspace, width_ratios=width_ratios,
                             height_ratios=height_ratios)
         axes = [fig.add_subplot(grid[i // ncols, i % ncols]) \
                 for i in range(npanels)]
-        lax = fig.add_subplot(grid[nrows, npanels % ncols + 1:])
+        lax = fig.add_subplot(grid[nrows - 1, npanels % ncols:])
     
-    mapprops = [[[[gethalodct_z_pax_phys(filen_template, afill, zfill, pfill)
-                   for afill in paxfills] # proj. axis
-                  for zfill in zflist2] # redshift
-                 for zflist2, pfill in zip(zflist1, pflist)] # phys.
-                for zflist1, pflist in zip(zfills, physfills)] # ICS
     phys_used = set()
     pcolors = sl.physcolors.copy()
     pv = ['perc-0.1', 'perc-0.5', 'perc-0.9']
     alpha = 0.3
+    fontsize = 12
     for ici in range(npanels):
         lby = ici % ncols == 0
         lbx = ici >= npanels - ncols
@@ -977,13 +974,13 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
         if lbx:
             ax.set_xlabel('$\\mathrm{r}_{\\perp} \\; [\\mathrm{pkpc}]$',
                           fontsize=fontsize)
+        _rvs = [rv for l1 in rvirs[ici] for l2 in l1 for rv in l2]
+        rvmin = np.min(_rvs)
+        rvmax = np.max(_rvs)
+        ax.axvspan(rvmin, rvmax, alpha=0.2, color='gray')
         for pi, plab in enumerate(physlabels[ici]):
             color = pcolors[plab]
             phys_used.add(plab)
-            _rvs = [rv for l1 in rvirs[ici][pi] for rv in l1]
-            rvmin = np.min(_rvs)
-            rvmax = np.amx(_rvs)
-            ax.axhspan(rvmin, rvmax, alpha=0.2, color='gray')
             
             _fns = [fn for l1 in filens[ici][pi] for fn in l1]
             rbins = np.linspace(0., 2. * rvmin, 50)
@@ -1006,7 +1003,6 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
     ymin = max(ymin, ymax - 5.)
     [ax.set_ylim((ymin, ymax)) for ax in axes]
 
-
     lax.axis('off')
     line = [[(0, 0)]]
     phys_used = sorted(list(phys_used))
@@ -1015,18 +1011,20 @@ def plotcomp_phys_haloset(filen_template, paxfills, zfills,
                               linewidth=1.5, colors=cvals)
     phandles = [lcs,
                 mpatch.Patch(label='perc. 10-90', linewidth=0.5, 
-                             color='gray', alpha=alpha)
+                             color='brown', alpha=alpha)
                 ]
     plabels = ['median', '10-90%']
     phandles += [mlines.Line2D((), (), linewidth=2., linestyle='solid',
                               label=physlab, 
                               color=pcolors[physlab])
                  for physlab in phys_used]
-    plabels += physlabels
+    plabels += phys_used
     lax.legend(phandles, plabels, 
                fontsize=fontsize, ncol=ncols_legend,
                handler_map={type(lcs): pu.HandlerDashedLines()},
                bbox_to_anchor=(0.5, 0.7), loc='upper center')
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
@@ -1040,13 +1038,13 @@ def plotsetcomp_phys_haloset(fileset='set3_model3'):
                  'shrink-sph-cen_BN98_2rvir_{{pax}}-proj_v3.hdf5')
         simnames_all = [sl.m12_hr_all1 + sl.m12_sr_all1] \
                        + [sl.m13_hr_all1 + sl.m13_sr_all1]
-        simgrouplabels = ['m12 haloes', 'm13 haloes']
+        simgrouplabels = ['m12_haloes', 'm13_haloes']
         simgroups = []
         iclabelss = []
         for simgroup in simnames_all:
             simlists = []
             iclab = []
-            for simname in simnames_all:
+            for simname in simgroup:
                 ic = simname.split('_')[0]
                 if ic in iclab:
                     si = np.where([ic == _ic for _ic in iclab])[0][0]
@@ -1054,7 +1052,7 @@ def plotsetcomp_phys_haloset(fileset='set3_model3'):
                 else:
                     iclab.append(ic)
                     simlists.append([simname])
-            simgroups.append(simlist)
+            simgroups.append(simlists)
             iclabelss.append(iclab)
 
         all_hr = sl.m12_hr_all1 + sl.m13_hr_all1
@@ -1066,7 +1064,7 @@ def plotsetcomp_phys_haloset(fileset='set3_model3'):
                        None
                        for simname in simlist] 
                       for simlist in simlists]
-                     for simlist in simgroups]
+                     for simlists in simgroups]
         physlabels = [[['AGN-CR' if 'MHDCRspec1' in simname
                          else 'noBH' if 'sdp1e10' in simname
                          else 'AGN-noCR'
@@ -1096,7 +1094,7 @@ def plotsetcomp_phys_haloset(fileset='set3_model3'):
                        for l2 in l1] for l1 in simlists_ext]
         zfills_ext = zfillsets * len(qtys)
         physlabels_ext = physlabels * len(qtys)
-        icset_ext = iclab * len(qtys)
+        icset_ext = simgrouplabels * len(qtys)
         paxfills_ext = paxfills * len(zfills_ext)
         qtylabels_ext = [lab for lab in qtylabs 
                          for i in range(len(simgroups))]
@@ -1110,10 +1108,9 @@ def plotsetcomp_phys_haloset(fileset='set3_model3'):
                    iclab_ext):
         filen_template = fdir + ftemp.format(qty=qty)
         title = f'{icset}, z=0.5-1.0, {qtylabel}'
-        _outname = outdir + outname.format(ic=icset, qty=qty)
+        _outname = outdir + outname.format(sglab=icset, qty=qty)
 
-        plotcomp_phys_haloset(filen_template, simfills, zfills,
-                              physfills, iclabs, physlabels, title=title,
+        plotcomp_phys_haloset(filen_template, paxfills, zfills,
+                              simfills, iclabs, physlabels, title=title,
                               outname=_outname, ylabel=ylabel)
-        plt.show() # don't overload memory with too many plots
-        break
+        plt.close() # don't overload memory with too many plots

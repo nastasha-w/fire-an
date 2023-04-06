@@ -12,6 +12,7 @@ import matplotlib as mpl
 import mpl_toolkits.axes_grid1 as axgrid
 import matplotlib.lines as mlines
 import matplotlib.legend_handler as mlh
+import matplotlib.patheffects as mppe 
 
 # default
 fontsize = 12
@@ -476,4 +477,8 @@ def get_perc_and_points(xdata, ydata, xbins,\
         
     return percs, outliers, xmininds
     
-    
+def getoutline(linewidth):
+    patheff = [mppe.Stroke(linewidth=linewidth + 0.5, foreground="black"),
+               mppe.Stroke(linewidth=linewidth + 0.5, foreground="white"),
+               mppe.Normal()]
+    return patheff

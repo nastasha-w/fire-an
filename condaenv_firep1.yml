@@ -1,0 +1,12 @@
+name: firep1
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - h5py
+  - pandas
+  - matplotlib
+  - ipython
+prefix: /work2/08466/tg877653/frontera/miniconda3/envs/firep1

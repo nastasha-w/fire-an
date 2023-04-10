@@ -34,6 +34,9 @@ Note that the `kernel_list`, `desngb`, `solar_abunds_ea`, and `Zsun_ea`
 variables do not need to be changed. They're basically just stored here
 because this started off as a parameter file.
 
+Storing files as `opts_locs_<system>.py` and copying those to 
+`opts_locs.py` locally is recommended, as it provides a back-up for the 
+setups on github, without constantly overwriting local locations.
 
 running the scripts:
 --------------------

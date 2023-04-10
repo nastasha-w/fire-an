@@ -90,6 +90,16 @@ m12_agncr_rest1 = [
      '_gacc31_fa0.5_fcr1e-3_vw3000'),
 ]
 
+## experimental m11 selection for C ion series
+m11_hr_nobh_set1 = [
+]
+
+m11_hr_agnnocr_set1 = [
+]
+
+m11_hr_agncr_set1 = [
+]
+
 ## run sets:
 m13_sr_clean1 = m13_nobh_clean1 + m13_agncr_clean1 # len 4
 m13_hr_clean1 = m13_agnnocr_clean1.copy() # len 2
@@ -117,6 +127,10 @@ snapmatch = {
 
 snaps_sr = [45, 46, 47, 48, 49, 50]
 snaps_hr = [186, 197, 210, 224, 240, 258]
+
+snaps_sr_051 = []
+snaps_hr_051 = []
+
 
 snaplists = {
     'm13_sr': snaps_sr,

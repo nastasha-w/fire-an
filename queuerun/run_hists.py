@@ -1013,6 +1013,50 @@ def run_hist(opt):
                 axqt = axqt.format(elt=parentelt)
         outfilen = outdir + outname.format(axqt=axqt, wt=wt, simname=simname, 
                                            snap=snapnum)
+        
+    elif opt >= 1296 and opt < TODO:
+        ind = opt - 1296
+        outdir = '/scratch1/08466/tg877653/output/hists/ionseries_C/'
+        outname = 'hist_r3D_by_{wt}_{simname}_snap{snap}_bins1_v1.hdf5'
+        particle_type = 0
+        wts = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Carbon']
+        snaps = []
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        simnames = ['m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000',
+                    ]
+
+        simi = ind // (len(snaps) * len(wts))
+        snpi = (ind % (len(snaps) * len(wts))) // (len(wts))
+        wti = (ind % len(wts))
+        simname = simnames[simi]
+        snapnum = snaps[snpi]
+        wt = wts[wti]
+        axtypes = []
+        axtypes_args = []
+        axqt = []
+        axbins = []
+        
+        runit = 'Rvir'
+        rbins = np.arange(0.15, 4., 0.01)
+        rbins = np.append(np.arange(0., 0.15, 0.005), rbins)
+
+        # directory is halo name + resolution 
+        dp2 = '_'.join(simname.split('_')[:2])
+        if dp2.startswith('m13h02_'):
+            dp2 = dp2.replace('m13h02', 'm13h002')
+        dirpath = '/'.join([_dirpath, dp2, simname])
+
+        if wt == 'Carbon':
+            weighttype = 'Metal'
+            weighttype_args = {'element': wt, 'density': False}
+        else:
+            weighttype = 'ion'
+            weighttype_args = {'ps20depletion': False, 'ion': wt,
+                               'density': False}
+            if wt == 'H1':
+                weighttype_args.update({'ionfrac-method': 'sim'})
+        outfilen = outdir + outname.format(wt=wt, simname=simname, 
+                                           snap=snapnum)
 
     mh.histogram_radprof(dirpath, snapnum,
                          weighttype, weighttype_args, axtypes, axtypes_args,

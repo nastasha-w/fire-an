@@ -569,5 +569,44 @@ def findclosestz_snap(path, redshift):
     snapnum = np.argmin(np.abs(zopts - redshift))
     zval = zopts[snapnum]
     return snapnum, zval
+
+def findclosestzs_snaps(basedir, simnames, zvals):
+    '''
+    for a set of simulations, find the closest snapshots to a list of
+    redshifts. The results are printed.
+
+    Parameters:
+    -----------
+    basedir: str
+        directory containing directories like m12_m6e4 (absolute path)
+    simnames: list of str
+        names of the directories containing a single set of snapshots,
+        possibly in a subdirectory called 'output'
+    zvals: list of floats
+        the redshift values to find the snapshots for
+
+    Returns:
+    --------
+    None 
+
+    '''
+    for simname in simnames:
+        dp2 = '_'.join(simname.split('_')[:2])
+        if dp2.startswith('m13h02_'):
+            dp2 = dp2.replace('m13h02', 'm13h002')
+        dirpath = '/'.join([basedir, dp2, simname])
+        print(simname)
+        snapnums = []
+        for ztar in zvals:
+            snapnum, zmatch = findclosestz_snap(dirpath, ztar)
+            pstr = f'{snapnum} at {zmatch} (target {ztar})'
+            try:
+                sno = get_Firesnap(dirpath, snapnum, filetype='snap')
+                snapnums.append(snapnum)
+            except RuntimeError:
+                pstr = pstr + ' snapshot not found'
+            print(pstr)
+        print(','.join(snapnums))
+    return None    
     
         

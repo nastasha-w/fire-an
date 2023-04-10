@@ -36,7 +36,8 @@ because this started off as a parameter file.
 
 Storing files as `opts_locs_<system>.py` and copying those to 
 `opts_locs.py` locally is recommended, as it provides a back-up for the 
-setups on github, without constantly overwriting local locations.
+setups on github, without constantly overwriting local locations. 
+(`utils/opts_locs.py` is included in .gitignore for this reason.)
 
 running the scripts:
 --------------------

@@ -2,6 +2,43 @@
 code and scripts for finding main halos, making histograms and 2D
 projected maps, and analysing those products in FIRE simulations
 
+'installation':
+---------------
+This is an in-development set of scripts, not a polished package. Many
+of the scripts are in flux, especially those in `queuerun` and 
+`makeplots`, and I do have a tendency to do development on the main 
+branch (especially if it's unlikely to break something important). 
+Because I'm updating this a lot, it's simpler to just use git pulls 
+instead of running an installation every time. However, I have provided
+a `condaenv_firep1.yml` file that includes the python packages required 
+to run these scripts. It can be used to set up a conda environment 
+where this code should run.
+
+Note that a few functions requires additional packages, such as Andrew
+Wetzel's FIRE analysis code. I haven't included these here, since these
+are no longer the defaults I use.
+
+Note that the main projection code and ion balance calculations call 
+some compiled C code. I don't have that publicly available right now, 
+because I did not write the SPH projection code myself (I only made 
+small modifications), and I have not gotten around to asking the authors
+for permission.
+
+setup:
+------
+The `utils` directory should contain a file called `opts_locs.py`. This
+file simply lists a number of files and directories needed to run the
+code, such as where to search for simulation outputs, and where to store
+halo data. Some example files `opts_locs_<system>.py` are provided.
+Note that the `kernel_list`, `desngb`, `solar_abunds_ea`, and `Zsun_ea`
+variables do not need to be changed. They're basically just stored here
+because this started off as a parameter file.
+
+Storing files as `opts_locs_<system>.py` and copying those to 
+`opts_locs.py` locally is recommended, as it provides a back-up for the 
+setups on github, without constantly overwriting local locations. 
+(`utils/opts_locs.py` is included in .gitignore for this reason.)
+
 running the scripts:
 --------------------
 To run, for example, `run.py`, options are:

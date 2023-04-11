@@ -1014,7 +1014,7 @@ def run_hist(opt):
         outfilen = outdir + outname.format(axqt=axqt, wt=wt, simname=simname, 
                                            snap=snapnum)
         
-    elif opt >= 1296 and opt < TODO:
+    elif opt >= 1296 and opt < 366532467859459237:
         ind = opt - 1296
         outdir = '/scratch1/08466/tg877653/output/hists/ionseries_C/'
         outname = 'hist_r3D_by_{wt}_{simname}_snap{snap}_bins1_v1.hdf5'
@@ -1056,6 +1056,50 @@ def run_hist(opt):
             if wt == 'H1':
                 weighttype_args.update({'ionfrac-method': 'sim'})
         outfilen = outdir + outname.format(wt=wt, simname=simname, 
+                                           snap=snapnum)
+        
+    elif opt >= 123456789 and opt < 123467890:
+        ind = opt - 1296
+        outdir = '/scratch1/08466/tg877653/output/hists/massprof/'
+        outname = 'hist_r3D_by_mass-pt{pt}_{simname}_snap{snap}_bins1_v1.hdf5'
+        pts = [0, 1, 2, 4, 5]
+        wt = 'Mass'
+        snaps = []
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        simnames = ['m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000',
+                    ]
+
+        simi = ind // (len(snaps) * len(pts))
+        snpi = (ind % (len(snaps) * len(pts))) // (len(pts))
+        pti = (ind % len(pts))
+        simname = simnames[simi]
+        snapnum = snaps[snpi]
+        particle_type = pts[pti]
+        axtypes = []
+        axtypes_args = []
+        axqt = []
+        axbins = []
+        
+        # no black holes in some simulations
+        if particle_type == 5 and 'sdp1e10' in simname:
+            msg = (f'Skipping particle type {particle_type} for noBH'
+                   f' simulation {simname}')
+            print(msg)
+            return None
+        
+        runit = 'Rvir'
+        rbins = np.arange(0.15, 4., 0.01)
+        rbins = np.append(np.arange(0., 0.15, 0.005), rbins)
+
+        # directory is halo name + resolution 
+        dp2 = '_'.join(simname.split('_')[:2])
+        if dp2.startswith('m13h02_'):
+            dp2 = dp2.replace('m13h02', 'm13h002')
+        dirpath = '/'.join([_dirpath, dp2, simname])
+
+        weighttype = wt
+        weighttype_args = {}
+        outfilen = outdir + outname.format(pt=particle_type, simname=simname,
                                            snap=snapnum)
 
     mh.histogram_radprof(dirpath, snapnum,

@@ -109,6 +109,7 @@ m12_agncr_rest2 = [] # len 0
 
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
+# mass res is ~ m12-sr res for all; hr/sr is for snapshot cadence
 # z=0: snap 60
 m11_sr_nobh_set1 = [
     'm11a_m2e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
@@ -122,7 +123,7 @@ m11_sr_nobh_set1 = [
     'm11i_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm11q_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm11v_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
-]
+] # len 11
 # z=0: snap 60
 m11_sr_agnnocr_set1 = [
     'm11a_m2e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp3e-7_gacc31_fa0.5',
@@ -136,15 +137,15 @@ m11_sr_agnnocr_set1 = [
     'm11i_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
     'm11q_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
     'm11v_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp3e-5_gacc31_fa0.5',
-]
+] # len 11
 # z=0: snap 500
 m11_hr_agncr_set1 = [
     ('m11a_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_'
      'sdp3e-7_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m11b_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
-     '_sdp1e-6_gacc31_fa0.5_fcr1e-3_vw3000'), # last snap 152 (2023-04-12)
-    ('m11c_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
-     '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'), 
+     '_sdp1e-6_gacc31_fa0.5_fcr1e-3_vw3000'),
+    #('m11c_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+    # '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'), # last snap 152 (2023-04-12)
     ('m11d_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp3e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m11e_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
@@ -159,12 +160,17 @@ m11_hr_agncr_set1 = [
      '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m11v_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp3e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
-]
+] # len 9; left out sim that didn't reach z=1.0.
 # z=0: snap 60
 m11_sr_agncr_set1 = [
     ('m11i_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-5_gacc31_fa0.5_fcr3e-3_vw3000'),
-]
+] # len 1
+
+# len 9
+m11_hr_set1 = m11_hr_agncr_set1.copy()
+# len 23
+m11_sr_set1 = m11_sr_agncr_set1 + m11_sr_agnnocr_set1 + m11_sr_nobh_set1 
 
 
 ## run sets:
@@ -208,7 +214,7 @@ m13_hr_all2 = m13_hr_clean2 + m13_hr_rest2 # len 2
 m12_sr_all2 = m12_sr_clean2 + m12_sr_rest2 # len 4
 m12_hr_all2 = m12_hr_clean2 + m12_hr_rest2 # len 18
 
-# subsets that ran to z=0 (2023-04-12)
+## subsets that ran to z=0 (2023-04-12)
 m13_sr_all2_z0 =[
     ('m13h002_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
@@ -219,9 +225,9 @@ m13_sr_all2_z0 =[
     ('m13h009_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m13h029_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
-     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m13h037_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
-     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'

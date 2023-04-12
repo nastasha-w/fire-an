@@ -169,6 +169,14 @@ def fromcommandline(index):
     elif index >= 5582 and index < 5594:
         rhp.run_halodata(index - 5582 + 282)
         # m12q noBH and AGN-noCR
+    elif index >= 5594 and index < 723607657956627:
+        rhp.run_halodata(index - 5582 + 282)
+        # 5594 - 5603: m13-sr z=0 (10 indices)
+        # 5604 - 5607: m12-sr z=0 (4 indices)
+        # 5608 - 5623: m12-hr z=0 (16 indices)
+        # no z=0 m13-hr runs
+        # 5624 - 5650: # m11-hr z=0, 0.5, 1 (27 indices)
+        # 5651 - 5719 # m11-sr z=0, 0.5, 1 (69 indices)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

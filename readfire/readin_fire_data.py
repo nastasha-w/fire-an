@@ -602,11 +602,12 @@ def findclosestzs_snaps(basedir, simnames, zvals):
             pstr = f'{snapnum} at {zmatch} (target {ztar})'
             try:
                 sno = get_Firesnap(dirpath, snapnum, filetype='snap')
-                snapnums.append(snapnum)
+                snapnums.append(f'{snapnum}')
             except RuntimeError:
                 pstr = pstr + ' snapshot not found'
             print(pstr)
         print(','.join(snapnums))
+        print()
     return None    
     
         

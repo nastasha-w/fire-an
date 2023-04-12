@@ -130,7 +130,7 @@ def run_halodata(opt):
         simnames = sl.m12_sr_all2_z0 # len 4
         snaps = [60]
     # m13_hr_all2_z0 : length 0
-    elif opt >= 308 and opt < 324:
+    elif opt >= 308 and opt < 325:
         # m12-hr z=0 
         # for C-series profiles z=0., 0.5, 1., supplement clean sample
         ind = opt - 308
@@ -138,20 +138,20 @@ def run_halodata(opt):
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
-        simnames = sl.m12_hr_all2_z0 # len 16
+        simnames = sl.m12_hr_all2_z0 # len 17
         snaps = [500]
-    elif opt >= 324 and opt < 351:
+    elif opt >= 325 and opt < 352:
         # m11-hr
-        ind = opt - 324
+        ind = opt - 325
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
         simnames = sl.m11_hr_set1 # len 9
         snaps = sl.snaps_hr_051 # len 3
-    elif opt >= 351 and opt < 420:
+    elif opt >= 352 and opt < 421:
         # m11-sr
-        ind = opt - 351
+        ind = opt - 352
         _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
         # might as well; extra overdensities are cheap
         meandef = ('BN98', '200c', '200m', '500c', '500m', 

@@ -96,6 +96,21 @@ def run_halodata(opt):
                    '2500c', '2500m', '178c', '178m', '100c', '100m')
         simnames = sl.m12_hr_all1 # len 16
         snaps = sl.snaplists['m12_hr'] # len 6
+    elif opt >= 282 and opt < 294:
+        # m12-hr, 96 indices
+        ind = opt - 282
+        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+        # might as well; extra overdensities are cheap
+        meandef = ('BN98', '200c', '200m', '500c', '500m', 
+                   '2500c', '2500m', '178c', '178m', '100c', '100m')
+        simnames = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5')
+                   ]
+        snaps = sl.snaplists['m12_hr'] # len 6
+
+    
 
     simi = ind // len(snaps)
     snapi = ind % len(snaps)

@@ -91,14 +91,64 @@ m12_agncr_rest1 = [
 ]
 
 ## experimental m11 selection for C ion series
-m11_hr_nobh_set1 = [
+# phys variations selected by match to m12 series names
+# z=0: snap 60
+m11_sr_nobh_set1 = [
+    'm11a_m2e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11b_m2e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11c_m2e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11d_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11e_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11f_m1e4_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11g_m1e4_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11h_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11i_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11q_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm11v_m7e3_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5',
 ]
-
-m11_hr_agnnocr_set1 = [
+# z=0: snap 60
+m11_sr_agnnocr_set1 = [
+    'm11a_m2e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp3e-7_gacc31_fa0.5',
+    'm11b_m2e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-6_gacc31_fa0.5',
+    'm11c_m2e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
+    'm11d_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp3e-5_gacc31_fa0.5',
+    'm11e_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
+    'm11f_m1e4_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-4_gacc31_fa0.5',
+    'm11g_m1e4_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-4_gacc31_fa0.5',
+    'm11h_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
+    'm11i_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
+    'm11q_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp1e-5_gacc31_fa0.5',
+    'm11v_m7e3_MHD_fire3_fireBH_Sep052021_crdiffc690_sdp3e-5_gacc31_fa0.5',
 ]
-
+# z=0: snap 500
 m11_hr_agncr_set1 = [
+    ('m11a_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_'
+     'sdp3e-7_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11b_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-6_gacc31_fa0.5_fcr1e-3_vw3000'), # last snap 152 (2023-04-12)
+    ('m11c_m2e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'), 
+    ('m11d_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp3e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11e_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11f_m1e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11g_m1e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11h_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11q_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m11v_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp3e-5_gacc31_fa0.5_fcr1e-3_vw3000'),
 ]
+# z=0: snap 60
+m11_sr_agncr_set1 = [
+    ('m11i_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-5_gacc31_fa0.5_fcr3e-3_vw3000'),
+]
+
 
 ## run sets:
 m13_sr_clean1 = m13_nobh_clean1 + m13_agncr_clean1 # len 4

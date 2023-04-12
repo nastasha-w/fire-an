@@ -169,14 +169,24 @@ def fromcommandline(index):
     elif index >= 5582 and index < 5594:
         rhp.run_halodata(index - 5582 + 282)
         # m12q noBH and AGN-noCR
-    elif index >= 5594 and index < 723607657956627:
+    elif index >= 5594 and index < 5721:
         rhp.run_halodata(index - 5582 + 282)
         # 5594 - 5603: m13-sr z=0 (10 indices)
         # 5604 - 5607: m12-sr z=0 (4 indices)
-        # 5608 - 5623: m12-hr z=0 (16 indices)
+        # 5608 - 5624: m12-hr z=0 (17 indices)
         # no z=0 m13-hr runs
-        # 5624 - 5650: # m11-hr z=0, 0.5, 1 (27 indices)
-        # 5651 - 5719 # m11-sr z=0, 0.5, 1 (69 indices)
+        # 5625 - 5720: # m11 z=0, 0.5, 1 (96 indices)
+    elif index >= 5721 and index < 7156:
+        rhs.run_hist_carbonions_z051(index - 5721)
+        # 5721 - 6392: m11 z=0, 0.5, 1 (672 indices)
+        # 6393 - 6511: m12-hr z=0      (119 indices)
+        # 6512 - 6763: m12-hr z=0.5, 1 (252 indices)
+        # 6764 - 6791: m12-sr z=0      (28 indices)
+        # 6792 - 6847: m12-sr z=0.5, 1 (56 indices)
+        # m13hr z=0: no sims
+        # 6848 - 6877: m13-hr z=0.5, 1 (28 indices)
+        # 6876 - 6945: m13-sr z=0      (70 indices)
+        # 6946 - 7155: m13-sr z=0.5, 1 (210 indices)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

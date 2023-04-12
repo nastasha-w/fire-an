@@ -270,6 +270,8 @@ m12_hr_all2_z0 = [
      '_sdp1e10_gacc31_fa0.5'),
     ('m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
      '_sdp2e-4_gacc31_fa0.5'),
+    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
     ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
      '_sdp1e10_gacc31_fa0.5'),
     ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
@@ -282,15 +284,17 @@ m12_hr_all2_z0 = [
      '_sdp1e10_gacc31_fa0.5'),
     ('m12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
      '_sdp1e-4_gacc31_fa0.5'),
-] # len 16; noBH and AGN-noCR
+] # len 17; noBH and AGN-noCR
 
 
 # to find matching snaps
 snapmatch = {
-    'm13_sr': set(m13_sr_clean1),
-    'm13_hr': set(m13_hr_clean1),
-    'm12_sr': set(m12_sr_clean1),
-    'm12_hr': set(m12_hr_clean1),
+    'm13_sr': set(m13_sr_all2),
+    'm13_hr': set(m13_hr_all2),
+    'm12_sr': set(m12_sr_all2),
+    'm12_hr': set(m12_hr_all2),
+    'm11_sr': set(m11_sr_set1),
+    'm11_hr': set(m11_hr_set1),
     }
 
 snaps_sr = [45, 46, 47, 48, 49, 50]

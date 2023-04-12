@@ -43,6 +43,18 @@ m12_agncr_clean1 = [
      '_gacc31_fa0.5_fcr1e-3_vw3000'),
 ]
 
+# adding m12q
+m12_nobh_clean2 = m12_nobh_clean1 + [
+    'm12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
+] # len 4
+m12_agnnocr_clean2 = m12_agnnocr_clean1 + [
+    'm12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5',
+] # len 4
+m12_agncr_clean2 = m12_agncr_clean1 + [
+    ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'),
+] # len 4
+
 # rest: all other sims in the noBH/AGN-noCR/AGN-CR suites. 
 # ICs are not complete sets for physics models.
 # must have run to redshift 0.5
@@ -89,6 +101,11 @@ m12_agncr_rest1 = [
     ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
      '_gacc31_fa0.5_fcr1e-3_vw3000'),
 ]
+
+# m12q -> clean2
+m12_nobh_rest2 = m12_nobh_rest1.copy() # len 5
+m12_agnnocr_rest2 = m12_agnnocr_rest1.copy() # len 5
+m12_agncr_rest2 = [] # len 0
 
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
@@ -151,6 +168,7 @@ m11_sr_agncr_set1 = [
 
 
 ## run sets:
+# set 1
 m13_sr_clean1 = m13_nobh_clean1 + m13_agncr_clean1 # len 4
 m13_hr_clean1 = m13_agnnocr_clean1.copy() # len 2
 m12_sr_clean1 = m12_agncr_clean1.copy() # len 3
@@ -166,6 +184,100 @@ m13_hr_all1 = m13_hr_clean1 + m13_hr_rest1 # len 2
 m12_sr_all1 = m12_sr_clean1 + m12_sr_rest1 # len 4
 m12_hr_all1 = m12_hr_clean1 + m12_hr_rest1 # len 16
 
+# set 2: added new m12q haloes (only affects m12_sr, really)
+m13_nobh_clean2 = m13_nobh_clean1.copy()
+m13_agnnocr_clean2 = m13_agnnocr_clean1.copy()
+m13_agncr_clean2 = m13_agncr_clean1.copy()
+
+m13_nobh_rest2 = m13_nobh_rest1.copy()
+m13_agnnocr_rest2 = m13_agnnocr_rest1.copy()
+m13_agncr_rest2 = m13_agncr_rest1.copy()
+
+m13_sr_clean2 = m13_nobh_clean2 + m13_agncr_clean2 # len 4
+m13_hr_clean2 = m13_agnnocr_clean2.copy() # len 2
+m12_sr_clean2 = m12_agncr_clean2.copy() # len 4
+m12_hr_clean2 = m12_nobh_clean2 + m12_agnnocr_clean2 # len 8
+
+m13_sr_rest2 = m13_nobh_rest2 + m13_agncr_rest2 # len 11
+m13_hr_rest2 = m13_agnnocr_rest2.copy() # len 0
+m12_sr_rest2 = m12_agncr_rest2.copy() # len 0
+m12_hr_rest2 = m12_nobh_rest2 + m12_agnnocr_rest2 # len 10
+
+m13_sr_all2 = m13_sr_clean2 + m13_sr_rest2 # len 15
+m13_hr_all2 = m13_hr_clean2 + m13_hr_rest2 # len 2
+m12_sr_all2 = m12_sr_clean2 + m12_sr_rest2 # len 4
+m12_hr_all2 = m12_hr_clean2 + m12_hr_rest2 # len 18
+
+# subsets that ran to z=0 (2023-04-12)
+m13_sr_all2_z0 =[
+    ('m13h002_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h007_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m13h007_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h009_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h029_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+    ('m13h037_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+    ('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m13h236_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
+] # length 10; mostly AGN-CR, a 2x noBH
+m13_hr_all2_z0 = [] # none
+# all m12s ran to z=0
+m12_sr_all2_z0 = [
+    ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m12i_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m12m_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+    ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000') 
+] # length 4; AGN-CR
+m12_hr_all2_z0 = [
+    ('m12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp2e-4_gacc31_fa0.5'),
+    ('m12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e-4_gacc31_fa0.5'),
+    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp2e-4_gacc31_fa0.5'),
+    ('m12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp2e-4_gacc31_fa0.5'),
+    ('m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp2e-4_gacc31_fa0.5'),
+    ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e-4_gacc31_fa0.5'),
+    ('m12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e-4_gacc31_fa0.5'),
+    ('m12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e10_gacc31_fa0.5'),
+    ('m12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+     '_sdp1e-4_gacc31_fa0.5'),
+] # len 16; noBH and AGN-noCR
+
 
 # to find matching snaps
 snapmatch = {
@@ -178,8 +290,12 @@ snapmatch = {
 snaps_sr = [45, 46, 47, 48, 49, 50]
 snaps_hr = [186, 197, 210, 224, 240, 258]
 
-snaps_sr_051 = []
-snaps_hr_051 = []
+# m12q AGN-noCR: no snapshot 500 (z=0)
+# m12q noBH: does have snapshot 500 (z=0) 
+# m13_sr_all1: 
+#     snap 60 (z=0) for m13h206_m3e5, 
+snaps_sr_051 = [45, 50, 60]
+snaps_hr_051 = [186, 258, 500]
 
 
 snaplists = {

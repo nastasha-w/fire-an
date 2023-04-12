@@ -110,8 +110,6 @@ def run_halodata(opt):
                    ]
         snaps = sl.snaplists['m12_hr'] # len 6
 
-    
-
     simi = ind // len(snaps)
     snapi = ind % len(snaps)
     simname = simnames[simi]

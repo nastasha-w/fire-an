@@ -109,6 +109,81 @@ def run_hist_carbonions_z051(opt):
                          logweights=True, logaxes=True, axbins=axbins,
                          outfilen=outfilen, overwrite=False)
     
+def run_hist_ptmasses_all2(opt):
+    if opt >= 0 and opt < 450:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 450 indices
+        ind = opt - 0
+        simnames = sl.m13_sr_all2 # len 15
+        snaps = sl.snaps_sr # len 6
+        pts = [0, 1, 2, 4, 5] # len 5
+    elif opt >= 450 and opt < 510:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-hr
+        # 60 indices
+        ind = opt - 450
+        simnames = sl.m13_hr_all2 # len 2
+        snaps = sl.snaps_hr # len 6
+        pts = [0, 1, 2, 4, 5] # len 5
+    elif opt >= 510 and opt < 630:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 120 indices
+        ind = opt - 510
+        simnames = sl.m12_sr_all2 # len 4
+        snaps = sl.snaps_sr # len 6
+        pts = [0, 1, 2, 4, 5] # len 5
+    elif opt >= 630 and opt < 1170:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-hr
+        # 540 indices
+        ind = opt - 630
+        simnames = sl.m12_hr_all2 # len 18
+        snaps = sl.snaps_hr # len 6
+        pts = [0, 1, 2, 4, 5] # len 5
+    
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    outdir = '/scratch1/08466/tg877653/output/hists/ptmasses_all2/'
+    outname = 'hist_r3D_by_mass_pt{pt}_{simname}_snap{snap}_bins1_v1.hdf5'
+    simi = ind // (len(snaps) * len(pts))
+    snpi = (ind % (len(snaps) * len(pts))) // (len(pts))
+    pti = (ind % len(pts))
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    pt = pts[pti]
+
+    if pt == 5 and 'sdp1e10' in simname:
+        msg = (f'Skipping particle type {pt} for noBH'
+                f' simulation {simname}, snap {snapnum}')
+        print(msg)
+        return None
+    
+    runit = 'Rvir'
+    rbins = np.arange(0.15, 5., 0.01)
+    rbins = np.append(np.arange(0., 0.15, 0.005), rbins)
+    weighttype = 'Mass' 
+    weighttype_args = {}
+    axtypes = []
+    axtypes_args = []
+    axbins = []
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+
+    outfilen = outdir + outname.format(pt=pt, simname=simname, 
+                                       snap=snapnum)
+    mh.histogram_radprof(dirpath, snapnum,
+                         weighttype, weighttype_args, axtypes, axtypes_args,
+                         particle_type=pt, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=True, axbins=axbins,
+                         outfilen=outfilen, overwrite=False)
+    return None
+
 def run_hist(opt):
     if opt >= 0 and opt < 60:
         ind = opt
@@ -1114,52 +1189,6 @@ def run_hist(opt):
                      for dct in axtypes_args]
                 axqt = axqt.format(elt=parentelt)
         outfilen = outdir + outname.format(axqt=axqt, wt=wt, simname=simname, 
-                                           snap=snapnum)
-        
-
-        
-    elif opt >= 123456789 and opt < 123467890:
-        ind = opt - 1296
-        outdir = '/scratch1/08466/tg877653/output/hists/massprof/'
-        outname = 'hist_r3D_by_mass-pt{pt}_{simname}_snap{snap}_bins1_v1.hdf5'
-        pts = [0, 1, 2, 4, 5]
-        wt = 'Mass'
-        snaps = []
-        _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
-        simnames = ['m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000',
-                    ]
-
-        simi = ind // (len(snaps) * len(pts))
-        snpi = (ind % (len(snaps) * len(pts))) // (len(pts))
-        pti = (ind % len(pts))
-        simname = simnames[simi]
-        snapnum = snaps[snpi]
-        particle_type = pts[pti]
-        axtypes = []
-        axtypes_args = []
-        axqt = []
-        axbins = []
-        
-        # no black holes in some simulations
-        if particle_type == 5 and 'sdp1e10' in simname:
-            msg = (f'Skipping particle type {particle_type} for noBH'
-                   f' simulation {simname}')
-            print(msg)
-            return None
-        
-        runit = 'Rvir'
-        rbins = np.arange(0.15, 4., 0.01)
-        rbins = np.append(np.arange(0., 0.15, 0.005), rbins)
-
-        # directory is halo name + resolution 
-        dp2 = '_'.join(simname.split('_')[:2])
-        if dp2.startswith('m13h02_'):
-            dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([_dirpath, dp2, simname])
-
-        weighttype = wt
-        weighttype_args = {}
-        outfilen = outdir + outname.format(pt=particle_type, simname=simname,
                                            snap=snapnum)
 
     mh.histogram_radprof(dirpath, snapnum,

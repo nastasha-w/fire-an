@@ -187,6 +187,12 @@ def fromcommandline(index):
         # 6848 - 6877: m13-hr z=0.5, 1 (28 indices)
         # 6876 - 6945: m13-sr z=0      (70 indices)
         # 6946 - 7155: m13-sr z=0.5, 1 (210 indices)
+    elif index >= 7156 and index < 8326:
+        rhs.run_hist_ptmasses_all2(index - 7156)
+        # 7156 - 7605: m13-sr (450 inds)
+        # 7606 - 7665: m13-hr ( 60 inds)
+        # 7666 - 7785: m12-sr (120 inds)
+        # 7786 - 8325: m12-hr (540 inds)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

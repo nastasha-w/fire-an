@@ -991,7 +991,20 @@ def run_ionmap_xyz(opt=0):
         loss = ['x', 'y', 'z']
         simnames = sl.m12_hr_all1 # len 16
         snaps = sl.snaplists['m12_hr'] # len 6
-        
+    # m12q runs: all1 -> all2
+    elif opt >= 3330 and opt < 3510:
+        # m12q additional: 180 indices
+        ind = opt - 3330
+        outdir = '/scratch1/08466/tg877653/output/maps/set3_model3/'
+        checkfileflag = True
+        ions = ['Mass', 'O6', 'Ne8', 'Mg10', 'Neon']
+        loss = ['x', 'y', 'z']
+        simnames = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5')
+                   ] # len 2
+        snaps = sl.snaplists['m12_hr'] # len 6
         
     simi = ind // (len(snaps) * len(ions) * len(loss))
     snpi = (ind % (len(snaps) * len(ions) * len(loss))) \

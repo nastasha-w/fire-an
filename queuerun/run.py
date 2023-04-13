@@ -193,6 +193,11 @@ def fromcommandline(index):
         # 7606 - 7665: m13-hr ( 60 inds)
         # 7666 - 7785: m12-sr (120 inds)
         # 7786 - 8325: m12-hr (540 inds)
+    elif index >= 8326 and index < 8506:
+        rim.run_ionmap_xyz(index - 8326 + 3330)
+        # added m12q haloes (all1 -> all2)
+        # z = 1.0 - 0.5, Mass, Ne8, Neon, O6, Mg10
+        # (180 inds)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

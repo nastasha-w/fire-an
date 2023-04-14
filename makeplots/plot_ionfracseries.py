@@ -6,10 +6,12 @@ import matplotlib.patheffects as mppe
 import matplotlib.pyplot as plt
 
 import fire_an.makeplots.tol_colors as tc
+import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
 
 
+# TODO put in the right hdf5 file paths
 def readin_data(filen):
     with h5py.File(filen) as f:
         hist = f['histpath']
@@ -104,9 +106,60 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
 
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
-    
+
+def phys_from_simn(simname):
+    if '_sdp1e10_' in simname:
+        return 'noBH'
+    elif '_MHDCRspec1_' in simname:
+        return 'AGN-CR'
+    else:
+        return 'AGN-noCR'
+
+# TODO set outdir, ddir
+def plotsetfracs_haloes():
+    ddir = ''
+    ftemp = 'hist_r3D_by_{ion}_{simname}_snap{snap}_bins1_v1.hdf5'
+    filen_template = ddir + ftemp
+    outdir = ''
+    rmin_rvir=0.1
+    rmax_rvir=1.0
+    for zi, redshift in enumerate([1.0, 0.5, 0.0]):
+        snap_hr = sl.snaps_hr_051[zi]
+        snap_sr = sl.snaps_sr_051[zi]
         
+        simns_m11_hr = sl.m11_hr_agncr_set1 +\
+                       sl.m11_hr_agnnocr_set1 +\
+                       sl.m11_hr_nobh_set1 
+        simns_m11_sr = sl.m11_sr_agncr_set1 \
+                       + sl.m11_sr_agnoncr_set1 \
+                       + sl.m11_sr_nobh_set1
+        if redshift == 0.:
+            simns_hi_hr = sl.m12_hr_all2_z0 + sl.m13_hr_all2_z0
+            simns_hi_sr = sl.m12_sr_all2_z0 + sl.m13_sr_all2_z0
+        else:
+            simns_hi_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+            simns_hi_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+        simns_hr = simns_hi_hr + simns_m11_hr
+        simns_sr = simns_hi_sr + simns_m11_sr
         
+        for phys in ['noBH', 'AGN-noCR', 'AGN-CR']:
+            msg = f'plotting z={redshift} (snap {snap_hr}/{snap_sr}), {phys}'
+            print(msg)
+            _simns_hr = [sim for sim in simns_hr 
+                         if phys_from_simn(sim) == phys]
+            _simns_sr = [sim for sim in simns_sr 
+                         if phys_from_simn(sim) == phys]
+            fills_sim = [{'snap': snap_sr, 'simname': simn} 
+                         for simn in _simns_sr]
+            fills_sim += [{'snap': snap_hr, 'simname': simn} 
+                          for simn in _simns_hr]
+            title = f'CGM carbon ion fractions: {phys}, $z={redshift:.1f}$'
+            outname = (f'ionfrac_C_CGM_{rmin_rvir:.2f}_to_{rmax_rvir:.2f}'
+                       f'_RBN98_{phys}_z{redshift:.1f}.pdf')
+            outname = outdir + outname
+            plotfracs_haloes(filen_template, fills_sim, title=title, 
+                             outname=outname, rmin_rvir=rmin_rvir, 
+                             rmax_rvir=rmax_rvir)
 
     
 

@@ -161,5 +161,179 @@ def plotsetfracs_haloes():
                              outname=outname, rmin_rvir=rmin_rvir, 
                              rmax_rvir=rmax_rvir)
 
+def plotradfracs_haloes(filen_template, fills_sim, ics_av,
+                        title=None, outname=None, rmax_rvir=2.0):
+    ions = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Carbon']
+    ionnames = ['C I', 'C II', 'C III', 'C IV', 'C V', 'C VI']
+    colors = tc.tol_cmap('bright')[:len(ions) - 1]
     
+    data = []
+    rcens_all = None
+    for sfill in fills_sim:
+        masses = {}
+        for ion in ions:
+            filen = filen_template.format(ion=ion, **sfill)
+            rbins_rvir, hist, cosmopars, halomass_msun = readin_data(filen)
+            stag = filen.split('/')[-1]
+            stag = stag.split('_')[0]
+            imax = np.where(np.isclose(rmax_rvir, rbins_rvir))[0]
+            if len(imax) == 0:
+                print(f'No bin match found for radius {rmax_rvir} Rvir')
+            else:
+                imax = imax[0]
+            mass = hist[: imax]
+            masses[ion] = mass
+            rbins_rvir = rbins_rvir[:imax + 1]
+            rcens_rvir = 0.5 * (rbins_rvir[:-1] + rbins_rvir[1:])
+            if rcens_all is None:
+                rcens_all = rcens_rvir
+            elif not np.allclose(rcens_all, rcens_rvir):
+                print(f'Issue in file {filen}')
+                raise RuntimeError('Radial bins do not match between files')
+        data.append({'masses': masses, 'halomass_msun': halomass_msun, 
+                     'stag': stag})
 
+    fig = plt.figure(figsize=(5.5, 11.))
+    grid1 = gsp.GridSpec(nrows=1, ncols=2,
+                         hspace=0., wspace=0.1,
+                         width_ratios=[1., 1.])
+    avax = fig.add_subplot(grid1[0, 0])
+    frameax = fig.add_subplot(grid1[0, 1])
+
+    grid = gsp.GridSpec(nrows=3, ncols=2, hspace=0., wspace=0.)
+    axes = [fig.add_subplot(grid[i // 2, i % 2]) for i in range(6)]
+
+    fontsize = 12
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    xlab = '$r_{\\mathrm{3D}} \\,/\\, \\mathrm{R}_{\\mathrm{vir}}$'
+    ylab = f'ion mass / {ions[-1]} mass'
+    frameax.axis('off')
+    frameax.set_xlabel(xlab, fontsize=fontsize)
+    frameax.set_ylabel(ylab, fontsize=fontsize)
+    avax.set_xscale('log')
+    avax.set_xlabel(xlab, fontsize=fontsize)
+    avax.set_ylabel(ylab, fontsize=fontsize)
+    avax.tick_params(which='both', labelsize=fontsize-1, 
+                     top=True, left=True, direction='in',
+                     labelleft=True, labelbottom=True)
+
+    bottom = np.zeros(len(rcens_all))
+    for ii, ion in enumerate(ion[:-1]):
+        ax = axes[ii]
+        ax.set_xscale('log')
+        ax.tick_params(which='both', labelsize=fontsize-1, 
+                       top=True, left=True, direction='in',
+                       labelleft=(ii % 2 == 0), 
+                       labelbottom=(ii - (len(ions) - 1) >= 2))
+        color = colors[ii]
+        
+        _avparts = []
+        for hd in data:
+            ionf = hd['masses'][ion] / hd['masses'][ions[-1]]
+            if hd['stag'] in ics_av:
+                _avparts.append(ionf)
+                lw = 2.5
+            else:
+                lw = 1.5
+            ax.plot(rcens_all, ionf, linewidth=lw, color='black',
+                    linestyle='solid')
+        _av = np.average(_avparts, axis=1)
+        _min = np.min(_avparts, axis=1)
+        _max = np.max(_avparts, axis=1)
+
+        ax.errorbar(rcens_all, _av, yerr=(_av - _min, _max - _av),
+                    color=color, linewidth=2., linestyle='solid')
+        avax.errorbar(rcens_all, bottom + _av, yerr=(_av - _min, _max - _av),
+                      color=color, linewidth=2., linestyle='solid')
+        avax.fill_between(rcens_all, bottom, bottom + _av,
+                          color=color, alpha=0.3)
+        bottom += _av
+            
+        if _av[-1] <= 0.5:
+            ytpos = 0.95
+            va = 'top'
+        else:
+            ytpos = 0.05
+            va = 'bottom'
+        textoutline = [mppe.Stroke(linewidth=1.5, foreground='black'),
+                       mppe.Normal()]
+        ax.text(0.95, ytpos, ionnames[ii], fontsize=fontsize,
+                horizontalalignment='right', verticalalignment=va,
+                transform=ax.transAxes, path_effects=textoutline)
+    ylims = [ax.get_ylims() for ax in axes]
+    ymin = 0.
+    ymax = np.max([yl[1] for yl in ylims])
+    [ax.set_ylims((ymin, ymax)) for ax in axes]
+
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+
+# TODO set outdir, ddir
+def plotsetradfracs_haloes():
+    ddir = ''
+    ftemp = 'hist_r3D_by_{ion}_{simname}_snap{snap}_bins1_v1.hdf5'
+    filen_template = ddir + ftemp
+    outdir = ''
+    rmin_rvir=0.1
+    rmax_rvir=1.0
+    for zi, redshift in enumerate([1.0, 0.5, 0.0]):
+        snap_hr = sl.snaps_hr_051[zi]
+        snap_sr = sl.snaps_sr_051[zi]
+        
+        simns_m11_hr = sl.m11_hr_agncr_set1 +\
+                       sl.m11_hr_agnnocr_set1 +\
+                       sl.m11_hr_nobh_set1 
+        simns_m11_sr = sl.m11_sr_agncr_set1 \
+                       + sl.m11_sr_agnoncr_set1 \
+                       + sl.m11_sr_nobh_set1
+        if redshift == 0.:
+            simns_hi_hr = sl.m12_hr_all2_z0 + sl.m13_hr_all2_z0
+            simns_hi_sr = sl.m12_sr_all2_z0 + sl.m13_sr_all2_z0
+        else:
+            simns_hi_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+            simns_hi_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+        simns_hr = simns_hi_hr + simns_m11_hr
+        simns_sr = simns_hi_sr + simns_m11_sr
+        
+        for phys in ['noBH', 'AGN-noCR', 'AGN-CR']:
+            for icset in ['m11', 'm12', 'm13']:
+                msg = (f'plotting z={redshift} (snap {snap_hr}/{snap_sr})'
+                       f', {phys}, {icset}')
+                print(msg)
+                _simns_hr = [sim for sim in simns_hr 
+                             if phys_from_simn(sim) == phys 
+                             and (sim.split('/')[0]).startswith(icset)]
+                _simns_sr = [sim for sim in simns_sr 
+                             if phys_from_simn(sim) == phys
+                             and (sim.split('/')[0]).startswith(icset)]
+                fills_sim = [{'snap': snap_sr, 'simname': simn} 
+                              for simn in _simns_sr]
+                fills_sim += [{'snap': snap_hr, 'simname': simn} 
+                              for simn in _simns_hr]
+                title = (f'carbon ion fraction profiles: {icset}'
+                         f', {phys}, $z={redshift:.1f}$')
+                outname = (f'ionfracprof_C_to_{rmax_rvir:.2f}'
+                           f'_RBN98_{icset}_{phys}_z{redshift:.1f}.pdf')
+                if icset == 'm11':
+                    ics_av = ['m11a', 'm11b', 'm11d', 'm11e', 'm11f', 'm11g',
+                              'm11h', 'm11i', 'm11q', 'm11v']
+                elif icset == 'm12':
+                    if redshift == 0.:
+                        ics_av = ['m12f', 'm12i', 'm12m']
+                    else:
+                        ics_av = ['m12f', 'm12i', 'm12m', 'm12q']
+                elif icset == 'm13':
+                    if redshift == 0.:
+                        # no m13 AGN-noCR halos reached z=0, so only
+                        # require AGN-CR and noBH runs
+                        ics_av = ['m13h007', 'm13h206']
+                    else:
+                        ics_av = ['m13h113', 'm13h206']
+                if len(fills_sim) == 0:
+                    print('skipping; no haloes')
+                    continue
+                outname = outdir + outname
+                plotradfracs_haloes(filen_template, fills_sim, ics_av,
+                                    title=title, outname=outname, rmax_rvir=2.0)

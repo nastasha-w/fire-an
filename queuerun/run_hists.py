@@ -184,6 +184,170 @@ def run_hist_ptmasses_all2(opt):
                          outfilen=outfilen, overwrite=False)
     return None
 
+def run_hist_o6ne8mg10_tosample2(opt):
+    outdir = '/scratch1/08466/tg877653/output/hists/all2_model3/'
+    outname = 'hist_{axqt}_r3D_by_{wt}_{simname}_snap{snap}_bins1_v1.hdf5'
+    particle_type = 0
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    if opt >= 0 and opt < 1824:
+        # 1824 inds, 864 with ion weights
+        # m12-hr (m12f already run; complete to all2 set)
+        iw_base = 0
+        niw_base = 864
+        snaps = sl.snaps_hr # z=0.5 - 1.0, len 6
+        # len 16
+        simnames = [('m12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e-4_gacc31_fa0.5'),
+                    ('m12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e-4_gacc31_fa0.5'),
+                    ('m12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e-4_gacc31_fa0.5'),
+                    ('m12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e-4_gacc31_fa0.5'),
+                    ('m12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ]
+    elif opt >= 1824 and opt < 2166:
+        # 342 inds, 162 with ion weights
+        # m12-sr (m12f already run; complete to all2 set)
+        iw_base = 1824
+        niw_base = 1986
+        snaps = sl.snaps_sr # z=0.5 - 1.0, len 6
+        # len 3
+        simnames = [('m12i_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m12m_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ]
+    # all m13-hr (h113, h206) already run
+    elif opt >= 2166 and opt < 3420:
+        # 1254 inds, 594 with ion weights
+        # m13-sr (m13h113, m13h206 already run; complete to all2 set)
+        iw_base = 2166
+        niw_base = 2760
+        snaps = sl.snaps_sr # z=0.5 - 1.0, len 6
+        # len 11
+        simnames = [('m13h002_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m13h007_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m13h029_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m13h223_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m13h236_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m13h002_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m13h007_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m13h009_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'), 
+                    ('m13h029_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m13h037_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'), 
+                    ('m13h236_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ]
+    # total: len 19
+    if (opt >= iw_base and opt < niw_base): # len 9
+        ind = opt - iw_base
+        wts = ['O6', 'Ne8', 'Mg10'] # len 3
+        axtypes_opts = [['sim-direct']] * 3 # len 3
+        axtypes_args_opts = [[{'field': 'Temperature'}],
+                             [{'field': 'Density'}],
+                             [{'field': 'ElementAbundance/{elt}'}],
+                            ]
+        axqts = ['Temperature', 'Density', '{elt}']
+        axbins = [0.05, 0.05, 0.1]
+    else: # len 10
+        ind = opt - niw_base
+        wts = ['Mass', 'Volume'] # len 2
+        axtypes_opts = [['sim-direct']] * 5 # len 5
+        axtypes_args_opts = [[{'field': 'Temperature'}],
+                                [{'field': 'Density'}],
+                                [{'field': 'ElementAbundance/Oxygen'}],
+                                [{'field': 'ElementAbundance/Neon'}],
+                                [{'field': 'ElementAbundance/Magnesium'}],
+                            ]
+        axqts = ['Temperature', 'Density', 'Oxygen', 'Neon', 'Magnesium']
+        axbins = [0.05, 0.05] + [0.1] * 3
+
+    simi = ind // (len(snaps) * len(wts) * len(axqts))
+    snpi = (ind % (len(snaps) * len(wts) * len(axqts))) \
+            // (len(wts) * len(axqts))
+    wti = (ind % (len(wts) * len(axqts))) // len(axqts)
+    axi = ind % len(axqts)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    wt = wts[wti]
+    axtypes = axtypes_opts[axi]
+    axtypes_args = axtypes_args_opts[axi]
+    axqt = axqts[axi]
+    
+    runit = 'pkpc'
+    rbins = np.arange(40., 501., 20.) if simname.startswith('m12') else\
+            np.arange(40., 1001., 20.)
+    rbins = np.append(np.arange(0., 40., 5.), rbins)
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+
+    if wt in ['Mass', 'Volume']:
+        weighttype = wt
+        weighttype_args = dict()
+    else:
+        weighttype = 'ion'
+        weighttype_args = {'ps20depletion': False, 'ion': wt,
+                           'density': False}
+        if wt == 'H1':
+            weighttype_args.update({'ionfrac-method': 'sim'})
+        else:
+            dummytab = Linetable_PS20(wt, 0.0, emission=False,
+                                        vol=True, lintable=True)
+            parentelt = dummytab.element
+            axtypes_args = \
+                [{key: (dct[key]).format(elt=parentelt) for key in dct}
+                  for dct in axtypes_args]
+            axqt = axqt.format(elt=parentelt)
+    outfilen = outdir + outname.format(axqt=axqt, wt=wt, simname=simname, 
+                                       snap=snapnum)
+
+    mh.histogram_radprof(dirpath, snapnum,
+                         weighttype, weighttype_args, axtypes, axtypes_args,
+                         particle_type=particle_type, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=True, axbins=axbins,
+                         outfilen=outfilen, overwrite=False)
+
 def run_hist(opt):
     if opt >= 0 and opt < 60:
         ind = opt

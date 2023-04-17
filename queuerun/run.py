@@ -198,6 +198,13 @@ def fromcommandline(index):
         # added m12q haloes (all1 -> all2)
         # z = 1.0 - 0.5, Mass, Ne8, Neon, O6, Mg10
         # (180 inds)
+    elif index >= 8506 and index < 11926:
+        rhs.run_hist_o6ne8mg10_tosample2(index - 8506)
+        # add most of all2 sample 3D profiles
+        #  8506 - 10329: m12-hr (1824 inds)
+        # 10330 - 10671: m12-sr (342 inds)
+        # 10672 - 11925: m13-sr (1254 inds)
+
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

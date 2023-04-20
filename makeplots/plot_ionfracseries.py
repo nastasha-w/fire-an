@@ -5,19 +5,19 @@ import matplotlib.gridspec as gsp
 import matplotlib.patheffects as mppe 
 import matplotlib.pyplot as plt
 
+import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
 
-
-# TODO put in the right hdf5 file paths
 def readin_data(filen):
     with h5py.File(filen) as f:
-        hist = f['histpath']
-        rbins_rvir = f['rbinspath']
-        cosmopars = {key: val for key, val in f['cppath'].attrs.items()}
-        halomass = f['halopars'].attrs['halomass_g']
+        hist = 10**f['histogram/histogram'][:]
+        rbins_rvir = f['axis_0/bins'][:]
+        cosmopars = {key: val for key, val
+                     in f['Header/cosmopars'].attrs.items()}
+        halomass = f['Header/inputpars/halodata'].attrs['Mvir_g']
         halomass_msun = halomass / c.solar_mass
     return rbins_rvir, hist, cosmopars, halomass_msun
 
@@ -25,7 +25,7 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
                      rmin_rvir=0.1, rmax_rvir=1.0):
     ions = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Carbon']
     ionnames = ['C I', 'C II', 'C III', 'C IV', 'C V', 'C VI']
-    colors = tc.tol_cmap('bright')[:len(ions) - 1]
+    colors = tc.tol_cset('bright')[:len(ions) - 1]
     m11list = []
     m12list = []
     m13list = []
@@ -35,7 +35,8 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
         for ion in ions:
             filen = filen_template.format(ion=ion, **sfill)
             rbins_rvir, hist, cosmopars, halomass_msun = readin_data(filen)
-            stag = filen.split('/')[-1]
+            print(cosmopars['z'])
+            stag = sfill['simname']
             stag = stag.split('_')[0]
             imin = np.where(np.isclose(rmin_rvir, rbins_rvir))[0]
             if len(imin) == 0:
@@ -55,6 +56,7 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
             _ls = m12list
         elif stag.startswith('m13'):
             _ls = m13list
+        #print(stag)
         _ls.append({'masses': masses, 'halomass_msun': halomass_msun, 
                     'stag': stag})
     m11list.sort(key=lambda x: x['halomass_msun'])
@@ -63,7 +65,7 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
     # None: skip leave a gap between m11/m12/m13 haloes
     halolist = m11list + [None] + m12list + [None] + m13list
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3., 11.))
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(11., 3.))
     fontsize = 12
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
@@ -81,11 +83,13 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
 
         fracs = [halodat['masses'][ion] / halodat['masses'][ions[-1]]
                  for ion in ions[:-1]]
+        #print(fracs)
         fracss.append(fracs)
     fracss = np.array(fracss)
     for ii in range(len(ions) - 1):
         ax.bar(tickposs, fracss[:, ii], color=colors[ii], edgecolor='black',
-               bottom=np.sum(fracss[:, :ii], axis=1), tick_label=ticklabels)
+               bottom=np.sum(fracss[:, :ii], axis=1))
+    ax.set_xticks(tickposs, labels=ticklabels, ha='right')
     nnames = len(ions) - 1
     textoutline = [mppe.Stroke(linewidth=1.5, foreground='black'),
                    mppe.Normal()]
@@ -93,16 +97,16 @@ def plotfracs_haloes(filen_template, fills_sim, title=None, outname=None,
         ax.text(tickposs[-1] + 0.5, (ii + 0.5) / (nnames + 1), ionnames[ii],
                 fontsize=fontsize, color=colors[ii],
                 horizontalalignment='left', verticalalignment='center',
-                patheffects=textoutline)
+                path_effects=textoutline)
     ax.tick_params(which='both', axis='x', labelsize=fontsize, direction='out',
                    labelrotation=45.)
     ax.tick_params(which='both', axis='y', labelsize=fontsize - 1, 
                    direction='in', right=True)
     ax.set_ylim((0., 1.))
     ylab = (f'fraction of {ions[-1]}, '
-            f'${rmin_rvir:.1f} \\endash ${rmax_rvir:.1f}'
+            f'${rmin_rvir:.1f} \\endash {rmax_rvir:.1f}'
             f' \\, \\mathrm{{R}}_{{\\mathrm{{vir}}}}$')
-    ax.set_ylabel(ylab)
+    ax.set_ylabel(ylab, fontsize=fontsize)
 
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
@@ -115,12 +119,11 @@ def phys_from_simn(simname):
     else:
         return 'AGN-noCR'
 
-# TODO set outdir, ddir
 def plotsetfracs_haloes():
-    ddir = ''
+    ddir = '/Users/nastasha/ciera/profiles/fire/ionseries_C/'
     ftemp = 'hist_r3D_by_{ion}_{simname}_snap{snap}_bins1_v1.hdf5'
     filen_template = ddir + ftemp
-    outdir = ''
+    outdir = '/Users/nastasha/ciera/projects_co/hsiao-wen_carbon_ions/'
     rmin_rvir=0.1
     rmax_rvir=1.0
     for zi, redshift in enumerate([1.0, 0.5, 0.0]):
@@ -131,7 +134,7 @@ def plotsetfracs_haloes():
                        sl.m11_hr_agnnocr_set1 +\
                        sl.m11_hr_nobh_set1 
         simns_m11_sr = sl.m11_sr_agncr_set1 \
-                       + sl.m11_sr_agnoncr_set1 \
+                       + sl.m11_sr_agnnocr_set1 \
                        + sl.m11_sr_nobh_set1
         if redshift == 0.:
             simns_hi_hr = sl.m12_hr_all2_z0 + sl.m13_hr_all2_z0
@@ -163,9 +166,10 @@ def plotsetfracs_haloes():
 
 def plotradfracs_haloes(filen_template, fills_sim, ics_av,
                         title=None, outname=None, rmax_rvir=2.0):
-    ions = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Carbon']
-    ionnames = ['C I', 'C II', 'C III', 'C IV', 'C V', 'C VI']
-    colors = tc.tol_cmap('bright')[:len(ions) - 1]
+    ions = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'][::-1] + ['Carbon']
+    ionnames = ['C I', 'C II', 'C III', 'C IV', 'C V', 'C VI'][::-1]
+    colors = tc.tol_cset('bright')[len(ions) - 2 : : -1]
+    print(colors)
     
     data = []
     rcens_all = None
@@ -174,7 +178,7 @@ def plotradfracs_haloes(filen_template, fills_sim, ics_av,
         for ion in ions:
             filen = filen_template.format(ion=ion, **sfill)
             rbins_rvir, hist, cosmopars, halomass_msun = readin_data(filen)
-            stag = filen.split('/')[-1]
+            stag = sfill['simname']
             stag = stag.split('_')[0]
             imax = np.where(np.isclose(rmax_rvir, rbins_rvir))[0]
             if len(imax) == 0:
@@ -193,14 +197,14 @@ def plotradfracs_haloes(filen_template, fills_sim, ics_av,
         data.append({'masses': masses, 'halomass_msun': halomass_msun, 
                      'stag': stag})
 
-    fig = plt.figure(figsize=(5.5, 11.))
+    fig = plt.figure(figsize=(11., 5.5))
     grid1 = gsp.GridSpec(nrows=1, ncols=2,
-                         hspace=0., wspace=0.1,
+                         hspace=0., wspace=0.2,
                          width_ratios=[1., 1.])
     avax = fig.add_subplot(grid1[0, 0])
     frameax = fig.add_subplot(grid1[0, 1])
-
-    grid = gsp.GridSpec(nrows=3, ncols=2, hspace=0., wspace=0.)
+    grid = gsp.GridSpecFromSubplotSpec(nrows=3, ncols=2, hspace=0., wspace=0.,
+                                       subplot_spec=grid1[0, 1])
     axes = [fig.add_subplot(grid[i // 2, i % 2]) for i in range(6)]
 
     fontsize = 12
@@ -208,44 +212,57 @@ def plotradfracs_haloes(filen_template, fills_sim, ics_av,
         fig.suptitle(title, fontsize=fontsize)
     xlab = '$r_{\\mathrm{3D}} \\,/\\, \\mathrm{R}_{\\mathrm{vir}}$'
     ylab = f'ion mass / {ions[-1]} mass'
-    frameax.axis('off')
-    frameax.set_xlabel(xlab, fontsize=fontsize)
-    frameax.set_ylabel(ylab, fontsize=fontsize)
-    avax.set_xscale('log')
+    frameax.tick_params(bottom=False, left=False, labelbottom=False, 
+                        labelleft=False)
+    frameax.spines['top'].set_visible(False)
+    frameax.spines['bottom'].set_visible(False)
+    frameax.spines['left'].set_visible(False)
+    frameax.spines['right'].set_visible(False)
+    frameax.set_xlabel(xlab, fontsize=fontsize, labelpad=20)
+    frameax.set_ylabel(ylab, fontsize=fontsize, labelpad=28)
+    #avax.set_xscale('log')
     avax.set_xlabel(xlab, fontsize=fontsize)
     avax.set_ylabel(ylab, fontsize=fontsize)
     avax.tick_params(which='both', labelsize=fontsize-1, 
-                     top=True, left=True, direction='in',
+                     top=True, right=True, direction='in',
                      labelleft=True, labelbottom=True)
 
     bottom = np.zeros(len(rcens_all))
-    for ii, ion in enumerate(ion[:-1]):
+    for ii, ion in enumerate(ions[:-1]):
         ax = axes[ii]
-        ax.set_xscale('log')
+        #ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.tick_params(which='both', labelsize=fontsize-1, 
-                       top=True, left=True, direction='in',
+                       top=True, right=True, direction='in',
                        labelleft=(ii % 2 == 0), 
-                       labelbottom=(ii - (len(ions) - 1) >= 2))
+                       labelbottom=(ii // 2 >= 2))
         color = colors[ii]
+        print(ii, ion)
         
         _avparts = []
         for hd in data:
             ionf = hd['masses'][ion] / hd['masses'][ions[-1]]
             if hd['stag'] in ics_av:
                 _avparts.append(ionf)
-                lw = 2.5
+                lw = 1.0
+                _c = 'black'
             else:
-                lw = 1.5
-            ax.plot(rcens_all, ionf, linewidth=lw, color='black',
+                lw = 1.0
+                _c = tc.tol_cset('bright').grey
+            ax.plot(rcens_all, ionf, linewidth=lw, color=_c,
                     linestyle='solid')
-        _av = np.average(_avparts, axis=1)
-        _min = np.min(_avparts, axis=1)
-        _max = np.max(_avparts, axis=1)
-
+        _av = np.average(_avparts, axis=0)
+        _min = np.min(_avparts, axis=0)
+        _max = np.max(_avparts, axis=0)
+        
+        pe = pu.getoutline(1.5)
         ax.errorbar(rcens_all, _av, yerr=(_av - _min, _max - _av),
-                    color=color, linewidth=2., linestyle='solid')
-        avax.errorbar(rcens_all, bottom + _av, yerr=(_av - _min, _max - _av),
-                      color=color, linewidth=2., linestyle='solid')
+                    color=color, linewidth=1.5, linestyle='solid',
+                    errorevery=13, capsize=2., path_effects=pe)
+        avax.plot(rcens_all, bottom + _av,
+                  color=color, linewidth=1.5, linestyle='solid')
+        #avax.errorbar(rcens_all, bottom + _av, yerr=(_av - _min, _max - _av),
+        #              color=color, linewidth=2., linestyle='solid')
         avax.fill_between(rcens_all, bottom, bottom + _av,
                           color=color, alpha=0.3)
         bottom += _av
@@ -260,23 +277,23 @@ def plotradfracs_haloes(filen_template, fills_sim, ics_av,
                        mppe.Normal()]
         ax.text(0.95, ytpos, ionnames[ii], fontsize=fontsize,
                 horizontalalignment='right', verticalalignment=va,
-                transform=ax.transAxes, path_effects=textoutline)
-    ylims = [ax.get_ylims() for ax in axes]
-    ymin = 0.
+                transform=ax.transAxes, path_effects=textoutline, color=color)
+    ylims = [ax.get_ylim() for ax in axes]
     ymax = np.max([yl[1] for yl in ylims])
-    [ax.set_ylims((ymin, ymax)) for ax in axes]
+    ymax = min(ymax, 1.3)
+    ymin = max(1e-5, ymax * 3e-5)
+    [ax.set_ylim((ymin, ymax)) for ax in axes]
+    avlim = avax.get_ylim()
+    avax.set_ylim(0., avlim[1])
 
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
-
-# TODO set outdir, ddir
 def plotsetradfracs_haloes():
-    ddir = ''
+    ddir = '/Users/nastasha/ciera/profiles/fire/ionseries_C/'
     ftemp = 'hist_r3D_by_{ion}_{simname}_snap{snap}_bins1_v1.hdf5'
     filen_template = ddir + ftemp
-    outdir = ''
-    rmin_rvir=0.1
+    outdir = '/Users/nastasha/ciera/projects_co/hsiao-wen_carbon_ions/'
     rmax_rvir=1.0
     for zi, redshift in enumerate([1.0, 0.5, 0.0]):
         snap_hr = sl.snaps_hr_051[zi]
@@ -286,7 +303,7 @@ def plotsetradfracs_haloes():
                        sl.m11_hr_agnnocr_set1 +\
                        sl.m11_hr_nobh_set1 
         simns_m11_sr = sl.m11_sr_agncr_set1 \
-                       + sl.m11_sr_agnoncr_set1 \
+                       + sl.m11_sr_agnnocr_set1 \
                        + sl.m11_sr_nobh_set1
         if redshift == 0.:
             simns_hi_hr = sl.m12_hr_all2_z0 + sl.m13_hr_all2_z0

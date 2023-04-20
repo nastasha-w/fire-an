@@ -479,6 +479,6 @@ def get_perc_and_points(xdata, ydata, xbins,\
     
 def getoutline(linewidth):
     patheff = [mppe.Stroke(linewidth=linewidth + 0.5, foreground="black"),
-               mppe.Stroke(linewidth=linewidth + 0.5, foreground="white"),
+               #mppe.Stroke(linewidth=linewidth + 0.5, foreground="white"),
                mppe.Normal()]
     return patheff

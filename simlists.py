@@ -166,6 +166,8 @@ m11_sr_agncr_set1 = [
     ('m11i_m7e3_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
      '_sdp1e-5_gacc31_fa0.5_fcr3e-3_vw3000'),
 ] # len 1
+m11_hr_agnnocr_set1 =[]
+m11_hr_nobh_set1 = []
 
 # len 9
 m11_hr_set1 = m11_hr_agncr_set1.copy()

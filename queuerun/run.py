@@ -184,7 +184,7 @@ def fromcommandline(index):
         # 6764 - 6791: m12-sr z=0      (28 indices)
         # 6792 - 6847: m12-sr z=0.5, 1 (56 indices)
         # m13hr z=0: no sims
-        # 6848 - 6877: m13-hr z=0.5, 1 (28 indices)
+        # 6848 - 6875: m13-hr z=0.5, 1 (28 indices)
         # 6876 - 6945: m13-sr z=0      (70 indices)
         # 6946 - 7155: m13-sr z=0.5, 1 (210 indices)
     elif index >= 7156 and index < 8326:

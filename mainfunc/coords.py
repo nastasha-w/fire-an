@@ -45,6 +45,7 @@ class CoordinateWranger:
         self.periodic = periodic
         self.coordaxis = 1 
         self.pcalcstarted = False
+        self.vcalcstarted = False
         self.__check_rotmatrix()
     
     def __check_rotmatrix(self):
@@ -63,6 +64,11 @@ class CoordinateWranger:
                 raise ValueError(msg)
         
     def __startcalc_pos(self, subindex=None):
+        '''
+        read in, center, rotate coordinates
+        '''
+        if self.pcalcstarted:
+            return None
         h5path = f'PartType{self.pt}/Coordinates'
         if self.rotmatrix is None:
             self._subindex = subindex
@@ -82,8 +88,14 @@ class CoordinateWranger:
         del self.coords_simxyz
         del self.toCGS_coords_simxyz
         self.pcalcstarted = True
-
+        return None
+    
     def __startcalc_vel(self, subindex=None):
+        '''
+        read in, center, rotate velocities
+        '''
+        if self.vcalcstarted:
+            return None
         h5path = f'PartType{self.pt}/Velocities'
         if self.rotmatrix is None:
             self._subindex = subindex
@@ -101,6 +113,7 @@ class CoordinateWranger:
         del self.vel_simxyz
         del self.toCGS_vel_simxyz
         self.vcalcstarted = True
+        return None
 
     def __rotate_pos(self):
         self.rotmatrix = np.asarray(self.rotmatrix, 
@@ -160,7 +173,7 @@ class CoordinateWranger:
                     0, 1, 2: position along the axis with this index
                     'allcart': for all three of these cartesian axes
                     'rcen': distance to the center
-                'vel': [0, 1, 2, 'allcart', 'vrad']
+                'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot']
                      0, 1, 2: velocity along the axis with this index
                     'allcart': for all three of these cartesian axes
                     'vrad': radial velocity (relative to coordinate

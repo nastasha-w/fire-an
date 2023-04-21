@@ -516,6 +516,129 @@ def adddata_cenrvir(rmtemp=False):
                 print(f'deleting {tfn}')
                 os.remove(tfn)
 
+def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
+              parttypes='all'):
+    '''
+    calculate center of mass velocity for specified particle 
+    types in a specified fraction of the given virial radius
+
+    Parameters:
+    -----------
+    path: str
+        where to find the simulation data (include full path),
+        directory should contain the snapshots or an 'ouput'
+        subdirectory with the snapshots
+    snapshot: int
+        snapshot number
+    radius_rvir: float
+        radius of the sphere in which to include particles, in
+        units of the virial radius
+    meandef_rvir: ['BN98', '<overdensity>c', '<overdensity>m']
+        which definition of the virial radius to use 
+        (see calc_halodata)
+    parttypes: tuple of ints (0, 1, 2, 4, and/or 5) or 'all'
+        which particle types to include in the calculation.
+        'all' uses all types except 2 (low-resolution dark matter),
+        and 5 if the simulation does not contain black holes.
+    '''
+    halodat = gethalodata_shrinkingsphere(path, snapshot, 
+                                          meandef=meandef_rvir)
+    cen_cm = np.array([halodat['Xc_cm'], halodat['Yc_cm'], halodat['Zc_cm']])
+    rvir_cm = halodat['Rvir_cm']
+    snap = rf.get_Firesnap(path, snapshot)
+    todoc = {}
+
+    # get mass and coordinate data
+    if parttypes == 'all':
+        parttypes = (0, 1, 4, 5)
+    else:
+        parttypes = parttypes
+    dct_m = {}
+    dct_c = {}
+    toCGS_m = None
+    toCGS_c = None
+    for pt in parttypes:
+        cpath = 'PartType{}/Coordinates'
+        mpath = 'PartType{}/Mass'
+        try:
+            dct_c[pt] = snap.readarray_emulateEAGLE(cpath.format(pt))
+            _toCGS_c = snap.toCGS
+            dct_m[pt] = snap.readarray_emulateEAGLE(mpath.format(pt))
+            _toCGS_m = snap.toCGS
+        except (OSError, rf.FieldNotFoundError):
+            msg = 'Skipping PartType {} in COM vel. calc: not present on file'
+            print(msg.format(pt))
+            continue
+        if toCGS_m is None:
+            toCGS_m = _toCGS_m
+        elif not np.isclose(toCGS_m, _toCGS_m):
+                msg = ('Different particle type masses have different'
+                       ' CGS conversions in ' + snap.firstfilen)
+                raise RuntimeError(msg)
+        if toCGS_c is None:
+            toCGS_c = _toCGS_c
+        elif not np.isclose(toCGS_c, _toCGS_c):
+                msg = ('Different particle type coordinates have different'
+                       ' CGS conversions in ' + snap.firstfilen)
+                raise RuntimeError(msg)
+    pt_used = list(dct_m.keys())
+    pt_used.sort()
+    totlen = sum([len(dct_m[pt]) for pt in pt_used])
+    masses = np.empty((totlen,), dtype=dct_m[pt_used[0]].dtype)
+    coords = np.empty((totlen, dct_c[pt_used[0]].shape[1]), 
+                      dtype=dct_c[pt_used[0]].dtype)
+    todoc['parttypes_used'] = tuple(pt_used)
+    start = 0
+    for pt in pt_used:
+        partlen = len(dct_m[pt])
+        masses[start: start + partlen] = dct_m[pt]
+        coords[start: start + partlen] = dct_c[pt]
+        start += partlen
+
+        del dct_m[pt]
+        del dct_c[pt]
+    # center coords and select 
+    coords -= cen_cm / toCGS_c
+    rsq = np.sum(coords**2, axis=1)
+    del coords
+    rsq_max = (radius_rvir * rvir_cm / toCGS_c)**2
+    psel = rsq < rsq_max
+    del rsq
+    
+    dct_v = {}
+    toCGS_v = None
+    # get velocities
+    for pt in pt_used:
+        vpath = 'PartType{}/Velocities'
+        dct_v[pt] = snap.readarray_emulateEAGLE(vpath.format(pt))
+        _toCGS_v = snap.toCGS
+        if toCGS_v is None:
+            toCGS_v = _toCGS_v
+        elif not np.isclose(toCGS_v, _toCGS_v):
+                msg = ('Different particle type velocities have different'
+                       ' CGS conversions in ' + snap.firstfilen)
+                raise RuntimeError(msg)
+    totlen = sum([len(dct_v[pt]) for pt in pt_used])
+    velocities = np.empty((totlen,), dtype=dct_v[pt_used[0]].dtype)
+    start = 0
+    for pt in pt_used:
+        partlen = len(dct_v[pt])
+        velocities[start: start + partlen] = dct_v[pt]
+        start += partlen
+        del dct_v[pt]
+    masses = masses[psel]
+    velocities = velocities[psel]
+    vcom_codeunits = np.sum(masses * velocities, axis=0) / np.sum(masses)
+    vcom_cmps = vcom_codeunits * toCGS_v
+    todoc['units'] = 'cm * s**-1'
+    out = {'VXcom_cmps': vcom_cmps[0], 
+           'VYcom_cmps': vcom_cmps[1],
+           'VZcom_cmps': vcom_cmps[2]}
+    return out, todoc
+
+
+
+
 def halodata_rockstar(path, snapnum, select='maxmass', 
                       masspath='mass.vir'):
     '''

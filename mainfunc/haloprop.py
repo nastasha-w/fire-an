@@ -632,14 +632,14 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
     else:
         parttypes = parttypes
     dct_m = {}
-    dct_c = {}
+    dct_r = {}
     toCGS_m = None
     toCGS_c = None
     for pt in parttypes:
         cpath = 'PartType{}/Coordinates'
         mpath = 'PartType{}/Mass'
         try:
-            dct_c[pt] = snap.readarray_emulateEAGLE(cpath.format(pt))
+            ctemp = snap.readarray_emulateEAGLE(cpath.format(pt))
             _toCGS_c = snap.toCGS
             dct_m[pt] = snap.readarray_emulateEAGLE(mpath.format(pt))
             _toCGS_m = snap.toCGS
@@ -659,26 +659,25 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
                 msg = ('Different particle type coordinates have different'
                        ' CGS conversions in ' + snap.firstfilen)
                 raise RuntimeError(msg)
+        ctemp -= cen_cm / toCGS_c
+        dct_r[pt] = np.sum(ctemp**2, axis=1)
+        del ctemp
+
     pt_used = list(dct_m.keys())
     pt_used.sort()
     totlen = sum([len(dct_m[pt]) for pt in pt_used])
     masses = np.empty((totlen,), dtype=dct_m[pt_used[0]].dtype)
-    coords = np.empty((totlen, dct_c[pt_used[0]].shape[1]), 
-                      dtype=dct_c[pt_used[0]].dtype)
+    rsq = np.empty((totlen,), dtype=dct_r[pt_used[0]].dtype)
     todoc['parttypes_used'] = tuple(pt_used)
     start = 0
     for pt in pt_used:
         partlen = len(dct_m[pt])
         masses[start: start + partlen] = dct_m[pt]
-        coords[start: start + partlen] = dct_c[pt]
+        rsq[start: start + partlen] = dct_r[pt]
         start += partlen
 
         del dct_m[pt]
-        del dct_c[pt]
-    # center coords and select 
-    coords -= cen_cm / toCGS_c
-    rsq = np.sum(coords**2, axis=1)
-    del coords
+        del dct_r[pt]
     rsq_max = (radius_rvir * rvir_cm / toCGS_c)**2
     psel = rsq < rsq_max
     del rsq

@@ -74,7 +74,7 @@ class Units:
             self._use_fire_defaults()
         
         # check if everything is present, add h factors
-        self._process_code_units()
+        self._check_code_units()
         # 
         self._get_derived_units_and_acorr()
       
@@ -88,11 +88,13 @@ class Units:
         if not hasattr(self, 'codemass_g'):
             self.codemass_g = 1e10 * c.solar_mass #/ self.HubbleParam
             print(f'FIRE default codemass_g (unprocessed): {self.codemass_g}')
+            self.codemass_g /= self.HubbleParam
         if not hasattr(self, 'codelength_cm'):
             self.codelength_cm = c.cm_per_mpc * 1e-3 #/ self.HubbleParam
             msg = ('FIRE default codelength_cm (unprocessed):'
                    f' {self.codelength_cm}')
             print(msg)
+            self.codelength_cm /= self.HubbleParam
         if not hasattr(self, 'codevelocity_cm_per_s'):
             self.codevelocity_cm_per_s = 1e5
             msg = ('FIRE default codevelocity_cm_per_s (unprocessed):'
@@ -108,6 +110,7 @@ class Units:
             print(f'FIRE default cosmpexp: {self.cosmpexp}')
 
     def _read_snapshot_data(self, snapn):
+        # no h factors: already seem to be incorporated here
         with h5py.File(snapn) as _f:
             if 'ComovingIntegrationOn' in _f['Header'].attrs:
                 _atn = 'ComovingIntegrationOn'
@@ -149,12 +152,14 @@ class Units:
                     msg = ('parameter file codelength_cm (unprocessed):'
                            f' {self.codelength_cm}')
                     print(msg)
+                    self.codelength_cm /= self.HubbleParam
                 elif line.startswith('UnitMass_in_g'):
                     self.codemass_g = float(line.split()[1])
                     setm = True
                     msg = ('parameter file codemass_g (unprocessed):'
                            f' {self.codemass_g}')
                     print(msg)
+                    self.codemass_g /= self.HubbleParam
                 elif line.startswith('UnitVelocity_in_cm_per_s'):
                     self.codevelocity_cm_per_s = float(line.split()[1])
                     setv = True  
@@ -199,7 +204,7 @@ class Units:
         alldone = np.all([present[attr] for attr in present])
         return alldone
         
-    def _process_code_units(self):
+    def _check_code_units(self):
         '''
         and processing depending on the header or parameterfile data.
         separated from direct read-in so that neither depends on the 
@@ -225,8 +230,6 @@ class Units:
             if len(missing) > 0:
                 msg = 'Could not find required values: {}'.format(missing)
                 raise RuntimeError(msg)
-        self.codemass_g /= self.HubbleParam
-        self.codelength_cm /= self.HubbleParam
         if not self.cosmoexp:
             self.a = 1.
         self.units_processed = True

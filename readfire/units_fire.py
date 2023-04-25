@@ -84,17 +84,29 @@ class Units:
         # units as well
         if not hasattr(self, 'HubbleParam'):
             self.HubbleParam = 0.7
+            print(f'FIRE default HubbleParam: {self.HubbleParam}')
         if not hasattr(self, 'codemass_g'):
             self.codemass_g = 1e10 * c.solar_mass #/ self.HubbleParam
+            print(f'FIRE default codemass_g (unprocessed): {self.codemass_g}')
         if not hasattr(self, 'codelength_cm'):
             self.codelength_cm = c.cm_per_mpc * 1e-3 #/ self.HubbleParam
+            msg = ('FIRE default codelength_cm (unprocessed):'
+                   f' {self.codelength_cm}')
+            print(msg)
         if not hasattr(self, 'codevelocity_cm_per_s'):
             self.codevelocity_cm_per_s = 1e5
+            msg = ('FIRE default codevelocity_cm_per_s (unprocessed):'
+                   f' {self.codevelocity_cm_per_s}')
+            print(msg)
         if not hasattr(self, 'codemageneticfield_gauss'):
             self.codemageneticfield_gauss =  1.
+            msg = ('FIRE default codemageneticfield_gauss (unprocessed):'
+                   f' {self.codemageneticfield_gauss}')
+            print(msg)
         if not hasattr(self, 'cosmpexp'):
             self.cosmpexp = True
-        
+            print(f'FIRE default cosmpexp: {self.cosmpexp}')
+
     def _read_snapshot_data(self, snapn):
         with h5py.File(snapn) as _f:
             if 'ComovingIntegrationOn' in _f['Header'].attrs:
@@ -107,13 +119,20 @@ class Units:
             # file
             if 'UnitMass_In_CGS' in _f['Header'].attrs:
                 self.codemass_g = _f['Header'].attrs['UnitMass_In_CGS']
-            
+                msg = ('snapshot Header codemass_g (unprocessed):'
+                   f' {self.codemass_g}')
+                print(msg)
             if 'UnitVelocity_In_CGS' in _f['Header'].attrs:
                 self.codevelocity_cm_per_s = \
                     _f['Header'].attrs['UnitVelocity_In_CGS']
-            
+                msg = ('snapshot Header codevelocity_cm_per_s (unprocessed):'
+                   f' {self.codevelocity_cm_per_s}')
+                print(msg)
             if 'UnitLength_In_CGS' in _f['Header'].attrs:
                 self.codelength_cm = _f['Header'].attrs['UnitLength_In_CGS']
+                msg = ('snapshot Header codelength_cm (unprocessed):'
+                   f' {self.codelength_cm}')
+                print(msg)
             
     def _read_parameterfile_units(self, filen):
         setl = False
@@ -127,21 +146,37 @@ class Units:
                 if line.startswith('UnitLength_in_cm'):
                     self.codelength_cm = float(line.split()[1])
                     setl = True
+                    msg = ('parameter file codelength_cm (unprocessed):'
+                           f' {self.codelength_cm}')
+                    print(msg)
                 elif line.startswith('UnitMass_in_g'):
                     self.codemass_g = float(line.split()[1])
                     setm = True
+                    msg = ('parameter file codemass_g (unprocessed):'
+                           f' {self.codemass_g}')
+                    print(msg)
                 elif line.startswith('UnitVelocity_in_cm_per_s'):
                     self.codevelocity_cm_per_s = float(line.split()[1])
                     setv = True  
+                    msg = ('parameter file codevelocity_cm_per_s '
+                           f'(unprocessed): {self.codevelocity_cm_per_s}')
+                    print(msg)
                 elif line.startswith('UnitMagneticField_in_gauss'):
                     self.codemageneticfield_gauss = float(line.split()[1])
                     setb = True  
+                    msg = ('parameter file codemageneticfield_gauss'
+                           f'(unprocessed): {self.codemageneticfield_gauss}')
+                    print(msg)
                 elif line.startswith('ComovingIntegrationOn'):
                     self.cosmoexp = bool(int(line.split()[1]))
                     setc = True
+                    msg = (f'parameter file cosmoexp: {self.cosmoexp}')
+                    print(msg)
                 elif line.startswith('HubbleParam'):
                     self.HubbleParam = float(line.split()[1])
                     seth = True
+                    msg = (f'parameter file HubbleParam: {self.HubbleParam}')
+                    print(msg)
                 if setl and setm and setv and setb and setc and seth:
                     break
         if not (setl and setm and setv and setb and setc and seth):

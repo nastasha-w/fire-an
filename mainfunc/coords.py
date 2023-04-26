@@ -140,32 +140,32 @@ class CoordinateWranger:
         self.toCGS_vel_rotxyz = self.toCGS_vel_simxyz
     
     def __center_pos(self):
-        self.center_simu = np.astype(self.cen_cm / self.toCGS_coords_simxyz,
-                                     dtype=self.coords_simxyz.dtype)
+        self.center_simu = (self.cen_cm / self.toCGS_coords_simxyz).astype(
+            self.coords_simxyz.dtype)
         self.coords_simxyz -= self.center_simu
         if self.periodic:
             self.boxsize_simu = self.snapobj.cosmopars.boxsize \
                                 * self.snapobj.cosmopars.a \
                                 / self.snapobj.cosmopars.h \
                                 * c.cm_per_mpc / self.toCGS_coords_simxyz
-            self.coords_simxyx += 0.5 * self.boxsize_simu
+            self.coords_simxyz += 0.5 * self.boxsize_simu
             self.coords_simxyz %= self.boxsize_simu
-            self.coords_simxyx -= 0.5 * self.boxsize_simu
+            self.coords_simxyz -= 0.5 * self.boxsize_simu
     
     def __center_vel(self):
-        self.vcen_simu = np.astype(self.vcen_cmps / self.toCGS_vel_simxyz,
-                                   dtype=self.vel_simxyz.dtype)
+        self.vcen_simu = (self.vcen_cmps / self.toCGS_vel_simxyz).astype(
+            self.vel_simxyz.dtype)
         self.vel_simxyz -= self.vcen_simu
         if self.periodic:
             self.cosmopars = self.snapobj.cosmopars.getdct()
             self.vboxsize_simu = self.snapobj.cosmopars.boxsize \
                                  * self.snapobj.cosmopars.a \
                                  / self.snapobj.cosmopars.h \
-                                 * c.cm_per_mpc / self.toCGS_coords_simxyz \
+                                 * c.cm_per_mpc / self.toCGS_vel_simxyz \
                                  * cu.Hubble(cosmopars=self.cosmopars)
-            self.vel_simxyx += 0.5 * self.vboxsize_simu
+            self.vel_simxyz += 0.5 * self.vboxsize_simu
             self.vel_simxyz %= self.vboxsize_simu
-            self.vel_simxyx -= 0.5 * self.vboxsize_simu
+            self.vel_simxyz -= 0.5 * self.vboxsize_simu
         
     def calccoords(self, coordspecs, filterdct=None):
         '''
@@ -202,20 +202,23 @@ class CoordinateWranger:
         note that if for some reason a coordspec is requested twice, 
         the tuples will include the same object twice
         '''
-        self.coordspecs_in = [(key, coordspecs[key]) for key in coordspecs]
+        self.coordspecs_in = [[(key, dct[key]) for key in dct][0] 
+                              if len(dct) == 1 else
+                              ('coordspecs dicts should have length 1', dct)
+                              for dct in coordspecs]
         ## this priority setting can get messy very fast if I try to
         ## implement too much here.
         # which (groups of) properties to calculate, and in what order
         # a group is calculated in a single function named 
         # __calc_<group key>
-        self.calcorder = {'poscart': [('pos', 'allcart'), ('pos', 0),
-                                      ('pos', 1), ('pos', 2)],
-                          'poscen': [('pos', 'rcen')],
-                          'velcart': [('vel', 'allcart'), ('vel', 0),
-                                      ('vel', 1), ('vel', 2)],
-                          'veltot': [('vel', 'vtot')], 
-                          'velcen': [('vel', 'vrad')],
-                          }
+        self.calcorder = [('poscart', [('pos', 'allcart'), ('pos', 0),
+                                       ('pos', 1), ('pos', 2)]),
+                          ('poscen', [('pos', 'rcen')]),
+                          ('velcart', [('vel', 'allcart'), ('vel', 0),
+                                      ('vel', 1), ('vel', 2)]),
+                          ('veltot', [('vel', 'vtot')]), 
+                          ('velcen', [('vel', 'vrad')]),
+                         ]
         # what to get just because it's needed later
         # note: should include dependencies of dependencies
         self.dependencies = {('pos', 'rcen'): [('pos', 'allcart')],
@@ -229,19 +232,25 @@ class CoordinateWranger:
         for _coordspec in self.coordspecs_in:
             if _coordspec in self.dependencies:
                 self._coords_todo |= set(self.dependencies[_coordspec])
-        self.coords_todo = [[group[key] for key in group 
-                             if group[key] in self._coords_todo] 
-                            for group in self.calcorder]
+        self.coords_todo = [[specs[i] for i in range(len(specs)) 
+                             if specs[i] in self._coords_todo] 
+                            for key, specs in self.calcorder]
+        while [] in self.coords_todo:
+            self.coords_todo.remove([])
         # holds arrays calculated for output 
-        self.coords_outlist = [None] * len(self.coordspecs_in)
+        self.coords_outlist = [None for i in range(len(self.coordspecs_in))]
         # holds all calculated arrays, including those only needed as
         # dependencies. (keys are coordspecs tuples)
         self.coords_stored = {}
-        
+        print(f'calculations todo: {self.coords_todo}')
         for self.gicur, self.gcur in enumerate(self.coords_todo):
-            self.gkeymatch = [key for key in self.calcorder 
+            self.gkeymatch = [key for key, specs in self.calcorder 
                               if set(self.gcur).issubset(
-                                  set(self.calcorder[key]))]
+                                  set(specs))]
+            if len(self.gkeymatch) == 0:
+                msg = ('Invalid calccoords coordspec entry '
+                      f'(tuple from dict):\n{self.gcur}')
+                raise ValueError(msg)
             self.gkeymatch = self.gkeymatch[0]
             print(f'calculating {self.gcur}')
             if self.gkeymatch == 'poscart':
@@ -254,9 +263,9 @@ class CoordinateWranger:
                 self.__calc_veltot(self.gcur)
             elif self.gkeymatch == 'velcen':
                 self.__calc_velrad(self.gcur)
-            self.__update_out_todo()
+            self.__update_out_todo(self.gcur)
             print(f'still todo: {self.still_todo}')
-        del self.gcur, self.fcur, self.gkeymatch, self.coords_todo, 
+        del self.gcur, self.gkeymatch, self.coords_todo, 
         del self.coords_stored
         return self.coords_outlist
     
@@ -264,11 +273,12 @@ class CoordinateWranger:
         if ('pos', 'allcart') in specs or len(specs) > 1:
             self.__startcalc_pos(subindex=None)
             for self.scur in specs:
-                if self.spec == ('pos', 'allcart'):
+                if self.scur == ('pos', 'allcart'):
                     self._todoc_cur = {'cen_cm': self.cen_cm,
                                        'rotmatrix': self.rotmatrix,
                                        'rotcoord_index': [0, 1, 2],
                                        'units': 'cm'}
+                    print(self.coords_rotxyz.shape)
                     self.coords_stored[self.scur] = (self.coords_rotxyz, 
                                                      self.toCGS_coords_rotxyz,
                                                      self._todoc_cur)
@@ -279,7 +289,7 @@ class CoordinateWranger:
                                        'units': 'cm'}
                     # storing a view of an array could cause unexpected
                     # side-effects
-                    self._out = np.copy(self.coords_rotxyz[self.scur[1]])
+                    self._out = np.copy(self.coords_rotxyz[:, self.scur[1]])
                     self.coords_stored[self.scur] = (self._out, 
                                                      self.toCGS_coords_rotxyz,
                                                      self._todoc_cur)
@@ -311,8 +321,8 @@ class CoordinateWranger:
         if ('vel', 'allcart') in specs or len(specs) > 1:
             self.__startcalc_vel(subindex=None)
             for self.scur in specs:
-                if self.spec == ('vel', 'allcart'):
-                    self._todoc_cur = {'vcen_cmps': self.vcen,
+                if self.scur == ('vel', 'allcart'):
+                    self._todoc_cur = {'vcen_cmps': self.vcen_cmps,
                                        'rotmatrix': self.rotmatrix,
                                        'rotcoord_index': [0, 1, 2],
                                        'units': 'cm * s**-1'}
@@ -326,7 +336,7 @@ class CoordinateWranger:
                                        'units': 'cm * s**-1'}
                     # storing a view of an array could cause unexpected
                     # side-effects
-                    self._out = np.copy(self.vel_rotxyz[self.scur[1]])
+                    self._out = np.copy(self.vel_rotxyz[:, self.scur[1]])
                     self.coords_stored[self.scur] = (self._out, 
                                                      self.toCGS_vel_rotxyz,
                                                      self._todoc_cur)
@@ -376,7 +386,7 @@ class CoordinateWranger:
         # update output list
         for self.scur in specs:
             for self.i, self.si in enumerate(self.coordspecs_in):
-                if self.insub == self.si:
+                if self.scur == self.si:
                     self.coords_outlist[self.i] = self.coords_stored[self.si]
         del self.scur, self.i, self.si
         # clean up stored list
@@ -387,6 +397,7 @@ class CoordinateWranger:
             self.curstored = list(self.coords_stored)
             for self.kcur in self.curstored:
                 if not (np.any([self.kcur in self.dependencies[_s] 
-                                for _g in self.still_todo for _s in _g])):
+                                for _g in self.still_todo for _s in _g
+                                if _s in self.dependencies])):
                     del self.coords_stored[self.kcur]
             del self.kcur        

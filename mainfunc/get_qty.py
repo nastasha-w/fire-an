@@ -385,9 +385,11 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
             'center_cm': length-3 iterable of floats
                 Where to center the positions, along the simulation
                 x, y, z axes. Required argument.
+                Units: physical cm
             'vcen_cmps': length-3 iterable of floats
                 Where to center the velocities, along the simulation
                 x, y, z axes. Required argument for 'vel' quantities.
+                Units: physical cm/s
 
     Returns:
     --------
@@ -542,24 +544,28 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
                 msg = ('specify a velocity center (vcen_cmps) for velocities.'
                        f' gave maptype_args:\n{maptype_args}')
             raise ValueError(msg)
-        elif 'mulitple' in maptype_args:
+        elif 'multiple' in maptype_args:
             indct = []
+            vcen_set = False
             for cdct in maptype_args['multiple']:
                 if len(cdct) != 1:
                     msg = ('dictionaries in the "multiple" list should only'
                            ' contain a single "pos" or "vel" entry. This '
                            'argument was given as:'
-                           f'\n{maptype_args["mulitple"]}')
+                           f'\n{maptype_args["multiple"]}')
                     raise ValueError(msg)
                 if 'vel' in cdct:
                     if 'vcen_cmps' in maptype_args:
                         vcen_cmps = maptype_args['vcen_cmps']
+                        vcen_set = True
                     else:
                         msg = ('specify a velocity center (vcen_cmps)'
                                ' for velocities. gave maptype_args:'
                                f'\n{maptype_args}')
-                    raise ValueError(msg)
+                        raise ValueError(msg)
                 indct.append(cdct)
+            if not vcen_set:
+                vcen_cmps = None
         else: 
             msg = ('No coordinate type(s) specified ("pos", "vel", '
                    'or "multiple") in maptype_args. gave maptype_args:\n'

@@ -391,7 +391,7 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
     
     try:
         halodat, todoc = readhalodata_shrinkingsphere(
-            path, snapshot, meandef=('200c', 'BN98'))
+            path, snapshot, meandef=meandef)
         return halodat, todoc    
     except NoStoredMatchError as err:
         print(err)
@@ -426,10 +426,12 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                     val = np.string_(val)
                 cengrp.attrs.create(key, val)
             # center pars. subgroups for mvir/rvir def.
+            outputsingle = False
             if isinstance(meandef, type('')):
                 meandef = [meandef]
                 halodat['Rvir_cm'] = [halodat['Rvir_cm']] 
                 halodat['Mvir_g'] = [halodat['Mvir_g']] 
+                outputsingle = True
             for md, rv, mv in zip(meandef, halodat['Rvir_cm'], 
                                   halodat['Mvir_g']):
                 gn = f'Rvir_{md}'
@@ -437,6 +439,9 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                 vgrp.attrs.create('Rvir_cm', rv)
                 vgrp.attrs.create('Mvir_g', mv)
         print(f'Saved new halo data.')
+        if outputsingle:
+            halodat['Rvir_cm'] = halodat['Rvir_cm'][0]
+            halodat['Mvir_g'] = halodat['Mvir_g'][0]
         return halodat, todoc
 
 def adddata_cenrvir(rmtemp=False):
@@ -679,7 +684,7 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
         del dct_m[pt]
         del dct_r[pt]
     rsq_max = (radius_rvir * rvir_cm / toCGS_c)**2
-    psel = rsq < rsq_max
+    psel = rsq <= rsq_max
     del rsq
     
     dct_v = {}
@@ -696,7 +701,7 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
                        ' CGS conversions in ' + snap.firstfilen)
                 raise RuntimeError(msg)
     totlen = sum([len(dct_v[pt]) for pt in pt_used])
-    velocities = np.empty((totlen,), dtype=dct_v[pt_used[0]].dtype)
+    velocities = np.empty((totlen, 3), dtype=dct_v[pt_used[0]].dtype)
     start = 0
     for pt in pt_used:
         partlen = len(dct_v[pt])
@@ -705,7 +710,8 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
         del dct_v[pt]
     masses = masses[psel]
     velocities = velocities[psel]
-    vcom_codeunits = np.sum(masses * velocities, axis=0) / np.sum(masses)
+    vcom_codeunits = np.sum(masses[:, np.newaxis] * velocities, axis=0) \
+                     / np.sum(masses)
     vcom_cmps = vcom_codeunits * toCGS_v
     todoc['units'] = 'cm * s**-1'
     out = {'VXcom_cmps': vcom_cmps[0], 

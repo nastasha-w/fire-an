@@ -573,7 +573,8 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
             raise ValueError(msg)
         coordobj = coords.CoordinateWranger(snap, center_cm, rotmatrix=None,
                                             parttype=parttype, periodic=True, 
-                                            vcen_cmps=vcen_cmps)
+                                            vcen_cmps=vcen_cmps,
+                                            filterdct=filterdct)
         out = coordobj.calccoords(indct)
         if len(indct) == 1:
             qty, toCGS, todoc = out[0]

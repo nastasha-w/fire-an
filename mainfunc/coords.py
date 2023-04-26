@@ -6,7 +6,8 @@ import fire_an.utils.cosmo_utils as cu
 
 class CoordinateWranger:
     def __init__(self, snapobj, center_cm, rotmatrix=None,
-                 parttype=0, periodic=True, vcen_cmps=None):
+                 parttype=0, periodic=True, vcen_cmps=None,
+                 filterdct=None):
         '''
         class to get position and velocity info in different coordinate
         bases
@@ -31,7 +32,12 @@ class CoordinateWranger:
         vcen_cmps: float array, shape (3,)
             bulk velocity (subtracted from simulation velocities before
             any rotations, etc.), in cm/s
-
+        filterdct: dict with a 'filter' key or None
+            the 'filter' key value should be a boolean array with 
+            size matching the number of particles of the requested 
+            type. Coordinate values are only returned for the 
+            particles with True values.
+            The default is None. (Use all particles of specified type.)
         Note:
         -----
         These objects store the arrays they used, so it's best to 
@@ -47,6 +53,10 @@ class CoordinateWranger:
         self.pcalcstarted = False
         self.vcalcstarted = False
         self.__check_rotmatrix()
+        self.filter = slice(None, None, None)
+        if filterdct is not None:
+            if 'filter' in filterdct:
+                self.filter = filterdct['filter']
     
     def __check_rotmatrix(self):
         if self.rotmatrix is not None:
@@ -74,8 +84,8 @@ class CoordinateWranger:
             self._subindex = subindex
         else:
             self._subindex = None
-        self.coords_simxyz = self.snapobj.readarray(h5path, 
-                                                    subindex=self._subindex)
+        self.coords_simxyz = self.snapobj.readarray(
+            h5path, subindex=self._subindex)[self.filter]
         self.toCGS_coords_simxyz = self.snapobj.toCGS
         self.__center_pos()
         if self.rotmatrix is not None:
@@ -101,8 +111,8 @@ class CoordinateWranger:
             self._subindex = subindex
         else:
             self._subindex = None
-        self.vel_simxyz = self.snapobj.readarray(h5path, 
-                                                 subindex=self._subindex)
+        self.vel_simxyz = self.snapobj.readarray(
+            h5path, subindex=self._subindex)[self.filter]
         self.toCGS_vel_simxyz = self.snapobj.toCGS
         self.__center_vel()
         if self.rotmatrix is not None:
@@ -157,7 +167,7 @@ class CoordinateWranger:
             self.vel_simxyz %= self.vboxsize_simu
             self.vel_simxyx -= 0.5 * self.vboxsize_simu
         
-    def calccoords(self, coordspecs):
+    def calccoords(self, coordspecs, filterdct=None):
         '''
         calculate various coordinate values. Doing this all in one go
         should save some time from reading in large arrays multiple

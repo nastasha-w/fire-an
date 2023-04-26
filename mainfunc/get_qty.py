@@ -1,11 +1,13 @@
 
 
+from urllib.request import HTTPDigestAuthHandler
 import numpy as np
 import string
 
 from fire_an.ionrad.ion_utils import Linetable_PS20, atomw_u_dct, elt_atomw_cgs
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.opts_locs as ol
+import fire_an.mainfunc.coords as coords
 
 
 # tested -> seems to work
@@ -318,20 +320,21 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
         used to read in what is needed
     parttype: {0, 1, 4, 5}
         particle type
-    maptype: {'Mass', 'Volume', 'Metal', 'ion', 'sim-direct'}
+    maptype: {'Mass', 'Volume', 'Metal', 'ion', 'sim-direct', 'coords'}
         what sort of thing are we looking for
     maptype_args: dict or None
-        additional arguments for each maptype
+        additional arguments for each maptype (dictionary, keys are the
+        listed strings)
         for maptype value:
         'Mass': None (ignored)
-        'Metal': str
+        'Metal':
             number of nuclei or nucleus density (all ions together)
             'element': str
                 element name, e.g. 'oxygen'
             'density': bool
                 get the metal number density instead of number of nuclei.
                 The default is False.
-        'ion': str
+        'ion':
             number of ions or ion density
             'ion': str
                 ion name. format e.g. 'o6', 'fe17'
@@ -359,6 +362,32 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
             'field': str
                 the name of the field (after 'PartType<#>') to read 
                 in from the simulation.
+        'coords': (only one of 'pos', 'cen' allowed per item)
+            'pos': [0, 1, 2, 'allcart', 'rcen']
+                0, 1, 2: position along the axis with this index
+                'allcart': for all three of these cartesian axes
+                'rcen': distance to the center
+                The center is assumed to match the halo center used
+                for the map.
+            'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot']
+                 0, 1, 2: velocity along the axis with this index
+                'allcart': for all three of these cartesian axes
+                'vrad': radial velocity (relative to coordinate
+                        center)
+                'vtot': total velocity (rms coordinate velocties)
+            'multiple': list of dicts
+                instead of 'vel' or 'pos', specify a list of 
+                dictionaries with one 'vel' or 'pos' key each.
+                in this case, the function returns lists of
+                values, toCGS, and documenting dict
+                (outer list is values or toCGS or dict, inner list
+                 matches the different requested coordinates by index)
+            'center_cm': length-3 iterable of floats
+                Where to center the positions, along the simulation
+                x, y, z axes. Required argument.
+            'vcen_cmps': length-3 iterable of floats
+                Where to center the velocities, along the simulation
+                x, y, z axes. Required argument for 'vel' quantities.
 
     Returns:
     --------
@@ -497,6 +526,61 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
         todoc['units'] = '(cgs {})'.format(field)
         if field == 'Pressure':
             todoc['info'] = 'thermal pressure only'
+    elif maptype == 'coords':
+        if 'pos' in maptype_args:
+            if 'vel' in maptype_args:
+                msg = ('specify "vel" XOR "pos" for coordinate quantities. '
+                       f'gave maptype_args:\n{maptype_args}')
+                raise ValueError(msg)
+            indct = [{'pos': maptype_args['pos']}]
+            vcen_cmps = None
+        elif 'vel' in maptype_args:
+            indct = [{'vel': maptype_args['vel']}]
+            if 'vcen_cmps' in maptype_args:
+                vcen_cmps = maptype_args['vcen_cmps']
+            else:
+                msg = ('specify a velocity center (vcen_cmps) for velocities.'
+                       f' gave maptype_args:\n{maptype_args}')
+            raise ValueError(msg)
+        elif 'mulitple' in maptype_args:
+            indct = []
+            for cdct in maptype_args['multiple']:
+                if len(cdct) != 1:
+                    msg = ('dictionaries in the "multiple" list should only'
+                           ' contain a single "pos" or "vel" entry. This '
+                           'argument was given as:'
+                           f'\n{maptype_args["mulitple"]}')
+                    raise ValueError(msg)
+                if 'vel' in cdct:
+                    if 'vcen_cmps' in maptype_args:
+                        vcen_cmps = maptype_args['vcen_cmps']
+                    else:
+                        msg = ('specify a velocity center (vcen_cmps)'
+                               ' for velocities. gave maptype_args:'
+                               f'\n{maptype_args}')
+                    raise ValueError(msg)
+                indct.append(cdct)
+        else: 
+            msg = ('No coordinate type(s) specified ("pos", "vel", '
+                   'or "multiple") in maptype_args. gave maptype_args:\n'
+                   f'{maptype_args}')
+            raise ValueError(msg)
+        if 'center_cm' in maptype_args:
+            center_cm = maptype_args['center_cm']
+        else:
+            msg = ('specify a center (center_cm) for coordinate quantities. '
+                   f'gave maptype_args:\n{maptype_args}')
+            raise ValueError(msg)
+        coordobj = coords.CoordinateWranger(snap, center_cm, rotmatrix=None,
+                                            parttype=parttype, periodic=True, 
+                                            vcen_cmps=vcen_cmps)
+        out = coordobj.calccoords(indct)
+        if len(indct) == 1:
+            qty, toCGS, todoc = out[0]
+        else:
+            qty = [out[i][0] for i in range(len(indct))]
+            toCGS = [out[i][1] for i in range(len(indct))]
+            todoc = [out[i][2] for i in range(len(indct))]
     else:
         raise ValueError('Invalid maptype: {}'.format(maptype))
     return qty, toCGS, todoc

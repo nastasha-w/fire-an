@@ -111,7 +111,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                         halodat['Zc_ckpc']])
         cen_cm = cen * snap.cosmopars.a * 1e-3 * c.cm_per_mpc 
         rvir_cm = halodat['Rvir_cm'] 
-    elif center ==  'shrinksph':
+    elif center == 'shrinksph':
         halodat, _ = hp.gethalodata_shrinkingsphere(dirpath, snapnum,
                                                     meandef='BN98')
         cen_cm = np.array([halodat['Xc_cm'], 

@@ -84,17 +84,21 @@ class CoordinateWranger:
             self._subindex = subindex
         else:
             self._subindex = None
+        self.sel = (self.filter, slice(None, None, None)) \
+                   if self._subindex is None else \
+                   self.filter
         self.coords_simxyz = self.snapobj.readarray(
-            h5path, subindex=self._subindex)[self.filter, :]
+            h5path, subindex=self._subindex)[self.sel]
+        del self.sel
         self.toCGS_coords_simxyz = self.snapobj.toCGS
         self.__center_pos()
         if self.rotmatrix is not None:
             self.__rotate_pos()
         else:
             self.coords_rotxyz = self.coords_simxyz
-            self.toCGS_coords_rotxyz = self.toCGS_coords_simxyz
-        if subindex is not None:
-            self.coords_rotxyz = np.copy(self.coords_rotxyz[subindex])
+        self.toCGS_coords_rotxyz = self.toCGS_coords_simxyz
+        if subindex is not None and self.rotmatrix is not None:
+            self.coords_rotxyz = np.copy(self.coords_rotxyz[:, subindex])
         del self.coords_simxyz
         del self.toCGS_coords_simxyz
         self.pcalcstarted = True
@@ -111,15 +115,21 @@ class CoordinateWranger:
             self._subindex = subindex
         else:
             self._subindex = None
+        self.sel = (self.filter, slice(None, None, None)) \
+              if self._subindex is None else \
+              self.filter
         self.vel_simxyz = self.snapobj.readarray(
-            h5path, subindex=self._subindex)[self.filter, :]
+            h5path, subindex=self._subindex)[self.sel]
+        del self.sel
         self.toCGS_vel_simxyz = self.snapobj.toCGS
         self.__center_vel()
         if self.rotmatrix is not None:
             self.__rotate_vel()
         else:
             self.vel_rotxyz = self.vel_simxyz
-            self.toCGS_vel_rotxyz = self.toCGS_vel_simxyz
+        self.toCGS_vel_rotxyz = self.toCGS_vel_simxyz
+        if subindex is not None and self.rotmatrix is not None:
+            self.vel_rotxyz = np.copy(self.vel_rotxyz[:, subindex])
         del self.vel_simxyz
         del self.toCGS_vel_simxyz
         self.vcalcstarted = True
@@ -142,7 +152,11 @@ class CoordinateWranger:
     def __center_pos(self):
         self.center_simu = (self.cen_cm / self.toCGS_coords_simxyz).astype(
             self.coords_simxyz.dtype)
-        self.coords_simxyz -= self.center_simu
+        self._sel = (np.newaxis, slice(None, None, None)) \
+                    if self._subindex is None else \
+                    self._subindex
+        self.coords_simxyz -= self.center_simu[self._sel]
+        del self._sel
         if self.periodic:
             self.boxsize_simu = self.snapobj.cosmopars.boxsize \
                                 * self.snapobj.cosmopars.a \
@@ -155,7 +169,11 @@ class CoordinateWranger:
     def __center_vel(self):
         self.vcen_simu = (self.vcen_cmps / self.toCGS_vel_simxyz).astype(
             self.vel_simxyz.dtype)
-        self.vel_simxyz -= self.vcen_simu
+        self._sel = (np.newaxis, slice(None, None, None)) \
+                    if self._subindex is None else \
+                    self._subindex
+        self.vel_simxyz -= self.vcen_simu[self._sel]
+        del self._sel
         if self.periodic:
             self.cosmopars = self.snapobj.cosmopars.getdct()
             self.vboxsize_simu = self.snapobj.cosmopars.boxsize \
@@ -278,7 +296,6 @@ class CoordinateWranger:
                                        'rotmatrix': self.rotmatrix,
                                        'rotcoord_index': [0, 1, 2],
                                        'units': 'cm'}
-                    print(self.coords_rotxyz.shape)
                     self.coords_stored[self.scur] = (self.coords_rotxyz, 
                                                      self.toCGS_coords_rotxyz,
                                                      self._todoc_cur)
@@ -367,10 +384,9 @@ class CoordinateWranger:
     def __calc_velrad(self, specs):
         self.scur = specs[0]
         self._cendir = self.coords_stored[('pos', 'allcart')][0]
-        self._cendir /= self.coords_stored[('pos', 'rcen')][0]
-        self._out = np.tensordot(self.cendir, 
-                                 self.coords_stored[('vel', 'allcart')][0],
-                                 axes=(self.coordaxis, self.coordaxis))
+        self._cendir /= self.coords_stored[('pos', 'rcen')][0][:, np.newaxis]
+        self._out = np.einsum('ij,ij->i', self._cendir, 
+                              self.coords_stored[('vel', 'allcart')][0])
         self._units = self.coords_stored[('vel', 'allcart')][1]
         self._todoc_cur = self.coords_stored[('vel', 'allcart')][2].copy()
         del self._todoc_cur['rotmatrix']

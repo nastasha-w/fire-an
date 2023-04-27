@@ -543,7 +543,7 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
             else:
                 msg = ('specify a velocity center (vcen_cmps) for velocities.'
                        f' gave maptype_args:\n{maptype_args}')
-            raise ValueError(msg)
+                raise ValueError(msg)
         elif 'multiple' in maptype_args:
             indct = []
             vcen_set = False
@@ -578,7 +578,7 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
                    f'gave maptype_args:\n{maptype_args}')
             raise ValueError(msg)
         coordobj = coords.CoordinateWranger(snap, center_cm, rotmatrix=None,
-                                            parttype=parttype, periodic=True, 
+                                            parttype=parttype, periodic=False, 
                                             vcen_cmps=vcen_cmps,
                                             filterdct=filterdct)
         out = coordobj.calccoords(indct)

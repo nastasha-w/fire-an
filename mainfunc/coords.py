@@ -85,7 +85,7 @@ class CoordinateWranger:
         else:
             self._subindex = None
         self.coords_simxyz = self.snapobj.readarray(
-            h5path, subindex=self._subindex)[self.filter]
+            h5path, subindex=self._subindex)[self.filter, :]
         self.toCGS_coords_simxyz = self.snapobj.toCGS
         self.__center_pos()
         if self.rotmatrix is not None:
@@ -112,7 +112,7 @@ class CoordinateWranger:
         else:
             self._subindex = None
         self.vel_simxyz = self.snapobj.readarray(
-            h5path, subindex=self._subindex)[self.filter]
+            h5path, subindex=self._subindex)[self.filter, :]
         self.toCGS_vel_simxyz = self.snapobj.toCGS
         self.__center_vel()
         if self.rotmatrix is not None:

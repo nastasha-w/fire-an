@@ -374,24 +374,23 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         mmap = omapW
         mdoc = todocW
         mlog = logmap
-
     else:
-        if logweightmap:
+        if logmap:
             omapQ = np.log10(mapQ)
             omapQ += np.log10(multipafterQ)
         else:
             mapQ *= multipafterQ
             omapQ = mapQ
         if save_weightmap:
-            if logmap:
+            if logweightmap:
                 omapW = np.log10(mapW)
-                olmapW += np.log10(multipafterW)
+                omapW += np.log10(multipafterW)
             else:
                 mapW *= multipafterW
                 omapW = mapW
         mmap = omapQ
         mdoc = todocQ
-        mlog = logweightmap
+        mlog = logmap
 
     with h5py.File(outfilen, 'w') as f:
         # map (emulate make_maps format)

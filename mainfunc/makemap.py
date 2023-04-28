@@ -10,6 +10,7 @@ from fire_an.utils.projection import project
 
 def savedict_hdf5(grp, dct):
     for key in dct:
+        val = dct[key]
         if isinstance(val, type('')):
             val = np.string_(val)
         elif val is None:
@@ -64,13 +65,13 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
               and np.any(['vel' in dct for dct in typeargs['multiple']]))
     outdoc = {}
     typeargs_out = typeargs.copy()
-    if ('rcen_cm' not in typeargs) or \
-       ('rcen_cm' in typeargs and typeargs['rcen_cm'] is None):
+    if ('center_cm' not in typeargs) or \
+       ('center_cm' in typeargs and typeargs['center_cm'] is None):
         rhdat, rdoc = hp.gethalodata_shrinkingsphere(simpath, snapnum, 
                                                      meandef='BN98')
         outdoc.update({'coords_' + key: rdoc[key] for key in rdoc})
         rcen_cm = np.array([rhdat['Xc_cm'], rhdat['Yc_cm'], rhdat['Zc_cm']])
-        typeargs_out.update({'rcen_cm': rcen_cm})
+        typeargs_out.update({'center_cm': rcen_cm})
         outdoc.update({'coords_rcen_cm_in': 'default'})
         outdoc.update({'coords_center': 'shrinksph'})
     if needsv:
@@ -138,8 +139,8 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             center='shrinksph', norm='pixsize_phys',
             maptype='Mass', maptype_args=None,
             weighttype=None, weighttype_args=None,
-            save_weightmap=False, logmapW=True,
-            logmapQ=False):
+            save_weightmap=False, logmap=True,
+            logweightmap=True):
     '''
     Creates a mass map projected perpendicular to a line of sight axis
     by assuming the simulation resolution elements divide their mass 
@@ -208,13 +209,13 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         Axis2 = 1
         Axis3 = 2
     elif axis == 'x':
-        Axis1 = 2
-        Axis2 = 0
-        Axis3 = 1
-    elif axis == 'y':
         Axis1 = 1
         Axis2 = 2
         Axis3 = 0
+    elif axis == 'y':
+        Axis1 = 2
+        Axis2 = 0
+        Axis3 = 1
     else:
         msg = 'axis should be "x", "y", or "z", not {}'
         raise ValueError(msg.format(axis))
@@ -364,25 +365,25 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                          'C2', dct, tree, ompproj=True, 
                          projmin=None, projmax=None)
     if weighttype is None:
-        if logmapW:
+        if logmap:
             omapW = np.log10(mapW)
-            olmapW += np.log10(multipafterW)
+            omapW += np.log10(multipafterW)
         else:
             mapW *= multipafterW
             omapW = mapW
         mmap = omapW
         mdoc = todocW
-        mlog = logmapW
+        mlog = logmap
 
     else:
-        if logmapQ:
+        if logweightmap:
             omapQ = np.log10(mapQ)
             omapQ += np.log10(multipafterQ)
         else:
             mapQ *= multipafterQ
             omapQ = mapQ
         if save_weightmap:
-            if logmapW:
+            if logmap:
                 omapW = np.log10(mapW)
                 olmapW += np.log10(multipafterW)
             else:
@@ -390,7 +391,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                 omapW = mapW
         mmap = omapQ
         mdoc = todocQ
-        mlog = logmapQ
+        mlog = logweightmap
 
     with h5py.File(outfilen, 'w') as f:
         # map (emulate make_maps format)
@@ -436,16 +437,9 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             igrp.attrs.create('maptype_args', np.string_('dict'))
             _grp = igrp.create_group('maptype_args_dict')
             savedict_hdf5(_grp, maptype_args)
-        for key in mdoc:
-            if key == 'units':
-                val = mdoc[key]
-                if weighttype is None:
-                    val = val + norm_units
-            else:
-                val = mdoc[key]
-            if isinstance(val, type('')):
-                val = np.string_(val)
-            igrp.attrs.create(key, val)
+        if weighttype is None and 'units' in mdoc:
+            mdoc['units'] = mdoc['units'] + norm_units
+        savedict_hdf5(igrp, mdoc)
         if weighttype is None:
             igrp.attrs.create('weighttype', np.string_('None'))
             igrp.attrs.create('weighttype_args', np.string_('None'))
@@ -457,19 +451,13 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                 igrp.attrs.create('weighttype_args', np.string_('dict'))
                 _grp = igrp.create_group('weighttype_args_dict')
                 savedict_hdf5(_grp, weighttype_args)
-                for key in todocW:
-                    if key == 'units':
-                        val = todocW[key]
-                        val = val + norm_units
-                    else:
-                        val = todocW[key]
-                    if isinstance(val, type('')):
-                        val = np.string_(val)
-                    igrp.attrs.create(key, val)
+                if 'units' in todocW:
+                    todocW['units'] = todocW['units'] + norm_units
+                savedict_hdf5(igrp, todocW)
             if save_weightmap:
                 f.create_dataset('weightmap', data=omapW)
-                f['weightmap'].attrs.create('log', logmapW)
-                if logmapW:
+                f['weightmap'].attrs.create('log', logweightmap)
+                if logweightmap:
                     minfinite = np.min(omapW[np.isfinite(omapW)])
                     f['weightmap'].attrs.create('minfinite', minfinite)
                 else:

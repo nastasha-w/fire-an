@@ -203,34 +203,6 @@ def calchalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                     dens_targets_cgs]
     dens2_order = (np.cumsum(masses_order)**2) \
                   / ((4. * np.pi / 3)**2 * r2_order**3)
-    # plotting sqrt dens2_order vs. sqrt r2_order, dens_targets -> 
-    # intersect at ~200 ckpc/h at z=2.8 for the m13 guinea pig
-    # seems reasonable...
-    # tests on buggy constant halo mass issue
-    #fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(5.5, 5.))
-    #outfn1 = ('/scratch1/08466/tg877653/output/'
-    #          f'debug_rvir_{path.split("/")[-1]}_snapshot{snapshot}.pdf')
-    #ax.plot(np.sqrt(r2_order[::1000]), np.sqrt(dens2_order[::1000]))
-    #ax.set_xlabel('radius [sim units]', fontsize=12)
-    #ax.set_ylabel('density [sim units]', fontsize=12)
-    #ax.set_yscale('log')
-    #ax.set_xscale('log')
-    #for t in dens_targets:
-    #    ax.axhline(t)
-    #plt.savefig(outfn1, bbox_inches='tight')
-    #
-    #fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(5.5, 5.))
-    #outfn2 = ('/scratch1/08466/tg877653/output/'
-    #          f'debug2_rvir_{path.split("/")[-1]}_snapshot{snapshot}.pdf')
-    #ax.plot(np.sqrt(r2_order[::1000]), np.sqrt(cmass2[::1000]))
-    #ax.set_xlabel('radius [sim units]', fontsize=12)
-    #ax.set_ylabel('cumul. mass [sim units]', fontsize=12)
-    #ax.set_yscale('log')
-    #ax.set_xscale('log')
-    #plt.savefig(outfn2, bbox_inches='tight')
-    #print('Last 100 values in cmass2 array (cumul. mass [sim units])**2:')
-    #print(cmass2[-100:])
-
 
     rsols_cgs = []
     msols_cgs = []
@@ -468,6 +440,7 @@ def adddata_cenrvir(rmtemp=False):
     with h5py.File(mainfilen, 'a') as fo:
         #print(mainfilen)
         for tfn in tempfilens:
+            vcomfile = (tfn.split('/')[-1]).startswith('temp_vcom')
             with h5py.File(tfn, 'r') as fi:
                 # should have one sim, snap, cen group
                 # possibly multiple rvir definitions
@@ -540,7 +513,8 @@ def adddata_cenrvir(rmtemp=False):
                         fi_dct = dict(fi_cgrp[mdn].attrs.items())
                         fo_dct = dict(fo_cgrp[mdn].attrs.items())
                         if fi_dct == fo_dct:
-                            pass # still need to check for any Vcom
+                            if not vcomfile:
+                                break
                         else:
                             msg = (f'{mainfilen} and {tfn} have matching'
                                    f'simulation {simid}, {sngrpn}, '
@@ -554,46 +528,47 @@ def adddata_cenrvir(rmtemp=False):
                         print(f'{simid}, {sngrpn}, {fi_mrdefs}')
                 fi_rgrp = fi_cgrp[mdn]
                 fo_rgrp = fo_cgrp[mdn]
-                # Vcom copy, if any
-                if 'Vcom0' not in fi_rgrp: # no Vcom data to copy
-                    continue
-                elif 'Vcom0' not in fo.rgrp:
-                    fi.copy(fi_rgrp['Vcom0'], fo_rgrp, name='Vcom0')
-                    print(f'Added Vcom file {tfn}:')
-                    l2 = (f'{simid}, {sngrpn}, {fo_cgrpn}, {fi_mrdefs}'
-                          ', first Vcom')
-                    print(l2)
-                    continue
-                vcom_fo = [grp for grp in fo_rgrp.keys() \
-                           if grp.startswith('Vcom')]
-                fi_vgrp = fi_rgrp['Vcom0']
-                tocheck = ['VXcom_cmps', 'VYcom_cmps', 'VZcom_cmps']
-                anymatch = False
-                for vgrpn in vcom_fo:
-                    _fo_vgrp = fo_rgrp[vgrpn]
-                    tomatch = set(fi_vgrp.attrs.keys()) - set(tocheck)
-                    # using: 'parttypes_used' is a tuple, comparison to 
-                    # array gives boolean array, or False if different lengths
-                    if np.all([np.all(_fo_vgrp.attrs[key] \
-                                      == fi_vgrp.attrs[key])\
-                            for key in tomatch]):
-                        fo_vgrp = _fo_vgrp
-                        anymatch = True
-                        if not np.all([np.all(_fo_vgrp.attrs[key] \
-                                    == fi_vgrp.attrs[key])\
-                                    for key in tocheck]):
-                            msg = (f'{mainfilen} and {tfn} have matching'
-                                f'simulation {simid}, {sngrpn}, '
-                                f'center finding, {mdn} but different Vcom:\n'
-                                f'{fo_vgrp.attrs.items()},\n'
-                                f'{fi_vgrp.attrs.items()}')
-                            raise RuntimeError(msg)
-                if not anymatch:
-                    fo_vgrpn = f'cen{len(vcom_fo)}'
-                    fi.copy(fi_vgrp, fo_vgrp, name=fo_vgrpn)
-                    print(f'Added file {tfn}:')
-                    print(f'{simid}, {sngrpn}, {mdn}, new Vcom')
-                    continue
+                # Vcom copy, if any 
+                if vcomfile:
+                    if 'Vcom0' not in fo_rgrp:
+                        fi.copy(fi_rgrp['Vcom0'], fo_rgrp, name='Vcom0')
+                        print(f'Added Vcom file {tfn}:')
+                        l2 = (f'{simid}, {sngrpn}, {fo_cgrpn}, {fi_mrdefs}'
+                            ', first Vcom')
+                        print(l2)
+                        continue
+                    vcom_fo = [grp for grp in fo_rgrp.keys() \
+                               if grp.startswith('Vcom')]
+                    fi_vgrp = fi_rgrp['Vcom0']
+                    tocheck = ['VXcom_cmps', 'VYcom_cmps', 'VZcom_cmps']
+                    anymatch = False
+                    for vgrpn in vcom_fo:
+                        _fo_vgrp = fo_rgrp[vgrpn]
+                        tomatch = set(fi_vgrp.attrs.keys()) - set(tocheck)
+                        # using: 'parttypes_used' is a tuple, 
+                        # comparison to array gives boolean array, or
+                        # False if different lengths
+                        if np.all([np.all(_fo_vgrp.attrs[key] \
+                                        == fi_vgrp.attrs[key])\
+                                for key in tomatch]):
+                            fo_vgrp = _fo_vgrp
+                            anymatch = True
+                            if not np.all([np.all(_fo_vgrp.attrs[key] \
+                                        == fi_vgrp.attrs[key])\
+                                        for key in tocheck]):
+                                msg = (f'{mainfilen} and {tfn} have matching'
+                                       f'simulation {simid}, {sngrpn}, '
+                                       f'center finding, {mdn}'
+                                       ' but different Vcom:\n'
+                                       f'{fo_vgrp.attrs.items()},\n'
+                                       f'{fi_vgrp.attrs.items()}')
+                                raise RuntimeError(msg)
+                    if not anymatch:
+                        fo_vgrpn = f'Vcom{len(vcom_fo)}'
+                        fi.copy(fi_vgrp, fo_rgrp, name=fo_vgrpn)
+                        print(f'Added file {tfn}:')
+                        print(f'{simid}, {sngrpn}, {mdn}, new Vcom')
+                        continue
             print(f'skipped {tfn}; duplicate data')
             if rmtemp:
                 print(f'deleting {tfn}')
@@ -629,7 +604,7 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
     cen_cm = np.array([halodat['Xc_cm'], halodat['Yc_cm'], halodat['Zc_cm']])
     rvir_cm = halodat['Rvir_cm']
     snap = rf.get_Firesnap(path, snapshot)
-    todoc = {}
+    todoc = {'radius_rvir': radius_rvir}
 
     # get mass and coordinate data
     if parttypes == 'all':
@@ -718,6 +693,8 @@ def calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
            'VYcom_cmps': vcom_cmps[1],
            'VZcom_cmps': vcom_cmps[2]}
     halodat.update(out)
+    print('todoc output calc_vcom:')
+    print(todoc)
     return halodat, todoc
 
 
@@ -725,8 +702,8 @@ def readdata_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
                   parttypes='all', datafile=None):
     # raises NoStoredMatchError if data isn't present 
     # -> also no vcom data present
-    halodat = readhalodata_shrinkingsphere(path, snapshot, 
-                                           meandef=meandef_rvir)
+    halodat, todoc_cen = readhalodata_shrinkingsphere(path, snapshot,
+                                                      meandef=meandef_rvir)
     
     todoc = {}
     usedvals_calchalo = {'shrinkfrac': 0.025, 
@@ -745,7 +722,9 @@ def readdata_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
     if parttypes == 'all':
         pts_vcom = pts
     else:
-        pts_vcom = tuple(list(pts).sort())
+        pts_vcom = list(parttypes)
+        pts_vcom.sort()
+        pts_vcom = tuple(pts_vcom)
 
     usedvalues_calcvcom = {'radius_rvir': radius_rvir,
                            'parttypes_used': pts_vcom}
@@ -802,18 +781,17 @@ def readdata_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
                 halodat['VZcom_cmps'] = vgrp.attrs['VZcom_cmps']
                 todoc.update(usedvalues_calcvcom)
                 break
-            if 'VXcom_cmps' not in halodat:
-                msg = (f'No Vcom stored for {path}, snapshot {snapshot}, '
-                       f'radius_rvir {radius_rvir}, meandef_rvir '
-                       f'{meandef_rvir}, particle types {pts_vcom}')
-                raise NoStoredMatchError(msg)
+        if 'VXcom_cmps' not in halodat:
+            msg = (f'No Vcom stored for {path}, snapshot {snapshot}, '
+                    f'radius_rvir {radius_rvir}, meandef_rvir '
+                    f'{meandef_rvir}, particle types {pts_vcom}')
+            raise NoStoredMatchError(msg)
     print(f'Retrieved stored halo data from {filen_main}')
     return halodat, todoc 
 
 def writedata_vcom(halodat, todoc,
                    path, snapshot, meandef_rvir='BN98',
                    datafile=None):
-    todoc = {}
     usedvals_calchalo = {'shrinkfrac': 0.025, 
                          'minparticles': 1000., 
                          'initialradiusfactor': 1.,
@@ -898,10 +876,12 @@ def writedata_vcom(halodat, todoc,
                         f'{rgrp.attrs.items()},\n'
                         f'{halodat}')
                 raise RuntimeError(msg)
+            for key in ['Mvir_g', 'Rvir_cm']:
+                rgrp.attrs.create(key, halodat[key])
         else:
             rgrp = cgrp.create_group(rgrpn)
-            for key in ['Mvir_g', 'Rvir_g']:
-                cgrp.attrs.create(key, halodat[key])
+            for key in ['Mvir_g', 'Rvir_cm']:
+                rgrp.attrs.create(key, halodat[key])
         vmatch = False
         for vcomgrpn in rgrp.keys():
             if not vcomgrpn.startswith('Vcom'):
@@ -935,8 +915,8 @@ def writedata_vcom(halodat, todoc,
             for key in ['VXcom_cmps', 'VYcom_cmps', 'VZcom_cmps']:
                 vgrp.attrs.create(key, halodat[key])
 
-def getvcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
-            parttypes_vcom='all'):
+def get_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
+             parttypes='all'):
     '''
     same in/output as calchalodata_shrinkingsphere,
     but reads data from file if stored, and stores data to a temporary
@@ -945,151 +925,15 @@ def getvcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
     file. (Doing this during the main run could cause issues if multiple
     processes try to write to the same file at the same time.)
     '''
-    # this must contain *all* todoc entries from calc_halodata
-    # used to calculate the halo COM and Rvir
-    # except 'parttypes_used', which is assumed to be everything but
-    # PartType2 (lo-res DM) present in the NumPart_Total table
-    # note that a different set of particles may be used for the 
-    # COM velocity, 
-    gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98'))
-    usedvals_calchalo = {'shrinkfrac': 0.025, 
-                         'minparticles': 1000., 
-                         'initialradiusfactor': 1.,
-                         'minpart_halo': 1000.}
-    snap = rf.get_Firesnap(path, snapshot, filetype='snap')
-    with h5py.File(snap.firstfilen) as f:
-        pts = list(f['Header'].attrs['NumPart_Total'])
-    pts = [ind for ind in range(len(pts)) if pts[ind] > 0]
-    pts.remove(2)
-    pts.sort()
-    usedvals_calchalo['parttypes_used'] = tuple(pts)
-                                                
-    fdir = ol.dir_halodata
-    filen_main = ol.filen_halocenrvir
-    
-    newcalc = False
-    pparts = path.split('/')
-    while '' in pparts:
-        pparts.remove('')
-    if pparts[-1] == 'output':
-        pparts = pparts[:-1]
-    simid = pparts[-1]
-    
-    try:
-        with h5py.File(filen_main, 'r') as f:
-            todoc = {}
-            halodat = {}
-            # check simulation run, snapshot
-            if simid in f:
-                smgrp = f[simid]
-            else:
-                raise NoStoredMatchError(f'Simulation {simid}')
-            snn = f'snap_{snapshot}'
-            if snn in smgrp:
-                sngrp = smgrp[snn]
-            else:
-                raise NoStoredMatchError(f'Simulation {simid}, {snn}')
-            cosmopars = {}
-            for key, val in sngrp['cosmopars'].attrs.items():
-                cosmopars[key] = val
-            todoc['cosmopars'] = cosmopars
-            # check center finding
-            cengrpns = [grp for grp in sngrp.keys() if grp.startswith('cen')]
-            for cengrpn in cengrpns:
-                cgrp = sngrp[cengrpn]
-                tomatch = usedvals_calchalo.keys()
-                # using: 'parttypes_used' is a tuple, comparison to 
-                # array gives boolean array, or False if different lengths
-                if np.all([np.all(usedvals_calchalo[key] == cgrp.attrs[key])\
-                           for key in tomatch]):
-                    halodat['Xc_cm'] = cgrp.attrs['Xc_cm']
-                    halodat['Yc_cm'] = cgrp.attrs['Yc_cm']
-                    halodat['Zc_cm'] = cgrp.attrs['Zc_cm']
-                    todoc.update(usedvals_calchalo)
-                    break
-            if 'Xc_cm' not in halodat:
-                msg = (f'Simulation {simid}, {snn}, '
-                       f'center finding parameters {usedvals_calchalo}')
-                raise NoStoredMatchError(msg)
-            # check Mvir/Rvir def.
-            outputsingle = False
-            if isinstance(meandef, type('')):
-                meandef = [meandef]
-                outputsingle = True
-            halodat['Rvir_cm'] = [] 
-            halodat['Mvir_g'] = [] 
-            for md in meandef:
-                subgrpn = f'Rvir_{md}'
-                if subgrpn in cgrp:
-                    sgrp = cgrp[subgrpn]
-                    halodat['Rvir_cm'].append(sgrp.attrs['Rvir_cm'])
-                    halodat['Mvir_g'].append(sgrp.attrs['Mvir_g'])
-                else:
-                    msg = (f'Simulation {simid}, {snn}, '
-                           f'center finding parameters {usedvals_calchalo}, '
-                           f'overdensity definition {md}')
-                    raise NoStoredMatchError(msg)
-            if outputsingle:
-                halodat['Rvir_cm'] = halodat['Rvir_cm'][0]
-                halodat['Mvir_g'] = halodat['Mvir_g'][0]
-        print(f'Retrieved stored halo data from {filen_main}')
-        return halodat, todoc    
-    except NoStoredMatchError as err:
-        print(err)
-        print('Center, Rvir were not stored')
-        newcalc = True
-    
-    if newcalc:
-        print('Calculating halo data...')
-        halodat, todoc = calchalodata_shrinkingsphere(path, snapshot, 
-                                                      meandef=meandef)
-        print('Halo data calculated.')
-        filen = fdir + f'temp_cen_rvir_{uuid.uuid1()}.hdf5'
-        print(f'Saving data to file {filen}')
-        if os.path.isfile(filen):
-            msg = f'Temporary center/Rvir file {filen} already exists'
-            raise RuntimeError(msg)
-        with h5py.File(filen, 'w') as f:
-            # sim, snap groups
-            smgrp = f.create_group(simid)
-            sngrp = smgrp.create_group(f'snap_{snapshot}')
-            cmgrp = sngrp.create_group('cosmopars')
-            for key in todoc['cosmopars']:
-                cmgrp.attrs.create(key, todoc['cosmopars'][key])
-            del todoc['cosmopars']
-            # sim/snap subgroup for center pars.
-            cengrp = sngrp.create_group('cen0')
-            for cv in ['Xc_cm', 'Yc_cm', 'Zc_cm']:
-                cengrp.attrs.create(cv, halodat[cv])
-            for key in todoc:
-                val = todoc[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                cengrp.attrs.create(key, val)
-            # center pars. subgroups for mvir/rvir def.
-            if isinstance(meandef, type('')):
-                meandef = [meandef]
-                halodat['Rvir_cm'] = [halodat['Rvir_cm']] 
-                halodat['Mvir_g'] = [halodat['Mvir_g']] 
-            for md, rv, mv in zip(meandef, halodat['Rvir_cm'], 
-                                  halodat['Mvir_g']):
-                gn = f'Rvir_{md}'
-                vgrp = cengrp.create_group(gn)
-                vgrp.attrs.create('Rvir_cm', rv)
-                vgrp.attrs.create('Mvir_g', mv)
-        print(f'Saved new halo data.')
-        return halodat, todoc
-
-def get_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
-             parttypes='all'):
     try:
         out = readdata_vcom(path, snapshot, radius_rvir, 
                             meandef_rvir=meandef_rvir,
                             parttypes=parttypes, datafile=None)
-    except NoStoredMatchError:
+    except NoStoredMatchError as err:
+        print(err)
         print('Calculating COM velocity')
-        out = calc_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
-                        parttypes='all')
+        out = calc_vcom(path, snapshot, radius_rvir, meandef_rvir=meandef_rvir,
+                        parttypes=parttypes)
         print('Vcom calculated.')
         filen = ol.dir_halodata + f'temp_vcom_{uuid.uuid1()}.hdf5'
         print(f'Saving data to file {filen}')
@@ -1099,6 +943,8 @@ def get_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
         writedata_vcom(out[0], out[1],
                        path, snapshot, meandef_rvir=meandef_rvir,
                        datafile=filen)
+        print(f'Saved new halo data.')
+    return out
         
 def halodata_rockstar(path, snapnum, select='maxmass', 
                       masspath='mass.vir'):

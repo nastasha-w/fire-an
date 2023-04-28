@@ -15,7 +15,10 @@ from fire_an.utils.projection import project
 def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             pixsize_pkpc=3., axis='z', outfilen=None,
             center='shrinksph', norm='pixsize_phys',
-            maptype='Mass', maptype_args=None):
+            maptype='Mass', maptype_args=None,
+            weighttype=None, weighttype_args=None,
+            save_weightmap=False, logmapW=True,
+            logmapQ=False):
     '''
     Creates a mass map projected perpendicular to a line of sight axis
     by assuming the simulation resolution elements divide their mass 
@@ -54,13 +57,23 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     norm: {'pixsize_phys'}
         how to normalize the column values 
         'pixsize_phys': [quantity] / cm**2
-    maptype: {'Mass', 'Metal', 'ion'}
+    maptype: {'Mass', 'Metal', 'ion', 'coords', 'sim-direct'}
         what sort of thing to map
         'Mass' -> g
         'Metal' -> number of nuclei of the selected element
         'ion' -> number of ions of the selected type
+        'coords' -> positions and velocities
+        'sim-direct' -> arrays stored in FIRE outputs
     maptype_args: dict or None
         see get_qty for parameters; options depend on maptype
+    weighttype: same options as masstype, or None
+        instead of projecting maptype directly, get the 
+        weighttype-weighted average of maptype along the line of sight
+    weighttype_args: dict or None
+        same as maptype_args, but for the weighttype (if any)
+    save_weightmap: bool
+        if obtaining a weighted quantity map, also save the projected
+        weights? (If true, both maps are stored in the same hdf5 file.)
     Output:
     -------
     massW: 2D array of floats
@@ -134,7 +147,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     size_touse_cm[Axis2] = npix_y * pixel_cm
 
     if norm == 'pixsize_phys':
-        multipafter = 1. / pixel_cm**2
+        multipafter_norm = 1. / pixel_cm**2
         norm_units = ' / (physical cm)**2'
     else:
         raise ValueError('Invalid norm option {}'.format(norm))
@@ -173,85 +186,22 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         filter = np.all(np.abs((coords)) <= 0.5 * box_dims_coordunit, axis=1)   
     
     coords = coords[filter]
-    qW, toCGS, todoc = gq.get_qty(snap, particle_type, maptype, maptype_args,
-                                  filterdct={'filter': filter})
-    multipafter *= toCGS
-    ## debugging: check for NaN values
-    #naninds = np.where(np.isnan(qW))[0]
-    #if len(naninds) > 0:
-    #    print('Some qW values are NaN')
-    #    print('Used {}, {}, {}'.format(particle_type, maptype, maptype_args))
-    #    outfile_debug = outfilen.split('/')[:-1]
-    #    outfile_debug.append('debug_qW_naninfo.hdf5')
-    #    outfile_debug = '/'.join(outfile_debug)
-    #
-    #    numnan = len(naninds)
-    #    minW = np.min(qW[np.isfinite(qW)])
-    #    maxW = np.max(qW[np.isfinite(qW)])
-    #    with h5py.File(outfile_debug, 'w') as f:
-    #        hed = f.create_group('Header')
-    #        hed.attrs.create('number of qW values', len(qW))
-    #        hed.attrs.create('number of NaN values', numnan)
-    #        hed.attrs.create('number of inf values', np.sum(qW == np.inf))
-    #        hed.attrs.create('number of -inf values', np.sum(qW == -np.inf))
-    #        hed.attrs.create('number of 0 values', np.sum(qW == 0))
-    #        hed.attrs.create('number of values < 0', np.sum(qW < 0))
-    #        hed.attrs.create('number of values > 0', np.sum(qW > 0))
-    #        hed.attrs.create('qW_toCGS', toCGS)
-    #        hed.attrs.create('multipafter', multipafter)
-    #
-    #        if minW > 0:
-    #            bins = np.logspace(np.log10(minW), np.log10(maxW), 100)
-    #        else:
-    #            bins = np.linspace(minW, maxW, 100)
-    #        # NaN, inf, -inf values just aren't counted
-    #        hist, _ = np.histogram(qW, bins=bins)
-    #
-    #        f.create_dataset('qW_hist', data=hist)
-    #        f.create_dataset('qW_hist_bins', data=bins)
-    #
-    #        # issues were for ion columns; check rho, T, Z of NaN values
-    #        _filter = filter.copy()
-    #        _filter[_filter] = np.isnan(qW)
-    #
-    #        _temp, _temp_toCGS, _temp_todoc = get_qty(snap, particle_type, 
-    #                'sim-direct', {'field': 'Temperature'}, 
-    #                filterdct={'filter': _filter})
-    #        ds = f.create_dataset('Temperature_nanqW', data=_temp)
-    #        ds.attrs.create('toCGS', _temp_toCGS)
-    #        print('Temperature: ', _temp_todoc)
-    #
-    #        _dens, _dens_toCGS, _dens_todoc = get_qty(snap, particle_type, 
-    #                'sim-direct', {'field': 'Density'}, 
-    #                filterdct={'filter': _filter})
-    #        ds = f.create_dataset('Density_nanqW', data=_dens)
-    #        ds.attrs.create('toCGS', _dens_toCGS)
-    #        print('Density: ', _dens_todoc)
-    #
-    #        _hden, _hden_toCGS, _emet_todoc = get_qty(snap, particle_type, 
-    #                'Metal', {'element': 'Hydrogen', 'density': True}, 
-    #                filterdct={'filter': _filter})
-    #        ds = f.create_dataset('nH_nanqW', data=_hden)
-    #        ds.attrs.create('toCGS', _hden_toCGS)
-    #        print('Hydrogen number density: ', _emet_todoc)
-    #
-    #        if maptype == 'ion':
-    #            ion = maptype_args['ion']
-    #            dummytab = Linetable_PS20(ion, snap.cosmopars.z, 
-    #                                      emission=False,
-    #                                      vol=True, lintable=True)
-    #            element = dummytab.element
-    #            eltpath = basepath + 'ElementAbundance/' +\
-    #                      string.capwords(element)
-    #            _emet, _emet_toCGS, _emet_todoc = get_qty(snap, particle_type, 
-    #                    'sim-direct', {'field': eltpath}, 
-    #                    filterdct={'filter': _filter})
-    #            ds = f.create_dataset('massfrac_{}_nanqW', data=_emet)
-    #            ds.attrs.create('toCGS', _emet_toCGS)
-    #            print(f'{element} mass fraction: ', _emet_todoc)
-    #else:
-    #    print('No NaN values in qW')
-    # stars, black holes. DM: should do neighbour finding. Won't though.
+    if weighttype is None:
+        qW, toCGSW, todocW = gq.get_qty(snap, particle_type, maptype,
+                                      maptype_args,
+                                      filterdct={'filter': filter})
+        multipafterW = toCGSW * multipafter_norm
+        qQ = np.zeros(len(qW), dtype=np.float32)
+    else:
+        qQ, toCGSQ, todocQ = gq.get_qty(snap, particle_type, maptype,
+                                       maptype_args,
+                                       filterdct={'filter': filter})
+        multipafterQ = toCGSQ
+        qW, toCGSW, todocW = gq.get_qty(snap, particle_type, weighttype,
+                                        weighttype_args,
+                                        filterdct={'filter': filter})
+        multipafterW = toCGSW * multipafter_norm
+        
     if not haslsmooth:
         # minimum smoothing length is set in the projection
         lsmooth = np.zeros(shape=(len(qW),), dtype=coords.dtype)
@@ -262,7 +212,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     NumPart = len(qW)
     dct = {'coords': coords, 'lsmooth': lsmooth, 
            'qW': qW, 
-           'qQ': np.zeros(len(qW), dtype=np.float32)}
+           'qQ': qQ}
     Ls = box_dims_coordunit
     # cosmopars uses EAGLE-style cMpc/h units for the box
     box3 = [snap.cosmopars.boxsize * c.cm_per_mpc / snap.cosmopars.h \
@@ -271,29 +221,45 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                          periodic, npix_x, npix_y,
                          'C2', dct, tree, ompproj=True, 
                          projmin=None, projmax=None)
-    lmapW = np.log10(mapW)
-    ## debug NaN values in maps
-    #if np.any(np.isnan(mapW)):
-    #    print('NaN values in mapW after projection')
-    #if np.any(mapW < 0.):
-    #    print('values < 0 in mapW after projection')
-    #if np.any(np.isnan(lmapW)):
-    #    print('NaN values in log mapW before multipafter')
+    if weighttype is None:
+        if logmapW:
+            omapW = np.log10(mapW)
+            olmapW += np.log10(multipafterW)
+        else:
+            mapW *= multipafterW
+            omapW = mapW
+        mmap = omapW
+        mdoc = todocW
+        mlog = logmapW
 
-    lmapW += np.log10(multipafter)
+    else:
+        if logmapQ:
+            omapQ = np.log10(mapQ)
+            omapQ += np.log10(multipafterQ)
+        else:
+            mapQ *= multipafterQ
+            omapQ = mapQ
+        if save_weightmap:
+            if logmapW:
+                omapW = np.log10(mapW)
+                olmapW += np.log10(multipafterW)
+            else:
+                mapW *= multipafterW
+                omapW = mapW
+        mmap = omapQ
+        mdoc = todocQ
+        mlog = logmapQ
 
-    #if np.any(np.isnan(lmapW)):
-    #    print('NaN values in log mapW after multipafter')
-    #if outfilen is None:
-    #    return lmapW, mapQ
-    
     with h5py.File(outfilen, 'w') as f:
         # map (emulate make_maps format)
-        f.create_dataset('map', data=lmapW)
-        f['map'].attrs.create('log', True)
-        minfinite = np.min(lmapW[np.isfinite(lmapW)])
-        f['map'].attrs.create('minfinite', minfinite)
-        f['map'].attrs.create('max', np.max(lmapW))
+        f.create_dataset('map', data=mmap)
+        f['map'].attrs.create('log', mlog)
+        if mlog:
+            minfinite = np.min(mmap[np.isfinite(mmap)])
+            f['map'].attrs.create('minfinite', minfinite)
+        else:
+            f['map'].attrs.create('min', np.min(mmap))
+        f['map'].attrs.create('max', np.max(mmap))
         
         # cosmopars (emulate make_maps format)
         hed = f.create_group('Header')
@@ -334,15 +300,50 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                 if isinstance(val, type('')):
                     val = np.string_(val)
                 _grp.attrs.create(key, val)
-        for key in todoc:
+        for key in mdoc:
             if key == 'units':
-                val = todoc[key]
-                val = val + norm_units
+                val = mdoc[key]
+                if weighttype is None:
+                    val = val + norm_units
             else:
-                val = todoc[key]
+                val = mdoc[key]
             if isinstance(val, type('')):
                 val = np.string_(val)
             igrp.attrs.create(key, val)
+        if weighttype is None:
+            igrp.attrs.create('weighttype', np.string_('None'))
+            igrp.attrs.create('weighttype_args', np.string_('None'))
+        else:
+            igrp.attrs.create('weighttype', np.string_(weighttype))
+            if weighttype_args is None:
+                igrp.attrs.create('weighttype_args', np.string_('None'))
+            else:
+                igrp.attrs.create('weighttype_args', np.string_('dict'))
+                _grp = igrp.create_group('weighttype_args_dict')
+                for key in weighttype_args:
+                    val = maptype_args[key]
+                    if isinstance(val, type('')):
+                        val = np.string_(val)
+                    _grp.attrs.create(key, val)
+            for key in todocW:
+                if key == 'units':
+                    val = todocW[key]
+                    val = val + norm_units
+                else:
+                    val = todocW[key]
+                if isinstance(val, type('')):
+                    val = np.string_(val)
+                igrp.attrs.create(key, val)
+            if save_weightmap:
+                f.create_dataset('weightmap', data=omapW)
+                f['weightmap'].attrs.create('log', logmapW)
+                if logmapW:
+                    minfinite = np.min(omapW[np.isfinite(omapW)])
+                    f['weightmap'].attrs.create('minfinite', minfinite)
+                else:
+                    f['weightmap'].attrs.create('min', np.min(omapW))
+                f['weightmap'].attrs.create('max', np.max(omapW))
+
 
 def massmap_wholezoom(dirpath, snapnum, pixsize_pkpc=3.,
                       outfilen_DM='map_DM_{ax}-axis.hdf5',

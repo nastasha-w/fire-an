@@ -8,6 +8,19 @@ import fire_an.readfire.readin_fire_data as rf
 import fire_an.utils.constants_and_units as c
 from fire_an.utils.projection import project
 
+def savedict_hdf5(grp, dct):
+    for key in dct:
+        if isinstance(val, type('')):
+            val = np.string_(val)
+        elif val is None:
+            val = np.string_('None')
+        elif isinstance(val, dict):
+            sgrp = grp.create_group(key + '_dict')
+            _val = val.copy()
+            savedict_hdf5(sgrp, _val)
+            val = np.string_('dict')
+        grp.attrs.create(key, val)
+
 def process_typeargs_coords(simpath, snapnum, typeargs,
                             paxis=None):
     '''
@@ -95,12 +108,12 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
                                  'a dictionary, or None')
         if 'vel' in typeargs and typeargs['vel'] == 'los':
             outdoc.update({'coords_vel_in': 'los'})
-            typeargs['vel'] = paxis
+            typeargs_out['vel'] = paxis
         elif 'pos' in typeargs and typeargs['pos'] == 'los':
             outdoc.update({'coords_pos_in': 'los'})
-            typeargs['pos'] = paxis
+            typeargs_out['pos'] = paxis
         elif 'multiple' in typeargs:
-            cspec = typeargs['multiple']
+            cspec = typeargs['multiple'].copy()
             for key in cspec:
                 if key == 'vel' and cspec['vel'] == 'los':
                     outdoc.update({'coords_vel_in': 'los'})
@@ -108,8 +121,8 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
                 elif key == 'pos' and cspec['pos'] == 'los':
                     outdoc.update({'coords_pos_in': 'los'})
                     cspec['pos'] = paxis
-            typeargs['multiple'].update[cspec]
-    return typeargs, outdoc
+            typeargs_out['multiple'].update[cspec]
+    return typeargs_out, outdoc
 
 
 
@@ -393,8 +406,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         hed = f.create_group('Header')
         cgrp = hed.create_group('inputpars/cosmopars')
         csm = snap.cosmopars.getdct()
-        for key in csm:
-            cgrp.attrs.create(key, csm[key])
+        savedict_hdf5(cgrp, csm)
         
         # direct input parameters
         igrp = hed['inputpars']
@@ -415,19 +427,14 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             igrp.attrs.create('margin_lsmooth_cm', lmargin * coords_toCGS)
         igrp.attrs.create('center', np.string_(center))
         _grp = igrp.create_group('halodata')
-        for key in halodat:
-            _grp.attrs.create(key, halodat[key])
+        savedict_hdf5(_grp, halodat)
         igrp.attrs.create('maptype', np.string_(maptype))
         if maptype_args is None:
             igrp.attrs.create('maptype_args', np.string_('None'))
         else:
             igrp.attrs.create('maptype_args', np.string_('dict'))
             _grp = igrp.create_group('maptype_args_dict')
-            for key in maptype_args:
-                val = maptype_args[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                _grp.attrs.create(key, val)
+            savedict_hdf5(_grp, maptype_args)
         for key in mdoc:
             if key == 'units':
                 val = mdoc[key]
@@ -448,11 +455,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             else:
                 igrp.attrs.create('weighttype_args', np.string_('dict'))
                 _grp = igrp.create_group('weighttype_args_dict')
-                for key in weighttype_args:
-                    val = maptype_args[key]
-                    if isinstance(val, type('')):
-                        val = np.string_(val)
-                    _grp.attrs.create(key, val)
+                savedict_hdf5(_grp, weighttype_args)
                 for key in todocW:
                     if key == 'units':
                         val = todocW[key]
@@ -621,8 +624,7 @@ def massmap_wholezoom(dirpath, snapnum, pixsize_pkpc=3.,
                 hed = f.create_group('Header')
                 cgrp = hed.create_group('inputpars/cosmopars')
                 csm = snap.cosmopars.getdct()
-                for key in csm:
-                    cgrp.attrs.create(key, csm[key])
+                savedict_hdf5(cgrp, csm)
         
                 # direct input parameters
                 igrp = hed['inputpars']

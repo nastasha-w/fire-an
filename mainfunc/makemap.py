@@ -60,7 +60,8 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
         is specified as 'los', otherwise ignored.
     '''
     needsv = 'vel' in typeargs or \
-             ('multiple' in typeargs and 'vel' in typeargs['multiple'])
+             ('multiple' in typeargs 
+              and np.any(['vel' in dct for dct in typeargs['multiple']]))
     outdoc = {}
     typeargs_out = typeargs.copy()
     if ('rcen_cm' not in typeargs) or \
@@ -83,16 +84,16 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
                 radius_rvir = tvdct['radius_rvir']
             else:
                 radius_rvir = 1.
-            outdoc.update({'coords_radius_rvir': radius_rvir})
+            outdoc.update({'vcen_radius_rvir': radius_rvir})
             if 'parttypes' in tvdct:
                 parttypes = tvdct['parttypes']
             else:
                 parttypes = 'all'
-            outdoc.update({'coords_parttypes': parttypes})
+            outdoc.update({'vcen_parttypes': parttypes})
             vdat, vdoc = hp.get_vcom(simpath, snapnum, 
                                      radius_rvir, meandef_rvir='BN98',
                                      parttypes=parttypes)
-            outdoc.update({'coords_' + key: vdoc[key] for key in vdoc})
+            outdoc.update({'vcen_' + key: vdoc[key] for key in vdoc})
             vcen_cmps = np.array([vdat['VXcom_cmps'],
                                   vdat['VYcom_cmps'],
                                   vdat['VZcom_cmps']])
@@ -106,22 +107,22 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
                 raise ValueError('The "vcen_cmps" argument should be a'
                                  ' length 3 iterable of floats, '
                                  'a dictionary, or None')
-        if 'vel' in typeargs and typeargs['vel'] == 'los':
-            outdoc.update({'coords_vel_in': 'los'})
-            typeargs_out['vel'] = paxis
-        elif 'pos' in typeargs and typeargs['pos'] == 'los':
-            outdoc.update({'coords_pos_in': 'los'})
-            typeargs_out['pos'] = paxis
-        elif 'multiple' in typeargs:
-            cspec = typeargs['multiple'].copy()
-            for key in cspec:
-                if key == 'vel' and cspec['vel'] == 'los':
-                    outdoc.update({'coords_vel_in': 'los'})
-                    cspec['vel'] = paxis
-                elif key == 'pos' and cspec['pos'] == 'los':
-                    outdoc.update({'coords_pos_in': 'los'})
-                    cspec['pos'] = paxis
-            typeargs_out['multiple'].update[cspec]
+    if 'vel' in typeargs and typeargs['vel'] == 'los':
+        outdoc.update({'coords_vel_in': 'los'})
+        typeargs_out['vel'] = paxis
+    elif 'pos' in typeargs and typeargs['pos'] == 'los':
+        outdoc.update({'coords_pos_in': 'los'})
+        typeargs_out['pos'] = paxis
+    elif 'multiple' in typeargs:
+        cspec = typeargs['multiple'].copy()
+        for di, dct in enumerate(cspec):
+            if 'vel' in dct and dct['vel'] == 'los':
+                outdoc.update({'coords_vel_in': 'los'})
+                cspec[di].update({'vel': paxis})
+            elif 'pos' in dct and dct['pos'] == 'los':
+                outdoc.update({'coords_pos_in': 'los'})
+                cspec[di].update({'pos': paxis})
+        typeargs_out['multiple'] = cspec
     return typeargs_out, outdoc
 
 
@@ -310,7 +311,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         if maptype == 'coords':
             maptype_args, todocW = process_typeargs_coords(dirpath, snapnum,
                                                            maptype_args,
-                                                           paxis=Axis2)
+                                                           paxis=Axis3)
         else:
             todocW = {}
         qW, toCGSW, _todocW = gq.get_qty(snap, particle_type, maptype,
@@ -323,7 +324,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         if maptype == 'coords':
             maptype_args, todocQ = process_typeargs_coords(dirpath, snapnum,
                                                            maptype_args,
-                                                           paxis=Axis2)
+                                                           paxis=Axis3)
         else:
             todocQ = {}
         qQ, toCGSQ, _todocQ = gq.get_qty(snap, particle_type, maptype,
@@ -334,7 +335,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         if weighttype == 'coords':
             maptype_args, todocW = process_typeargs_coords(dirpath, snapnum,
                                                            weighttype_args,
-                                                           paxis=Axis2)
+                                                           paxis=Axis3)
         else:
             todocW = {}
         qW, toCGSW, _todocW = gq.get_qty(snap, particle_type, weighttype,

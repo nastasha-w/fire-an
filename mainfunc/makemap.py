@@ -1,4 +1,5 @@
 import h5py
+import numbers as num
 import numpy as np
 
 import fire_an.mainfunc.get_qty as gq
@@ -7,9 +8,115 @@ import fire_an.readfire.readin_fire_data as rf
 import fire_an.utils.constants_and_units as c
 from fire_an.utils.projection import project
 
+def process_typeargs_coords(simpath, snapnum, typeargs,
+                            paxis=None):
+    '''
+    allows standard values or gethalodata_shrinkinssphere/get_vcom
+    arguments to be used instead of specifiying vcen_cmps, rcen_cm
+    explicitly.
+
+    Parameters
+    ----------
+    typeargs: dict
+        may match any maptype_args for maptype 'coords' in get_qty
+        additional convenience options (by key):
+        'rcen_cm': not included or None
+            not included or None: use the BN98 overdensity definition,
+            shrinking-sphere method with all particle types (except 2)
+            and standard parameter values for centering.
+            Otherwise, should match the get_qty options.
+        'vcen_cmps': not included, None, or dict
+            centering/virial radius always match the defaults under 
+            'rcen_cm', and the virial radius is always the 'BN98' one.
+            The defaults for 'radius_rvir' and 'parttypes' are 1. and
+            'all', respectively. If a dict argument is given, these
+            defaults may be overridden by including the 'radius_rvir'
+            and/or 'parttypes' keywords, with options matching those
+            arguments for haloprop.get_vcom 
+            Otherwise, should match the get_qty options.
+        'pos': 'los'
+            get the line-of-sight position along whatever the 
+            projection axis is. (requires the paxis argument to be set
+            to 0, 1, or 2)
+        'vel': 'los'
+            get the line-of-sight velocity along whatever the 
+            projection axis is. (requires the paxis argument to be set
+            to 0, 1, or 2)
+    paxis: {0, 1, 2, None}
+        the projection axis. Required if a 'pos' or 'vel' coordinate
+        is specified as 'los', otherwise ignored.
+    '''
+    needsv = 'vel' in typeargs or \
+             ('multiple' in typeargs and 'vel' in typeargs['multiple'])
+    outdoc = {}
+    typeargs_out = typeargs.copy()
+    if ('rcen_cm' not in typeargs) or \
+       ('rcen_cm' in typeargs and typeargs['rcen_cm'] is None):
+        rhdat, rdoc = hp.gethalodata_shrinkingsphere(simpath, snapnum, 
+                                                     meandef='BN98')
+        outdoc.update({'coords_' + key: rdoc[key] for key in rdoc})
+        rcen_cm = np.array([rhdat['Xc_cm'], rhdat['Yc_cm'], rhdat['Zc_cm']])
+        typeargs_out.update({'rcen_cm': rcen_cm})
+        outdoc.update({'coords_rcen_cm_in': 'default'})
+        outdoc.update({'coords_center': 'shrinksph'})
+    if needsv:
+        if 'vcen_cmps' not in typeargs:
+            typeargs['vcen_cmps'] = dict()
+        elif typeargs['vcen_cmps'] is None:
+            typeargs['vcen_cmps'] = dict()
+        if (isinstance(typeargs['vcen_cmps'], dict)):
+            tvdct = typeargs['vcen_cmps'].copy()
+            if 'radius_rvir' in tvdct:
+                radius_rvir = tvdct['radius_rvir']
+            else:
+                radius_rvir = 1.
+            outdoc.update({'coords_radius_rvir': radius_rvir})
+            if 'parttypes' in tvdct:
+                parttypes = tvdct['parttypes']
+            else:
+                parttypes = 'all'
+            outdoc.update({'coords_parttypes': parttypes})
+            vdat, vdoc = hp.get_vcom(simpath, snapnum, 
+                                     radius_rvir, meandef_rvir='BN98',
+                                     parttypes=parttypes)
+            outdoc.update({'coords_' + key: vdoc[key] for key in vdoc})
+            vcen_cmps = np.array([vdat['VXcom_cmps'],
+                                  vdat['VYcom_cmps'],
+                                  vdat['VZcom_cmps']])
+            typeargs_out.update({'vcen_cmps': vcen_cmps})
+        else:
+            vcin = typeargs['vcen_cmps']
+            if not (hasattr(vcin, '__len__') 
+                    and len(vcin) == 3
+                    and np.all([isinstance(vcin[i], num.Number) 
+                                for i in range(3)])):
+                raise ValueError('The "vcen_cmps" argument should be a'
+                                 ' length 3 iterable of floats, '
+                                 'a dictionary, or None')
+        if 'vel' in typeargs and typeargs['vel'] == 'los':
+            outdoc.update({'coords_vel_in': 'los'})
+            typeargs['vel'] = paxis
+        elif 'pos' in typeargs and typeargs['pos'] == 'los':
+            outdoc.update({'coords_pos_in': 'los'})
+            typeargs['pos'] = paxis
+        elif 'multiple' in typeargs:
+            cspec = typeargs['multiple']
+            for key in cspec:
+                if key == 'vel' and cspec['vel'] == 'los':
+                    outdoc.update({'coords_vel_in': 'los'})
+                    cspec['vel'] = paxis
+                elif key == 'pos' and cspec['pos'] == 'los':
+                    outdoc.update({'coords_pos_in': 'los'})
+                    cspec['pos'] = paxis
+            typeargs['multiple'].update[cspec]
+    return typeargs, outdoc
+
+
+
 # AHF: sorta tested (enclosed 2D mass wasn't too far above Mvir)
 # Rockstar: untested draft
 # shrinking spheres: sort of tested (maps look right)
+# centers, masses agree ok with Imran's (DM only) code
 # mass maps: look ok
 # ion/metal maps: tested sum of ions
 def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
@@ -187,19 +294,40 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     
     coords = coords[filter]
     if weighttype is None:
-        qW, toCGSW, todocW = gq.get_qty(snap, particle_type, maptype,
+        if maptype == 'coords':
+            maptype_args, todocW = process_typeargs_coords(dirpath, snapnum,
+                                                           maptype_args,
+                                                           paxis=Axis2)
+        else:
+            todocW = {}
+        qW, toCGSW, _todocW = gq.get_qty(snap, particle_type, maptype,
                                       maptype_args,
                                       filterdct={'filter': filter})
+        todocW.update(_todocW)
         multipafterW = toCGSW * multipafter_norm
         qQ = np.zeros(len(qW), dtype=np.float32)
     else:
-        qQ, toCGSQ, todocQ = gq.get_qty(snap, particle_type, maptype,
-                                       maptype_args,
-                                       filterdct={'filter': filter})
-        multipafterQ = toCGSQ
-        qW, toCGSW, todocW = gq.get_qty(snap, particle_type, weighttype,
-                                        weighttype_args,
+        if maptype == 'coords':
+            maptype_args, todocQ = process_typeargs_coords(dirpath, snapnum,
+                                                           maptype_args,
+                                                           paxis=Axis2)
+        else:
+            todocQ = {}
+        qQ, toCGSQ, _todocQ = gq.get_qty(snap, particle_type, maptype,
+                                        maptype_args,
                                         filterdct={'filter': filter})
+        multipafterQ = toCGSQ
+        todocQ.update(_todocQ)
+        if weighttype == 'coords':
+            maptype_args, todocW = process_typeargs_coords(dirpath, snapnum,
+                                                           weighttype_args,
+                                                           paxis=Axis2)
+        else:
+            todocW = {}
+        qW, toCGSW, _todocW = gq.get_qty(snap, particle_type, weighttype,
+                                         weighttype_args,
+                                         filterdct={'filter': filter})
+        todocW.update(_todocW)
         multipafterW = toCGSW * multipafter_norm
         
     if not haslsmooth:
@@ -325,15 +453,15 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
                     if isinstance(val, type('')):
                         val = np.string_(val)
                     _grp.attrs.create(key, val)
-            for key in todocW:
-                if key == 'units':
-                    val = todocW[key]
-                    val = val + norm_units
-                else:
-                    val = todocW[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                igrp.attrs.create(key, val)
+                for key in todocW:
+                    if key == 'units':
+                        val = todocW[key]
+                        val = val + norm_units
+                    else:
+                        val = todocW[key]
+                    if isinstance(val, type('')):
+                        val = np.string_(val)
+                    igrp.attrs.create(key, val)
             if save_weightmap:
                 f.create_dataset('weightmap', data=omapW)
                 f['weightmap'].attrs.create('log', logmapW)

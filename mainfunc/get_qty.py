@@ -329,6 +329,8 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
         listed strings)
         for maptype value:
         'Mass': None (ignored)
+        'Volume': None (ignored)
+            only for gas (parttype 0), as density is required
         'Metal':
             number of nuclei or nucleus density (all ions together)
             'element': str

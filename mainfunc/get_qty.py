@@ -3,11 +3,13 @@
 from urllib.request import HTTPDigestAuthHandler
 import numpy as np
 import string
+import numbers as num
 
 from fire_an.ionrad.ion_utils import Linetable_PS20, atomw_u_dct, elt_atomw_cgs
+import fire_an.mainfunc.coords as coords
+import fire_an.mainfunc.haloprop as hp
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.opts_locs as ol
-import fire_an.mainfunc.coords as coords
 
 
 # tested -> seems to work
@@ -591,3 +593,107 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
     else:
         raise ValueError('Invalid maptype: {}'.format(maptype))
     return qty, toCGS, todoc
+
+def process_typeargs_coords(simpath, snapnum, typeargs,
+                            paxis=None):
+    '''
+    allows standard values or gethalodata_shrinkinssphere/get_vcom
+    arguments to be used instead of specifiying vcen_cmps, rcen_cm
+    explicitly.
+
+    Parameters
+    ----------
+    typeargs: dict
+        may match any maptype_args for maptype 'coords' in get_qty
+        additional convenience options (by key):
+        'rcen_cm': not included or None
+            not included or None: use the BN98 overdensity definition,
+            shrinking-sphere method with all particle types (except 2)
+            and standard parameter values for centering.
+            Otherwise, should match the get_qty options.
+        'vcen_cmps': not included, None, or dict
+            centering/virial radius always match the defaults under 
+            'rcen_cm', and the virial radius is always the 'BN98' one.
+            The defaults for 'radius_rvir' and 'parttypes' are 1. and
+            'all', respectively. If a dict argument is given, these
+            defaults may be overridden by including the 'radius_rvir'
+            and/or 'parttypes' keywords, with options matching those
+            arguments for haloprop.get_vcom 
+            Otherwise, should match the get_qty options.
+        'pos': 'los'
+            get the line-of-sight position along whatever the 
+            projection axis is. (requires the paxis argument to be set
+            to 0, 1, or 2)
+        'vel': 'los'
+            get the line-of-sight velocity along whatever the 
+            projection axis is. (requires the paxis argument to be set
+            to 0, 1, or 2)
+    paxis: {0, 1, 2, None}
+        the projection axis. Required if a 'pos' or 'vel' coordinate
+        is specified as 'los', otherwise ignored.
+    '''
+    needsv = 'vel' in typeargs or \
+             ('multiple' in typeargs 
+              and np.any(['vel' in dct for dct in typeargs['multiple']]))
+    outdoc = {}
+    typeargs_out = typeargs.copy()
+    if ('center_cm' not in typeargs) or \
+       ('center_cm' in typeargs and typeargs['center_cm'] is None):
+        rhdat, rdoc = hp.gethalodata_shrinkingsphere(simpath, snapnum, 
+                                                     meandef='BN98')
+        outdoc.update({'coords_' + key: rdoc[key] for key in rdoc})
+        rcen_cm = np.array([rhdat['Xc_cm'], rhdat['Yc_cm'], rhdat['Zc_cm']])
+        typeargs_out.update({'center_cm': rcen_cm})
+        outdoc.update({'coords_rcen_cm_in': 'default'})
+        outdoc.update({'coords_center': 'shrinksph'})
+    if needsv:
+        if 'vcen_cmps' not in typeargs:
+            typeargs['vcen_cmps'] = dict()
+        elif typeargs['vcen_cmps'] is None:
+            typeargs['vcen_cmps'] = dict()
+        if (isinstance(typeargs['vcen_cmps'], dict)):
+            tvdct = typeargs['vcen_cmps'].copy()
+            if 'radius_rvir' in tvdct:
+                radius_rvir = tvdct['radius_rvir']
+            else:
+                radius_rvir = 1.
+            outdoc.update({'vcen_radius_rvir': radius_rvir})
+            if 'parttypes' in tvdct:
+                parttypes = tvdct['parttypes']
+            else:
+                parttypes = 'all'
+            outdoc.update({'vcen_parttypes': parttypes})
+            vdat, vdoc = hp.get_vcom(simpath, snapnum, 
+                                     radius_rvir, meandef_rvir='BN98',
+                                     parttypes=parttypes)
+            outdoc.update({'vcen_' + key: vdoc[key] for key in vdoc})
+            vcen_cmps = np.array([vdat['VXcom_cmps'],
+                                  vdat['VYcom_cmps'],
+                                  vdat['VZcom_cmps']])
+            typeargs_out.update({'vcen_cmps': vcen_cmps})
+        else:
+            vcin = typeargs['vcen_cmps']
+            if not (hasattr(vcin, '__len__') 
+                    and len(vcin) == 3
+                    and np.all([isinstance(vcin[i], num.Number) 
+                                for i in range(3)])):
+                raise ValueError('The "vcen_cmps" argument should be a'
+                                 ' length 3 iterable of floats, '
+                                 'a dictionary, or None')
+    if 'vel' in typeargs and typeargs['vel'] == 'los':
+        outdoc.update({'coords_vel_in': 'los'})
+        typeargs_out['vel'] = paxis
+    elif 'pos' in typeargs and typeargs['pos'] == 'los':
+        outdoc.update({'coords_pos_in': 'los'})
+        typeargs_out['pos'] = paxis
+    elif 'multiple' in typeargs:
+        cspec = typeargs['multiple'].copy()
+        for di, dct in enumerate(cspec):
+            if 'vel' in dct and dct['vel'] == 'los':
+                outdoc.update({'coords_vel_in': 'los'})
+                cspec[di].update({'vel': paxis})
+            elif 'pos' in dct and dct['pos'] == 'los':
+                outdoc.update({'coords_pos_in': 'los'})
+                cspec[di].update({'pos': paxis})
+        typeargs_out['multiple'] = cspec
+    return typeargs_out, outdoc

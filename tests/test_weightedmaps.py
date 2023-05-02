@@ -7,7 +7,9 @@ import fire_an.mainfunc.makemap as mm
 import fire_an.utils.constants_and_units as c
 
 # quest
-tdir = '/projects/b1026/nastasha/tests/weightedmaps/'
+#tdir = '/projects/b1026/nastasha/tests/weightedmaps/'
+# laptop
+tdir = '/Users/nastasha/ciera/tests/weightedmaps/'
 
 simname = ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
            '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
@@ -170,8 +172,8 @@ def plot_maps():
     caxspace = 0.5     
     ncols = 3 
     nrows = 3
-    wspace = 0.25
-    hspace = 0.25
+    wspace = 0.35
+    hspace = 0.35
     width_ratios = [panelsize] * ncols + [caxspace]
     width = np.sum(width_ratios) * \
             (1. + wspace * ncols / np.sum(width_ratios))
@@ -185,23 +187,92 @@ def plot_maps():
                         wspace=wspace, hspace=hspace)
     fig.suptitle(title, fontsize=fontsize)
 
-    star_cax = fig.add_axes(grid[0, ncols])
-    gas_cax = fig.add_axes(grid[1, ncols])
-    ne8_cax = fig.add_axes(grid[2, ncols])
-    vel_cax = fig.add_axes(grid[nrows, 1])
-    temp_cax = fig.add_axes(grid[nrows, 2])
+    star_cax = fig.add_subplot(grid[0, ncols])
+    gas_cax = fig.add_subplot(grid[1, ncols])
+    ne8_cax = fig.add_subplot(grid[2, ncols])
+    vel_cax = fig.add_subplot(grid[nrows, 1])
+    temp_cax = fig.add_subplot(grid[nrows, 2])
 
-    starax = fig.add_axes(grid[0, 0])
+    starax = fig.add_subplot(grid[0, 0])
     starunits = c.solar_mass / (c.cm_per_mpc * 1e-3)**2
     starimg = starax.imshow(maps['star'][0].T - np.log10(starunits), 
                             extent=maps['star'][1],
                             origin='lower', interpolation='nearest',
-                            cmap=cmap_stars)
+                            cmap=cmap_stars, vmin=0.)
     starax.set_ylabel('pkpc', fontsize=fontsize)
-    plt.colorbar(starimg, ax=star_cax, orientation='vertical')
+    plt.colorbar(starimg, cax=star_cax, orientation='vertical', extend='min')
     star_cax.set_ylabel('$\\log_{10} \\, \\Sigma_{*} \\, '
-                        '[\\mathrm{M}_{\\odot} \\, \\mathrm{pkpc}^{-2}]$',
+                        '[\\mathrm{M}_{\\odot} \\; \\mathrm{pkpc}^{-2}]$',
+                        fontsize=fontsize)
+    
+    gasax = fig.add_subplot(grid[1, 0])
+    gasunits = 0.752 / c.atomw_H * c.u
+    gasimg = gasax.imshow(maps['gas'][0].T - np.log10(gasunits), 
+                          extent=maps['gas'][1],
+                          origin='lower', interpolation='nearest',
+                          cmap=cmap_gas)
+    gasax.set_ylabel('pkpc', fontsize=fontsize)
+    plt.colorbar(gasimg, cax=gas_cax, orientation='vertical')
+    gas_cax.set_ylabel('$\\log_{10} \\, \\Sigma_{\\mathrm{gas}} \\; '
+                        '[\\mathrm{cm}^{-2}]$',
+                        fontsize=fontsize)
+    
+    ne8ax = fig.add_subplot(grid[2, 0])
+    ne8img = ne8ax.imshow(maps['ne8'][0].T, 
+                          extent=maps['ne8'][1],
+                          origin='lower', interpolation='nearest',
+                          cmap=cmap_ne8)
+    ne8ax.set_ylabel('pkpc', fontsize=fontsize)
+    ne8ax.set_xlabel('pkpc', fontsize=fontsize)
+    plt.colorbar(ne8img, cax=ne8_cax, orientation='vertical')
+    ne8_cax.set_ylabel('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne\\,VIII}) \\;'
+                        '[\\mathrm{cm}^{-2}]$',
                         fontsize=fontsize)
 
-
+    svax = fig.add_subplot(grid[0, 1])
+    vunits = 1e5
+    vmin_vel /= vunits
+    vmax_vel /= vunits
+    vmin_vel = -150.
+    vmax_vel = 150.
+    svimg = svax.imshow(maps['starvel'][0].T / vunits, 
+                        extent=maps['starvel'][1],
+                        origin='lower', interpolation='nearest',
+                        cmap=cmap_vel, vmin=vmin_vel, vmax=vmax_vel)
+    plt.colorbar(svimg, cax=vel_cax, orientation='horizontal', extend='both')
+    vel_cax.set_xlabel('$\\mathrm{v}_{\\mathrm{los}}\\, '
+                       '[\\mathrm{km} \\; \\mathrm{s}^{-1}]$',
+                       fontsize=fontsize)
+    
+    gvax = fig.add_subplot(grid[1, 1])
+    gvimg = gvax.imshow(maps['gasvel'][0].T / vunits, 
+                        extent=maps['gasvel'][1],
+                        origin='lower', interpolation='nearest',
+                        cmap=cmap_vel, vmin=vmin_vel, vmax=vmax_vel)
+    
+    nvax = fig.add_subplot(grid[2, 1])
+    nvimg = nvax.imshow(maps['ne8vel'][0].T / vunits, 
+                        extent=maps['ne8vel'][1],
+                        origin='lower', interpolation='nearest',
+                        cmap=cmap_vel, vmin=vmin_vel, vmax=vmax_vel)
+    nvax.set_xlabel('pkpc', fontsize=fontsize)
+    
+    gtax = fig.add_subplot(grid[1, 2])
+    gtimg = gtax.imshow(maps['gastemp'][0].T, 
+                        extent=maps['gastemp'][1],
+                        origin='lower', interpolation='nearest',
+                        cmap=cmap_T, vmin=vmin_t, vmax=vmax_t)
+    plt.colorbar(gtimg, cax=temp_cax, orientation='horizontal')
+    temp_cax.set_xlabel('$\\log_{10} \\mathrm{T} \\; '
+                        '[\\mathrm{K}]$',
+                        fontsize=fontsize)
+    
+    ntax = fig.add_subplot(grid[2, 2])
+    ntimg = ntax.imshow(maps['ne8temp'][0].T, 
+                        extent=maps['ne8temp'][1],
+                        origin='lower', interpolation='nearest',
+                        cmap=cmap_T, vmin=vmin_t, vmax=vmax_t)
+    ntax.set_xlabel('pkpc', fontsize=fontsize)
+    
+    plt.savefig(outname, bbox_inches='tight')
  

@@ -52,13 +52,15 @@ def histogram_radprof(dirpath, snapnum,
         get_qty
     weighttype_args: dict
         additional arguments for what to weight the histogram by. Options 
-        are maptype_args options in get_qty
+        are maptype_args options in get_qty, with some extra options from
+        process_typeargs_coords
     axtypes: list
         list of what to histogram; each entry is one histogram dimension.
         Options are maptype options in get_qty.
     axtypes_args: list of dicts
         list of additional arguments for the histogram dimensions. Options 
-        are maptype_args options in get_qty. Mind the 'density' option for
+        are maptype_args options in get_qty, with some extra options from
+        process_typeargs_coords. Mind the 'density' option for
         ions and metals. These are matched to axtypes by list index.
     particle_type: int
         particle type to project (follows FIRE format)
@@ -204,8 +206,13 @@ def histogram_radprof(dirpath, snapnum,
         halodat = None
     
     for axt, axarg, logax, axb in zip(axtypes, axtypes_args, logaxes, axbins):
-        qty, toCGS, todoc = gq.get_qty(snap, particle_type, axt, axarg, 
-                                       filterdct=filterdct)
+        if axt == 'coords':
+            axarg, todoc = gq.process_typeargs_coords(dirpath, snapnum, axarg)
+        else:
+            todoc = {}
+        qty, toCGS, _todoc = gq.get_qty(snap, particle_type, axt, axarg, 
+                                        filterdct=filterdct)
+        todoc.update(_todoc)
         if logax:
             qty = np.log10(qty)
         qty_good = np.isfinite(qty)
@@ -233,10 +240,15 @@ def histogram_radprof(dirpath, snapnum,
         else:
             _bins_doc = usebins_simu * toCGS
         _axbins_outunit.append(_bins_doc)
-    
-    wt, wt_toCGS, wt_todoc = gq.get_qty(snap, particle_type, weighttype,
-                                        weighttype_args, 
-                                        filterdct=filterdct)
+    if weighttype == 'coords':
+        weighttype_args, wt_todoc = gq.process_typeargs_coords(
+            dirpath, snapnum, weighttype_args)
+    else:
+        wt_todoc = {}
+    wt, wt_toCGS, _wt_todoc = gq.get_qty(snap, particle_type, weighttype,
+                                         weighttype_args, 
+                                         filterdct=filterdct)
+    wt_todoc.update(_wt_todoc)
     #print(_axbins)
     maxperloop = 752**3 // 8
     if len(wt) <= maxperloop:

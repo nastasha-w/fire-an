@@ -153,6 +153,9 @@ def fillin_frontera_seq_multigen(**kwargs):
     outfilen = outfilen.format(st=kwargs_out['start'],
                                ls=kwargs_out['last'],
                                jobname=kwargs_out['PYFILL_JOBNAME'])
+    del kwargs_out['start']
+    del kwargs_out['last']
+    del kwargs_out['npar']
     fillin(templatefilen, outfilen, **kwargs_out)
 
 if __name__ == '__main__':

@@ -44,14 +44,14 @@ def tryout_coords_hist(ind):
     snapnum = 45
 
     weighttypes = ['Mass', 'ion', 'Metal', 'Volume']
-    weighttype_argss = [None,
+    weighttype_argss = [dict(),
                         {'ion': 'Ne8',
                          'ps20depletion': False,
                          'density': False},
                         {'element': 'neon',
                          'ps20depletion': False,
                          'density': False},
-                        None,
+                        dict(),
                         ]
     axtypess = ['coords', 'coords']
     axtypes_argss = [{'vel': 'vrad'},
@@ -79,7 +79,7 @@ def tryout_coords_hist(ind):
                          weighttype, weighttype_args, axtypes, axtypes_args,
                          particle_type=0, 
                          center='shrinksph', rbins=rbins, runit='Rvir',
-                         logweights=True, logaxes=False, axbins=5e5,
+                         logweights=True, logaxes=False, axbins=[5e5],
                          outfilen=outfilen, overwrite=True)
 
 def run_coords_hist():
@@ -108,7 +108,8 @@ def getdata_testhist(filen, yunit=1., xunit=1.):
 
 
 def plot_coords_hist():
-    ddir = '/projects/b1026/nastasha/tests/hists_coords/'
+    #ddir = '/projects/b1026/nastasha/tests/hists_coords/'
+    ddir = 'Users/nastasha/ciera/tests/hists_coords/'
     simname = ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
                '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')
     snapnum = 45
@@ -143,7 +144,7 @@ def plot_coords_hist():
     grid = gsp.GridSpec(ncols=len(wtstrs) + 1, nrows=len(atstrs),
                         wspace=0., hspace=0.,
                         width_ratios=width_ratios)
-    cax = grid.add_subplot(grid[:, len(wtstrs)])
+    cax = fig.add_subplot(grid[:, len(wtstrs)])
     clabel = ('$\\partial^{2}\\, \\mathrm{weight} \\, / \\, '
               '(\\Sigma(\\mathrm{weight}) \\; \\partial \\, \\mathrm{r}'
               '\\; \\partial \\, v) \\;'

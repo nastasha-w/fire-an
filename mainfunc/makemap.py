@@ -6,22 +6,8 @@ import fire_an.mainfunc.get_qty as gq
 import fire_an.mainfunc.haloprop as hp
 import fire_an.readfire.readin_fire_data as rf
 import fire_an.utils.constants_and_units as c
+import fire_an.utils.h5utils as h5u
 from fire_an.utils.projection import project
-
-def savedict_hdf5(grp, dct):
-    for key in dct:
-        val = dct[key]
-        if isinstance(val, type('')):
-            val = np.string_(val)
-        elif val is None:
-            val = np.string_('None')
-        elif isinstance(val, dict):
-            sgrp = grp.create_group(key + '_dict')
-            _val = val.copy()
-            savedict_hdf5(sgrp, _val)
-            val = np.string_('dict')
-        grp.attrs.create(key, val)
-
 
 # AHF: sorta tested (enclosed 2D mass wasn't too far above Mvir)
 # Rockstar: untested draft
@@ -305,7 +291,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         hed = f.create_group('Header')
         cgrp = hed.create_group('inputpars/cosmopars')
         csm = snap.cosmopars.getdct()
-        savedict_hdf5(cgrp, csm)
+        h5u.savedict_hdf5(cgrp, csm)
         
         # direct input parameters
         igrp = hed['inputpars']
@@ -326,17 +312,17 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             igrp.attrs.create('margin_lsmooth_cm', lmargin * coords_toCGS)
         igrp.attrs.create('center', np.string_(center))
         _grp = igrp.create_group('halodata')
-        savedict_hdf5(_grp, halodat)
+        h5u.savedict_hdf5(_grp, halodat)
         igrp.attrs.create('maptype', np.string_(maptype))
         if maptype_args is None:
             igrp.attrs.create('maptype_args', np.string_('None'))
         else:
             igrp.attrs.create('maptype_args', np.string_('dict'))
             _grp = igrp.create_group('maptype_args_dict')
-            savedict_hdf5(_grp, maptype_args)
+            h5u.savedict_hdf5(_grp, maptype_args)
         if weighttype is None and 'units' in mdoc:
             mdoc['units'] = mdoc['units'] + norm_units
-        savedict_hdf5(igrp, mdoc)
+        h5u.savedict_hdf5(igrp, mdoc)
         if weighttype is None:
             igrp.attrs.create('weighttype', np.string_('None'))
             igrp.attrs.create('weighttype_args', np.string_('None'))
@@ -347,10 +333,10 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             else:
                 igrp.attrs.create('weighttype_args', np.string_('dict'))
                 _grp = igrp.create_group('weighttype_args_dict')
-                savedict_hdf5(_grp, weighttype_args)
+                h5u.savedict_hdf5(_grp, weighttype_args)
                 if 'units' in todocW:
                     todocW['units'] = todocW['units'] + norm_units
-                savedict_hdf5(igrp, todocW)
+                h5u.savedict_hdf5(igrp, todocW)
             if save_weightmap:
                 f.create_dataset('weightmap', data=omapW)
                 f['weightmap'].attrs.create('log', logweightmap)
@@ -510,7 +496,7 @@ def massmap_wholezoom(dirpath, snapnum, pixsize_pkpc=3.,
                 hed = f.create_group('Header')
                 cgrp = hed.create_group('inputpars/cosmopars')
                 csm = snap.cosmopars.getdct()
-                savedict_hdf5(cgrp, csm)
+                h5u.savedict_hdf5(cgrp, csm)
         
                 # direct input parameters
                 igrp = hed['inputpars']

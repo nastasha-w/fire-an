@@ -1,6 +1,7 @@
 
 
 import h5py
+import numbers as num
 import numpy as np
 import os
 
@@ -8,6 +9,7 @@ import fire_an.mainfunc.get_qty as gq
 import fire_an.mainfunc.haloprop as hp
 import fire_an.readfire.readin_fire_data as rf
 import fire_an.utils.constants_and_units as c
+import fire_an.utils.h5utils as h5u
 
 
 def getaxbins(minfinite, maxfinite, bin, extendmin=True, extendmax=True):
@@ -219,7 +221,8 @@ def histogram_radprof(dirpath, snapnum,
         minq = np.min(qty[qty_good])
         maxq = np.max(qty[qty_good])
         needext = not np.all(qty_good)
-        if hasattr(axb, '__len__'):
+        if hasattr(axb, '__len__') \
+                or (isinstance(axb, num.Number) and not isinstance(axb, int)):
             if logax:
                 _axb = axb - np.log10(toCGS)
             else:
@@ -228,7 +231,7 @@ def histogram_radprof(dirpath, snapnum,
             _axb = axb
         usebins_simu = getaxbins(minq, maxq, _axb, extendmin=needext, 
                                  extendmax=needext)
-        
+
         _axvals.append(qty)
         _axbins.append(usebins_simu)
         _axdoc.append(todoc)
@@ -294,22 +297,10 @@ def histogram_radprof(dirpath, snapnum,
             hgrp = f.create_group('histogram')
             hgrp.create_dataset('histogram', data=hist)
             hgrp.attrs.create('log', logweights)
-            for key in wt_todoc:
-                val = wt_todoc[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                if val is None:
-                    val = np.string_(val)
-                hgrp.attrs.create(key, val)
+            h5u.savedict_hdf5(hgrp, wt_todoc)
             hgrp.attrs.create('weight_type', np.string_(weighttype))
             wagrp = hgrp.create_group('weight_type_args')
-            for key in weighttype_args:
-                val = weighttype_args[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                if val is None:
-                    val = np.string_(val)
-                wagrp.attrs.create(key, val)
+            h5u.savedict_hdf5(wagrp, weighttype_args)
             
             # histogram axes
             for i in range(0, len(_axbins)):
@@ -324,22 +315,10 @@ def histogram_radprof(dirpath, snapnum,
                 else:
                     agrp.attrs.create('bin_input', axbins[i - 1])
                 _todoc = _axdoc[i]
-                for key in _todoc:
-                    val = _todoc[key]
-                    if isinstance(val, type('')):
-                        val = np.string_(val)
-                    if val is None:
-                        val = np.string_(val)
-                    agrp.attrs.create(key, val)
+                h5u.savedict_hdf5(agrp, _todoc)
                 agrp.attrs.create('qty_type', np.string_(_axtypes[i]))
                 aagrp = agrp.create_group('qty_type_args')
-                for key in _axtypes_args[i]:
-                    val = _axtypes_args[i][key]
-                    if isinstance(val, type('')):
-                        val = np.string_(val)
-                    if val is None:
-                        val = np.string_(val)
-                    aagrp.attrs.create(key, val)
+                h5u.savedict_hdf5(aagrp, _axtypes_args[i])
             
             # direct input parameters
             igrp = hed.create_group('inputpars')
@@ -348,16 +327,8 @@ def histogram_radprof(dirpath, snapnum,
             igrp.attrs.create('dirpath', np.string_(dirpath))
             igrp.attrs.create('particle_type', particle_type)
             igrp.attrs.create('outfilen', np.string_(outfilen))
-            
+            h5u.savedict_hdf5(igrp, todoc_gen)
+
             if halodat is not None:
                 _grp = igrp.create_group('halodata')
-                for key in halodat:
-                    _grp.attrs.create(key, halodat[key])
-
-            for key in todoc_gen:
-                val = todoc_gen[key]
-                if isinstance(val, type('')):
-                    val = np.string_(val)
-                if val is None:
-                    val = np.string_(val)
-                igrp.attrs.create(key, val)
+                h5u.savedict_hdf5(_grp, halodat)

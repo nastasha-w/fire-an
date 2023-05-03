@@ -204,7 +204,13 @@ def fromcommandline(index):
         #  8506 - 10329: m12-hr (1824 inds)
         # 10330 - 10671: m12-sr (342 inds)
         # 10672 - 11925: m13-sr (1254 inds)
-
+    elif index >= 11926 and index < 12160:
+        rhp.run_vcen1(index - 11926)
+        # get all2 centers of velocity (halo and gal for each index)
+        # 11926 - 12015: m13-sr (90 inds)
+        # 12016 - 12027: m13-hr (12 inds)
+        # 12028 - 12051: m12-sr (24 inds)
+        # 12052 - 12159: m12-hr (108 inds) 
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

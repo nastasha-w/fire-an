@@ -29,10 +29,10 @@ vcen_all_cmps = (vcen_all[0]['VXcom_cmps'], vcen_all[0]['VYcom_cmps'],
                  vcen_all[0]['VZcom_cmps'])
 pcen_cm = (vcen_all[0]['Xc_cm'], vcen_all[0]['Yc_cm'],
            vcen_all[0]['Zc_cm'])
-vcen_gal = hp.get_vcom(simpath, snapnum, 1., meandef_rvir='BN98',
-                       parttypes='all')
-vcen_gal_cmps = (vcen_gal[0]['VXcom_cmps'], vcen_gal[0]['VYcom_cmps'],
-                 vcen_gal[0]['VZcom_cmps'])
+#vcen_gal = hp.get_vcom(simpath, snapnum, 1., meandef_rvir='BN98',
+#                       parttypes='all')
+#vcen_gal_cmps = (vcen_gal[0]['VXcom_cmps'], vcen_gal[0]['VYcom_cmps'],
+#                 vcen_gal[0]['VZcom_cmps'])
 maptype_args_all = {'vcen_cmps': vcen_all_cmps, 'center_cm': pcen_cm}
 rvir_cm = vcen_all[0]['Rvir_cm']
 pcen_cm = np.array(pcen_cm)

@@ -170,4 +170,48 @@ def run_halodata(opt):
     dirpath = '/'.join([_dirpath, dp2, simname]) 
     
     hp.gethalodata_shrinkingsphere(dirpath, snapshot, meandef=meandef)
+
+def run_vcen1(opt):
+    '''
+    1 index runs the Halo (all particles but type 2, 1 Rvir) and
+    the galaxy (parttype 4, 0.1 Rvir) velocity calculation.
+    '''
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    meandef = 'BN98'
+    if opt >= 0 and opt < 90:
+        ind = opt - 0
+        simnames = sl.m13_sr_all2 # 15
+        snaps = sl.snaps_sr # 6
+    elif opt >= 90 and opt < 102:
+        ind = opt - 90
+        simnames = sl.m13_hr_all2 # 2
+        snaps = sl.snaps_hr # 6
+    elif opt >= 102 and opt < 126:
+        ind = opt - 102
+        simnames = sl.m12_sr_all2 # 4
+        snaps = sl.snaps_sr # 6
+    elif opt >= 126 and opt < 234:
+        ind = opt - 126
+        simnames = sl.m12_hr_all2 # 18
+        snaps = sl.snaps_hr # 6
+    else:
+        raise ValueError(f'Nothing specified for index {ind}')
+    simi = ind // len(snaps)
+    snapi = ind % len(snaps)
+    simname = simnames[simi]
+    snapnum = snaps[snapi]
+
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname]) 
+
+    print(f'Whole halo, {simname}, snap {snapnum}')
+    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir='BN98',
+                       parttypes='all')
+    print('\n\n')
+    print(f'Galaxy, {simname}, snap {snapnum}')
+    hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
+                parttypes=(4,))
+        
         

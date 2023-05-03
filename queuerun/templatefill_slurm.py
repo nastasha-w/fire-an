@@ -21,6 +21,17 @@ for --firemaps_frontera_seq: fire_maps.py calls with sequential indices
     calls fire_maps.py with a number of indices, so that all indices 
     from start to last are called, with max. step on each node. No jobs 
     with more than one node are created.
+
+for --frontera_seq_multigen: fire_maps.py calls with sequential indices
+    unlike --firemaps_frontera_seq, the step size determines the number
+    of concurrent processes, but the launcher file contains all jobs 
+    from start to last. 
+    --PYFILL_TIME_HHMMSS=HH:MM:SS
+    --PYFILL_PARTITION=<flex OR small>
+    --PYFILL_JOBNAME=<job name>
+    --start=<first index, int>
+    --last=<last index, int>
+    --npar=<number of tasks per node, int> (number run in parallel)
 '''
 
 import os
@@ -108,9 +119,46 @@ def fillset_firemaps_frontera_seqinds(**kwargs):
         kwargs_next['PYFILL_FMIND_START'] = start
         fillin_firemaps_frontera_seqinds(**kwargs_next)
 
+def fillin_frontera_seq_multigen(**kwargs):
+    '''
+    fill in template_slurm_frontera_autolauncher_multigen.sh,
+    checking the key values
+    '''
+    templatefilen = sdir + 'template_slurm_frontera_autolauncher_multigen.sh'
+    # standard format to document, jobname for batch queue submission
+    outfilen = sdir + 'slurm_run_{st}_to_{ls}_{jobname}.sh'
+    defaults = {'PYFILL_TIME_HHMMSS': '01:00:00',
+                'PYFILL_PARTITION': 'flex'}
+    keys_req = ['PYFILL_JOBNAME',
+                'start',
+                'last',
+                'npar']
+    keys_opt = list(defaults.keys())
+    kwargs_out = defaults.copy()
+    for key in kwargs:
+        if (key not in keys_req) and (key not in keys_opt):
+            msg = 'skipping key {}: not an option for this template'
+            print(msg.format(key))
+            continue
+        kwargs_out.update({key: kwargs[key]})
+        if key in keys_req:
+            keys_req.remove(key)
+    if len(keys_req) > 0:
+        print('required keys missing: {}'.format(keys_req))
+    
+    kwargs_out['PYFILL_FMIND_START'] = kwargs_out['start']
+    kwargs_out['PYFILL_FMIND_LAST'] = kwargs_out['last']
+    kwargs_out['PYFILL_NTASKS'] = kwargs_out['npar']
+
+    outfilen = outfilen.format(st=kwargs_out['start'],
+                               ls=kwargs_out['last'],
+                               jobname=kwargs_out['PYFILL_JOBNAME'])
+    fillin(templatefilen, outfilen, **kwargs_out)
+
 if __name__ == '__main__':
     args = sys.argv[1:]
-    methodargs = ['--firemaps_frontera_seq']
+    methodargs = ['--firemaps_frontera_seq',
+                  '--frontera_seq_multigen']
     methodset = False
     kwargs = {}
     for arg in args:
@@ -128,6 +176,8 @@ if __name__ == '__main__':
 
     if '--firemaps_frontera_seq' in args:
         fillset_firemaps_frontera_seqinds(**kwargs)
+    if '--frontera_seq_multigen' in args:
+        fillin_frontera_seq_multigen(**kwargs)
     else: 
         msg = 'No known template specified; options are: {}'
         raise ValueError(msg.format(methodargs))

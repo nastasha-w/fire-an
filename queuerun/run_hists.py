@@ -395,7 +395,6 @@ def run_hist_vtotrad(opt):
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
     outdir = '/scratch1/08466/tg877653/output/hists/vradtot_all2/'
-    outname = 'hist_r3D_by_mass_pt{pt}_{simname}_snap{snap}_bins1_v1.hdf5'
     simi = ind // (len(snaps) * len(wts) * len(ats))
     snpi = (ind % (len(snaps) * len(wts) * len(ats))) // (len(wts) * len(ats))
     wti = (ind % (len(wts) * len(ats))) // len(ats)
@@ -404,8 +403,8 @@ def run_hist_vtotrad(opt):
     snapnum = snaps[snpi]
     wt = wts[wti]
     wtarg = wtargs[wti]
-    at = ats[ati]
-    atarg = atargs[ati]
+    at = [ats[ati]]
+    atarg = [atargs[ati]]
     
     runit = 'Rvir'
     rbins = np.append(np.linspace(0., 0.09, 10), np.linspace(0.1, 2., 39))

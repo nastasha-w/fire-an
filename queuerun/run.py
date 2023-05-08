@@ -211,6 +211,13 @@ def fromcommandline(index):
         # 12016 - 12027: m13-hr (12 inds)
         # 12028 - 12051: m12-sr (24 inds)
         # 12052 - 12159: m12-hr (108 inds) 
+    elif index >= 12160 and index < 14968:
+        # get all2 vrad/vtot for different weights
+        # 12160 - 13239: m13-sr (1080 indices)
+        # 13240 - 13383: m13-hr (144 indices)
+        # 13384 - 13671: m12-sr (288 indices)
+        # 13672 - 14967: m12-hr (1296 indices)
+        rhs.run_hist_vtotrad(opt - 12160)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

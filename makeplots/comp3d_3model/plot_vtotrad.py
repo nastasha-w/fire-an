@@ -19,7 +19,7 @@ def getdata_hist(filen, yunit=1., xunit=1.):
         rbins = f['axis_0/bins'][:] / xunit
         ybins = f['axis_1/bins'][:] / yunit   
         csmpath = 'Header/cosmopars'
-        cosmopars = {key: val for key, val in f[csmpath].items()}
+        cosmopars = {key: val for key, val in f[csmpath].attrs.items()}
     basehist = hist / np.diff(rbins)[:, np.newaxis] \
                     / np.diff(ybins)[np.newaxis, :] \
                     / np.sum(hist)
@@ -53,7 +53,7 @@ def plot_vradtot_zphyscomp(filen_template, zfills, phicfills,
     nz = len(zfills[0])
     _colors = tc.tol_cmap('rainbow_discrete', nz)
     zticks = np.linspace(0.5 / nz, 1. - 0.5 / nz, nz)
-    colors = _colors(zticks)
+    colors = _colors(zticks)[::-1]
     # zip/list comprehension issues or something when using 
     # tol_cmap outputs directly
     colors = [mcolors.to_rgb(col) for col in colors]
@@ -65,20 +65,20 @@ def plot_vradtot_zphyscomp(filen_template, zfills, phicfills,
             for _zflist, phicfill in zip(zfills, phicfills)]
     ncols = len(phicfills)
     panelsize = 2.5
-    laxspace = 1.0
+    laxspace = 1.5
     width_ratios = [panelsize] * ncols
     height_ratios = [panelsize] + [laxspace]
     hspace = 0.0
     wspace = 0.0
-    height = sum(height_ratios) \
-             * (1. + hspace * sum(height_ratios) / (len(height_ratios) - 1.))
-    width = sum(width_ratios) \
-            * (1. + hspace * sum(width_ratios) / (len(width_ratios) - 1.))
+    height = sum(height_ratios) * (1. + hspace * sum(height_ratios) \
+                * (len(height_ratios) - 1.)/ len(height_ratios))
+    width = sum(width_ratios) * (1. + hspace * sum(width_ratios) \
+                *  (len(width_ratios) - 1.)  / (len(width_ratios)))
     fig = plt.figure(figsize=(width, height))
     grid = gsp.GridSpec(ncols=ncols, nrows=2, wspace=wspace,
                         hspace=hspace, width_ratios=width_ratios,
                         height_ratios=height_ratios)
-    axes = fig.add_subplot(grid[0, i] for i in range(ncols))
+    axes = [fig.add_subplot(grid[0, i]) for i in range(ncols)]
     lax = fig.add_subplot(grid[1, :])
     lax.axis('off')
     
@@ -94,38 +94,39 @@ def plot_vradtot_zphyscomp(filen_template, zfills, phicfills,
                        labelbottom=True, labelleft=doleft)
         if physlabels is not None:
             plab = physlabels[pi]
-            ax.text(0.05, 0.95, plab, fontsize=fontsize,
-                    horizontalalignment='left',
+            ax.text(0.95, 0.95, plab, fontsize=fontsize,
+                    horizontalalignment='right',
                     verticalalignment='top',
                     transform=ax.transAxes,
                     color='black')
         if doleft and ylabel is not None:
             ax.set_ylabel(ylabel, fontsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize)
+        ax.axhline(0., linestyle='solid', color='gray', linewidth=1.)
         for zi in range(nz):
             _data = data[pi][zi]
             color = colors[zi]
             rbins = _data['rbins']
-            rc = 0.5 * (rbins[:-1] + rbins[:1])
+            rc = 0.5 * (rbins[:-1] + rbins[1:])
             ybins = _data['ybins']
             hist = _data['hist']
             zvals.append(_data['cosmopars']['z'])
             
-            yv = mu.percentiles_from_histogram(hist, ybins, axis=-1, 
+            yv = mu.percentiles_from_histogram(hist, ybins, axis=1, 
                 percentiles=np.array(perclevels))
             for pvi in range(len(perclevels)):
                 ax.plot(rc, yv[pvi], color=color, **(pstyles[pvi]))
-    ylims = [ax.get_ylims() for ax in axes]
+    ylims = [ax.get_ylim() for ax in axes]
     ymin = min([yl[0] for yl in ylims])
-    ymin = max(ymin, -250.)
+    ymin = max(ymin, -300.)
     ymax = max([yl[1] for yl in ylims])
-    ymax = min(ymax, 400.)
-    [ax.set_ylims((ymin, ymax)) for ax in axes]
+    ymax = min(ymax, 500.)
+    [ax.set_ylim((ymin, ymax)) for ax in axes]
 
-    chandles = [mlines.line2D((), (), color=color, label=f'$z={z:.1f}$')
+    chandles = [mlines.Line2D((), (), color=color, label=f'$z={z:.1f}$')
                 for color, z in zip(colors, zvals)]
-    lshandles = [mlines.line2D((), (), color='black', 
-                               label=f'${pv * 100:.0f}%$', **ls)
+    lshandles = [mlines.Line2D((), (), color='black', 
+                               label=f'{pv * 100:.0f}%', **ls)
                  for ls, pv in zip(pstyles, perclevels)]
     lax.legend(handles=lshandles + chandles, fontsize=fontsize - 1., 
                ncol=int(np.floor(1.5 * ncols)),
@@ -134,14 +135,15 @@ def plot_vradtot_zphyscomp(filen_template, zfills, phicfills,
         plt.savefig(outname, bbox_inches='tight')
 
 def plotset_vradtot_zphyscomp(vtype='rad'):
-    fdir = '/projects/b1026/nastasha/hists/vradtot_all2/'
-    outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/'
+    fdir = '/Users/nastasha/ciera/profiles/fire/vradtot_all2/'
+    outdir = ('/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+              'model3/vel3dcomp/')
     simnames = sl.m13_sr_all2 + sl.m13_hr_all2 \
                + sl.m12_sr_all2 + sl.m12_hr_all2
     sn_hr = sl.m13_hr_all2 + sl.m12_hr_all2
     sn_sr = sl.m13_sr_all2 + sl.m12_sr_all2
     icsets = []
-    ylabel = (f'$v_{vtype} \\;'
+    ylabel = (f'$v_{{\\mathrm{{{vtype}}}}}\\;'
               '[\\mathrm{km} \\, \\mathrm{s}^{-1}]$')
     for simname in simnames:
         ic = simname.split('_')[0]
@@ -175,8 +177,6 @@ def plotset_vradtot_zphyscomp(vtype='rad'):
             plot_vradtot_zphyscomp(ftemp, zfills, phicfills,
                                    title=title, outname=outname, 
                                    ylabel=ylabel, physlabels=physlabels)
-            break
-        break
 
 def plotvradtot_zweightcomp(filen_template, zfills, wfills):
     '''

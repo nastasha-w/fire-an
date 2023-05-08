@@ -217,7 +217,7 @@ def fromcommandline(index):
         # 13240 - 13383: m13-hr (144 indices)
         # 13384 - 13671: m12-sr (288 indices)
         # 13672 - 14967: m12-hr (1296 indices)
-        rhs.run_hist_vtotrad(opt - 12160)
+        rhs.run_hist_vtotrad(index - 12160)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

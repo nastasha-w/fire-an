@@ -383,7 +383,7 @@ class CoordinateWranger:
 
     def __calc_velrad(self, specs):
         self.scur = specs[0]
-        self._cendir = self.coords_stored[('pos', 'allcart')][0]
+        self._cendir = np.copy(self.coords_stored[('pos', 'allcart')][0])
         self._cendir /= self.coords_stored[('pos', 'rcen')][0][:, np.newaxis]
         self._out = np.einsum('ij,ij->i', self._cendir, 
                               self.coords_stored[('vel', 'allcart')][0])

@@ -321,7 +321,7 @@ def paste_cmaps(cmaplist, edges, trunclist=None, transwidths=None):
     if trunclist is None:
         trunclist = [(0., 1.)] * len(cmaplist)
     if transwidths is None:
-        transwidths = [0.] * (len(cmaplist) - 1)
+        transwidths = [0.] * max((len(cmaplist) - 1), 1)
     # cobble together a color map
     nsample = 256
     cmaps = [mpl.cm.get_cmap(cmap) if isinstance(cmap, type('')) else cmap \

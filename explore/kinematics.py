@@ -42,12 +42,16 @@ def getspacefilter(simname, snapnum, maxradius_rvir, parttype=0):
     return filter
 
 def genfilter(simname: str, snapnum: int, 
-              qtys: list[str], qtys_args: list[dict],
-              qtys_minmax_cgs: list[tuple],
+              qtys: list, qtys_args: list,
+              qtys_minmax_cgs: list,
               parttype=0, filterdct=None):
     '''
     selects >= min, < max each qty
     each element in qtys, qtys_args is passed to get_qty
+    qtys: list[str], 
+    qtys_args: list[dict],
+    qtys_minmax_cgs: list[tuple]
+
     returns:
     --------
     The filter array (boolean, size equal to the number of True

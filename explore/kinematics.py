@@ -170,25 +170,51 @@ def get_selkin(simname, snapnum, maxradius_rvir,
     return pvs, rvir_pkpc
 
 def run_sel1(simname, snapnum):
-    selqtys = ['Mass', 'Volume', 'Mass', 'Metal', 'ion']
-    selqtys_args = [{}, {}, {}, {'element': 'Neon'}, {'ion': 'Ne8'}]
-    sselqtys = [None, None, 'sim-direct', None, None]
-    sselqtys_args = [None, None, {'field': 'Temperature'}, None, None]
-    sselqtys_minmax = [None, None, (1e5, np.inf), None, None]
+    selqtys = ['Mass', 'Mass', 'Metal', 'Metal', 'Volume', 'ion']
+    selqtys_args = [{}, {}, {'element': 'Neon'}, {'element': 'Neon'}, 
+                    {}, {'ion': 'Ne8'}]
+    sselqtys = [None, ['sim-direct'],
+                 None, ['sim-direct'], 
+                 None, None]
+    sselqtys_args = [None, [{'field': 'Temperature'}], 
+                     None, [{'field': 'Temperature'}], 
+                     None, None]
+    sselqtys_minmax = [None, [(1e5, np.inf)], 
+                       None, [(1e5, np.inf)],
+                       None, None]
     pv, rv = get_selkin(simname, snapnum, 1., 
                         selqtys, selqtys_args, samplesize=500,
-                        parttype=0, strictselqtyss=None, 
-               strictselqtyss_args=None,
-               strictselqtyss_minmax=None)
+                        parttype=0, strictselqtyss=sselqtys, 
+                        strictselqtyss_args=sselqtys_args,
+                        strictselqtyss_minmax=sselqtys_minmax)
     pvs, rvs = get_selkin(simname, snapnum, 1., 
-                          ['Mass'], [{}], samplesize=500,
+                          ['Mass'], [{}], samplesize=300,
                           parttype=4)
     pvsc, rvsc = get_selkin(simname, snapnum, 0.05, 
                             ['Mass'], [{}], samplesize=100,
                             parttype=4)
-    labels = ['Mass', 'Volume', 'Mass > 1e5 K', 'Neon', 
-              'Ne8', 'stars', 'stars < 0.05 Rvir']
+    labels = ['Mass', 'Mass > 1e5 K', 'Neon', 'Neon > 1e5 K', 
+              'Volume', 'Ne8', 'stars', 'stars < 0.05 Rvir']
     return pv + pvs + pvsc, labels
+
+def run_sel2(simname, snapnum):
+    selqtys = ['Volume', 'Mass', 'Mass', 'Metal'] + ['ion'] * 4
+    selqtys_args = [{}, {}, {}, {'element': 'Neon'},
+                    {'ion': 'Ne8'}, {'ion': 'O6'}, {'ion': 'O7'},
+                    {'ion': 'O8'}]
+    sselqtys = [None, None, ['sim-direct'], ['sim-direct']] + [None] * 4
+    sselqtys_args = [None, None, [{'field': 'Temperature'}], 
+                     [{'field': 'Temperature'}]] + [None] * 4
+    sselqtys_minmax = [None, None, [(1e5, np.inf)], [(1e5, np.inf)]] \
+                      + [None] * 4
+    pv, rv = get_selkin(simname, snapnum, 1., 
+                        selqtys, selqtys_args, samplesize=500,
+                        parttype=0, strictselqtyss=sselqtys, 
+                        strictselqtyss_args=sselqtys_args,
+                        strictselqtyss_minmax=sselqtys_minmax)
+    labels = ['Volume', 'Mass', 'Mass > 1e5 K', 'Neon > 1e5 K', 
+              'Ne8', 'O6', 'O7', 'O8']
+    return pv, labels
 
 def quiverplot(pos, vel, alpha=0.2, vscale=0.1):
     fig = plt.figure()
@@ -211,12 +237,12 @@ def quiverplots(posvels, alpha=0.2, vscales=0.1, axtitles=None,
             for i in range(len(posvels))]
     if not hasattr(vscales, '__len__'):
         vscales = [vscales] * npanels
+    vmax = max([np.max(np.abs(_pv[2])) for _pv in posvels])
+    vmin = -1. * vmax 
     for i, (_p, _v, _vr) in enumerate(posvels):
         ax = axes[i]
         __v = vscales[i] * _v
         __p = np.copy(_p)
-        vmax = np.max(np.abs(_vr))
-        vmin = -1. * vmax 
         cmap = mpl.cm.get_cmap('cool_r')
         cvals = cmap((_vr - vmin) / (vmax  - vmin))
         cvals[:, 3] = alpha
@@ -236,7 +262,7 @@ def quiverplots(posvels, alpha=0.2, vscales=0.1, axtitles=None,
         plt.savefig(outdir + outname, bbox_inches='tight')
     plt.show()
 
-def runplots_sel1(hset='m12'):
+def runplots_selset(hset='m12', selset=2):
     if hset == 'm12':
         sims = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
                  '_sdp1e10_gacc31_fa0.5'),
@@ -262,10 +288,15 @@ def runplots_sel1(hset='m12'):
     zstrs = ['1p0', '0p5']
 
     outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
-    outname_temp = 'pv3d_try2_{ic}_{phys}_z{zstr}_vscale_0p2_0p02.pdf'
-    title_temp = '{ic} {phys} z={z:.1f}, pos.: pkpc, vel: km/s * (0.2, 0.02)'
-    vscales = [0.2, 0.2, 0.2, 0.2, 
-               0.2, 0.2, 0.02]
+    if selset == 1:
+        outname_temp = 'pv3d_try2_{ic}_{phys}_z{zstr}_vscale_0p2_0p01.pdf'
+        title_temp = ('{ic} {phys} z={z:.1f}, pos.: pkpc, '
+                      'vel: km/s * (0.2, 0.01)')
+        vscales = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.01]
+    elif selset == 2:
+        outname_temp = 'pv3d_try3_{ic}_{phys}_z{zstr}_vscale_0p2.pdf'
+        title_temp = '{ic} {phys} z={z:.1f}, pos.: pkpc, vel: km/s * 0.2'
+        vscales = [0.2] * 8
     for sim in sims:
         ic = sim.split('_')[0]
         phys = ('noBH' if '_sdp1e10_' in sim 
@@ -281,7 +312,10 @@ def runplots_sel1(hset='m12'):
                                                    zstr=zstr)
             title = title_temp.format(ic=ic, phys=phys, z=zv)
             
-            pvs, labels = run_sel1(sim, snap)
+            if selset == 1:
+                pvs, labels = run_sel1(sim, snap)
+            elif selset == 2:
+                pvs, labels = run_sel2(sim, snap)
             quiverplots(pvs, alpha=0.2, vscales=vscales, axtitles=labels,
                         outname=outname, title=title)
 

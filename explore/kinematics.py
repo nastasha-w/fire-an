@@ -287,7 +287,7 @@ def runplots_selset(hset='m12', selset=2):
     zs = [1.0, 0.5]
     zstrs = ['1p0', '0p5']
 
-    outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
+    #outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
     if selset == 1:
         outname_temp = 'pv3d_try2_{ic}_{phys}_z{zstr}_vscale_0p2_0p01.pdf'
         title_temp = ('{ic} {phys} z={z:.1f}, pos.: pkpc, '
@@ -308,8 +308,7 @@ def runplots_selset(hset='m12', selset=2):
             snap = (snaps_hr[zi] if sim in hrset 
                     else snaps_sr[zi] if sim in srset 
                     else None)
-            outname = outdir + outname_temp.format(ic=ic, phys=phys, 
-                                                   zstr=zstr)
+            outname = outname_temp.format(ic=ic, phys=phys, zstr=zstr)
             title = title_temp.format(ic=ic, phys=phys, z=zv)
             
             if selset == 1:

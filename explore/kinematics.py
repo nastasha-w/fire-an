@@ -110,7 +110,8 @@ def getweightfilter(simname, snapnum, selqty, selqty_args,
                            replace=False, p=normedvals)
     return out
 
-def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False):
+def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False,
+               rcen=False):
     '''
     returns positions in pkpc, velocities in km/s, and Rvir in pkpc
     '''
@@ -127,19 +128,28 @@ def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False):
     
     qty = 'coords'
     coords_todo = [{'pos': 'allcart'}, {'vel': 'allcart'}]
+    basei = 2
     if vr:
         coords_todo = coords_todo + [{'vel': 'vrad'}]
+        vri = basei
+        basei += 1
+    if rcen:
+        coords_todo = coords_todo + [{'pos': 'rcen'}]
+        rci = basei
     qty_args = {'center_cm': cen_cm, 'vcen_cmps': vcen_cmps,
                 'multiple': coords_todo}
     valspv, toCGSpv, todoc_pv = gq.get_qty(
         snap, parttype, qty, qty_args, filterdct=filterdct)
     pos_pkpc = valspv[0] * (toCGSpv[0] / (c.cm_per_mpc * 1e-3))
     vel_kmps = valspv[1] * (toCGSpv[1] / (1e5))
+    out = (pos_pkpc, vel_kmps)
     if vr:
-        vr_kmps = valspv[2] * (toCGSpv[2] / (1e5))
-        return pos_pkpc, vel_kmps, vr_kmps, rvir_pkpc
-    else:
-        return pos_pkpc, vel_kmps, rvir_pkpc
+        vr_kmps = valspv[vri] * (toCGSpv[vri] / (1e5))
+        out = out + (vr_kmps,)
+    if rcen:
+        rc_pkpc = valspv[rci] * (toCGSpv[rci] /  (c.cm_per_mpc * 1e-3))
+        out = out + (rc_pkpc,)
+    return out +  (rvir_pkpc,)
 
 def get_selkin(simname, snapnum, maxradius_rvir, 
                selqtys, selqtys_args, samplesize=2000,
@@ -264,14 +274,14 @@ def quiverplots(posvels, alpha=0.2, vscales=0.1, axtitles=None,
 
 def runplots_selset(hset='m12', selset=2):
     if hset == 'm12':
-        sims = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
-                 '_sdp1e10_gacc31_fa0.5'),
-                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
-                 '_sdp2e-4_gacc31_fa0.5'),
-                ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
-                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
-                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
-                 '_sdp1e10_gacc31_fa0.5'),
+        sims = [#('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                # '_sdp1e10_gacc31_fa0.5'),
+                #('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                # '_sdp2e-4_gacc31_fa0.5'),
+                #('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                # '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                #('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                # '_sdp1e10_gacc31_fa0.5'),
                 ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
                  '_sdp2e-4_gacc31_fa0.5'),
                 ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
@@ -318,6 +328,55 @@ def runplots_selset(hset='m12', selset=2):
             quiverplots(pvs, alpha=0.2, vscales=vscales, axtitles=labels,
                         outname=outname, title=title)
 
+def calcangmomprofile(simname, snapnum, rbins_rvir,
+                      wtqtys, wtqtys_args, 
+                      selqtys=None, selqtys_args=None, selqtys_minmax=None,
+                      parttype=0):
+    
+    sf = getspacefilter(simname, snapnum, rbins_rvir[-1], parttype=parttype)
+    sfd = {'filter': sf}
+    pall_pkpc, vall_kmps, vrall_kmps, rcall_pkpc, rvir_pkpc = getkininfo(
+        simname, snapnum, filterdct=sfd, parttype=parttype, vr=True, rcen=True)
+    specL = np.cross(pall_pkpc, vall_kmps, axis=1)
+    maxspecL = rcall_pkpc * vrall_kmps
+    
+    rbins_pkpc = np.array(rbins_rvir) * rvir_pkpc
+    rinds = np.searchsorted(rbins_pkpc, rcall_pkpc) - 1 
+    if selqtys is None:
+        selqtys = [None] * len(wtqtys)
+        selqtys_args = [None] * len(wtqtys)
+        selqtys_minmax = [None] * len(wtqtys)
+    wtd_specL = []
+    wtd_maxspecL = []
+    wts_tot = []
+    for wtqty, wtqty_args, _selqtys, _selqtys_args, _selqtys_minmax in zip(
+            wtqtys, wtqtys_args, selqtys, selqtys_args, selqtys_minmax):
+        _specL_perbin = []
+        _maxspecL_perbin = []
+        _wtvals_perbin = []
+        if _selqtys is not None:
+            filter = genfilter(simname, snapnum, _selqtys, 
+                               _selqtys_args, _selqtys_minmax, 
+                               parttype=parttype, filterdct=sfd)
+            setzero = np.logical_not(filter)
+        else:
+            setzero = slice(0, 0, 1) # select nothing
+        wtvals, wtvals_toCGS, wtvals_todoc = gq.get_qty(
+            snapnum, parttype, wtqty, wtqty_args, filterdct=sfd)
+        wtvals[setzero] = 0.
+        for ri in range(len(rbins_pkpc) - 1):
+            rsel = rinds == ri
+            _wt = wtvals[rsel]
+            wtot = np.sum(_wt)
+            _specL_perbin.append(np.sum(specL[rsel] * _wt) / wtot)
+            _maxspecL_perbin.append(np.sum(maxspecL[rsel] * _wt) / wtot)
+            _wtvals_perbin.append(wtot)
+        wtd_specL.append(_specL_perbin)
+        wtd_maxspecL.append(_maxspecL_perbin)
+        wts_tot.append(_wtvals_perbin)
+    return rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot
+
+    
 
     
     

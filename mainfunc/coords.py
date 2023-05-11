@@ -232,18 +232,30 @@ class CoordinateWranger:
         self.calcorder = [('poscart', [('pos', 'allcart'), ('pos', 0),
                                        ('pos', 1), ('pos', 2)]),
                           ('poscen', [('pos', 'rcen')]),
+                          ('posazi', [('pos', 'azimuth')]),
+                          ('posphi', [('pos', 'phi')]),
                           ('velcart', [('vel', 'allcart'), ('vel', 0),
                                       ('vel', 1), ('vel', 2)]),
                           ('veltot', [('vel', 'vtot')]), 
                           ('velcen', [('vel', 'vrad')]),
+                          ('velazi', [('vel', 'azimuth')]),
+                          ('velphi', [('vel', 'phi')])
                          ]
         # what to get just because it's needed later
         # note: should include dependencies of dependencies
         self.dependencies = {('pos', 'rcen'): [('pos', 'allcart')],
+                             ('pos', 'azimuth') : [('pos', 'allcart'),
+                                                   ('pos', 'rcen')],
+                             ('pos', 'phi') : [('pos', 'allcart')],
                              ('vel', 'vtot'): [('vel', 'allcart')],
                              ('vel', 'vrad'): [('vel', 'allcart'),
                                                ('pos', 'allcart'),
-                                               ('pos', 'rcen')]
+                                               ('pos', 'rcen')],
+                             ('vel', 'azimuth'): [('vel', 'allcart'),
+                                                  ('pos', 'azimuth'),
+                                                  ('pos', 'phi')],
+                             ('vel', 'phi'): [('vel', 'allcart'),
+                                              ('pos', 'phi')],
                             }
         # set up to-do list of everything that's needed (no duplicates)
         self._coords_todo = set(self.coordspecs_in.copy())
@@ -275,12 +287,20 @@ class CoordinateWranger:
                 self.__calc_poscart(self.gcur)
             elif self.gkeymatch == 'poscen':
                 self.__calc_poscen(self.gcur)
+            elif self.gkeymatch == 'posazi':
+                self.__calc_posazimuth(self.gcur)
+            elif self.gkeymatch == 'posphi':
+                self.__calc_posphi(self.gcur)
             elif self.gkeymatch == 'velcart':
                 self.__calc_velcart(self.gcur)
             elif self.gkeymatch == 'veltot':
                 self.__calc_veltot(self.gcur)
             elif self.gkeymatch == 'velcen':
                 self.__calc_velrad(self.gcur)
+            elif self.gkeymatch == 'velazi':
+                self.__calc_velazimuth(self.gcur)
+            elif self.gkeymatch == 'velphi':
+                self.__calc_velphi(self.gcur)
             self.__update_out_todo(self.gcur)
             print(f'still todo: {self.still_todo}')
         del self.gcur, self.gkeymatch, self.coords_todo, 
@@ -332,6 +352,51 @@ class CoordinateWranger:
         self._out = np.sqrt(np.sum(self._in[0]**2, axis=self.coordaxis))
         self.coords_stored[self.scur] = (self._out, self._in[1], 
                                          self._todoc_cur)
+        del self.scur, self._out, self._todoc_cur, self._in
+    
+    def __calc_posazimuth(self, specs):
+        '''
+        spherical coordinate theta: angle with the rotated z axis
+        (axis index 2)
+        range: -pi/2 -- pi/2 
+        units: radians
+        '''
+        self.scur = specs[0]
+        self._in = self.coords_stored[('pos', 'allcart')]
+        self._todoc_cur = self._in[2].copy()
+        del self._todoc_cur['rotcoord_index']
+        self._todoc_cur['units'] = 'radians'
+        self._todoc_cur['info'] = ('angle with rot. coord. z axis,'
+                                   ' [-pi / 2, pi / 2]')
+        self._r = self.coords_stored[('pos', 'rcen')]
+        self._rat = self._in[0][:, 2] / self._r[0]
+        # adjust if any unit differences
+        if not np.isclose(self._in[1], self._r[1]):
+            self._rat *= (self._in[1] / self._r[1])
+        del self._r, self._in
+        self._out = np.arccos(self._rat)
+        self.coords_stored[self.scur] = (self._out, 1., self._todoc_cur)
+        del self.scur, self._out, self._todoc_cur, self._in, self._rat
+
+    def __calc_posphi(self, specs):
+        '''
+        spherical coordinate phi: angle with the rotated positive 
+        x axis (axis index 0), in the rotated x-y plane (axis 
+        indices 0 , 1)
+        range: -pi -- pi 
+        units: radians
+        '''
+        self.scur = specs[0]
+        self._in = self.coords_stored[('pos', 'allcart')]
+        self._todoc_cur = self._in[2].copy()
+        del self._todoc_cur['rotcoord_index']
+        self._todoc_cur['units'] = 'radians'
+        self._todoc_cur['info'] = ('angle with rot. coord. +x axis,'
+                                   ' in the rot. x-y plane [-pi, pi]')
+        # arctan2 arguments are y, x!
+        # 0., 0., -> 0.
+        self._out = np.arctan2(self._in[0][:, 1], self._in[0][:, 0])
+        self.coords_stored[self.scur] = (self._out, 1., self._todoc_cur)
         del self.scur, self._out, self._todoc_cur, self._in
 
     def __calc_velcart(self, specs):
@@ -397,6 +462,46 @@ class CoordinateWranger:
                                          self._todoc_cur)
         del self.scur, self._out, self._todoc_cur, self._cendir, self._units
         del self.pkey
+
+    def __calc_velphi(self, specs):
+        self.scur = specs[0]
+        self._in = self.coords_stored[('vel', 'allcart')]
+        self._phi = self.coords_stored[('pos', 'phi')]
+        self._phidir = np.zeros(self._in.shape, dtype=self._in.dtype)
+        self._phidir[:, 0] = - np.sin(self._phi)
+        self._phidir[:, 1] = np.cos(self._phi)
+        del self._phi
+        self._out = np.einsum('ij,ij->i', self._phidir, self._in)
+        self._units = self.coords_stored[('vel', 'allcart')][1]
+        self._todoc_cur = self._in[2].copy()
+        del self._todoc_cur['rotcoord_index']
+        self._todoc_cur['info'] = ('velocity component in rot. x-y plane'
+                                   ' rotation')
+        self.coords_stored[self.scur] = (self._out, self._units, 
+                                         self._todoc_cur)
+        del self.scur, self._out, self._todoc_cur, self._in, self._units
+        del self._phidir
+    
+    def __calc_velazimuth(self, specs):
+        self.scur = specs[0]
+        self._in = self.coords_stored[('vel', 'allcart')]
+        self._phi = self.coords_stored[('pos', 'phi')][0]
+        self._azi = self.coords_stored[('pos', 'azimuth')][0]
+        self._phidir = np.zeros(self._in.shape, dtype=self._in.dtype)
+        self._phidir[:, 0] = np.cos(self._azi) * np.cos(self._phi)
+        self._phidir[:, 1] = np.cos(self._azi) * np.sin(self._phi)
+        self._phidir[:, 2] =  - np.sin(self._azi)
+        del self._phi, self._azi
+        self._out = np.einsum('ij,ij->i', self._phidir, self._in[0])
+        self._units = self._in[1]
+        self._todoc_cur = self._in[2].copy()
+        del self._todoc_cur['rotcoord_index']
+        self._todoc_cur['info'] = ('velocity component in rot. x-y plane'
+                                   ' rotation')
+        self.coords_stored[self.scur] = (self._out, self._units, 
+                                         self._todoc_cur)
+        del self.scur, self._out, self._todoc_cur, self._in, self._units
+        del self._phidir
 
     def __update_out_todo(self, specs):
         # update output list

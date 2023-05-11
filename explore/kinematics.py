@@ -376,14 +376,16 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
         wts_tot.append(_wtvals_perbin)
     return rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot
 
-def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot):
+def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
+                       wtlabels, wtcolors, wtstyles):
     # plot delta(wt, ref wt at cen)
     # plot delta(wt, prev. weight)
     # plot planar fractions
     # plot radial dist.
     # different weights in different colors
     # different plots for different haloes
-    
+    pass
+
     
 
     

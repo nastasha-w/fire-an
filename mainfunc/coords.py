@@ -185,7 +185,7 @@ class CoordinateWranger:
             self.vel_simxyz %= self.vboxsize_simu
             self.vel_simxyz -= 0.5 * self.vboxsize_simu
         
-    def calccoords(self, coordspecs, filterdct=None):
+    def calccoords(self, coordspecs):
         '''
         calculate various coordinate values. Doing this all in one go
         should save some time from reading in large arrays multiple
@@ -197,16 +197,26 @@ class CoordinateWranger:
             list: different coordinates to calculate
             dict or dicts in list: specify what to calculate
             dict keys and possible values:
-                'pos': [0, 1, 2, 'allcart', 'rcen']
+                'pos': [0, 1, 2, 'allcart', 'rcen', 'phi', 'azimuth']
                     0, 1, 2: position along the axis with this index
                     'allcart': for all three of these cartesian axes
                     'rcen': distance to the center
-                'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot']
+                    'phi': angle w.r.t. the positive x-axis in the
+                        x-y plane (after coordinate rotation)
+                    'azimuth': angle w.r.t. the postitive z-axis
+                        (after coordinate rotation)
+                'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot', 'phi',
+                        'azimuth']
                      0, 1, 2: velocity along the axis with this index
                     'allcart': for all three of these cartesian axes
                     'vrad': radial velocity (relative to coordinate
-                            center)
+                        center)
                     'vtot': total velocity (rms coordinate velocties)
+                    'phi': rotational velocity about the z-axis
+                        (after coordinate rotation)
+                    'azimuth': in spherical coordinates, velocity in 
+                        the azimuthal angle/theta direction (after 
+                        coordinate rotation)
                     note: you must specifiy vcen_cmps when initializing
                     this object to calculate this. 
                 indices etc. are all for the rotated coordinates, after

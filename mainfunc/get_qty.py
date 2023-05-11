@@ -367,13 +367,14 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
                 the name of the field (after 'PartType<#>') to read 
                 in from the simulation.
         'coords': (only one of 'pos', 'cen' allowed per item)
-            'pos': [0, 1, 2, 'allcart', 'rcen']
+            'pos': [0, 1, 2, 'allcart', 'rcen', 'phi', 'azimuth']
                 0, 1, 2: position along the axis with this index
                 'allcart': for all three of these cartesian axes
                 'rcen': distance to the center
                 The center is assumed to match the halo center used
                 for the map.
-            'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot']
+            'vel': [0, 1, 2, 'allcart', 'vrad', 'vtot', 'phi',
+                    'azimuth']
                  0, 1, 2: velocity along the axis with this index
                 'allcart': for all three of these cartesian axes
                 'vrad': radial velocity (relative to coordinate

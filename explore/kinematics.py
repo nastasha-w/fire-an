@@ -6,6 +6,8 @@ possibly expandable into proper scripts
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.gridspec as gsp
+import matplotlib.lines as mlines
 import mpl_toolkits.mplot3d as m3d  
 
 import fire_an.mainfunc.get_qty as gq
@@ -288,8 +290,8 @@ def runplots_selset(hset='m12', selset=2):
                  '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
                 ]
     else:
-        sims = sl.m13_nobh_clean2 + sl.m13_agnnocr_clean2 \
-               + sl.m13_agncr_clean2
+        sims = sl.m13_agnnocr_clean2 \
+               + sl.m13_agncr_clean2 #sl.m13_nobh_clean2 +
     snaps_hr = [sl.snaps_hr[0], sl.snaps_hr[-1]]
     snaps_sr = [sl.snaps_sr[0], sl.snaps_sr[-1]]
     hrset = sl.m12_hr_all2 + sl.m13_hr_all2
@@ -332,7 +334,8 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
                       wtqtys, wtqtys_args, 
                       selqtys=None, selqtys_args=None, selqtys_minmax=None,
                       parttype=0):
-    
+    simpath = getpath(simname)
+    snap = rfd.get_Firesnap(simpath, snapnum)
     sf = getspacefilter(simname, snapnum, rbins_rvir[-1], parttype=parttype)
     sfd = {'filter': sf}
     pall_pkpc, vall_kmps, vrall_kmps, rcall_pkpc, rvir_pkpc = getkininfo(
@@ -362,14 +365,16 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
         else:
             setzero = slice(0, 0, 1) # select nothing
         wtvals, wtvals_toCGS, wtvals_todoc = gq.get_qty(
-            snapnum, parttype, wtqty, wtqty_args, filterdct=sfd)
+            snap, parttype, wtqty, wtqty_args, filterdct=sfd)
         wtvals[setzero] = 0.
         for ri in range(len(rbins_pkpc) - 1):
             rsel = rinds == ri
             _wt = wtvals[rsel]
             wtot = np.sum(_wt)
-            _specL_perbin.append(np.sum(specL[rsel] * _wt) / wtot)
-            _maxspecL_perbin.append(np.sum(maxspecL[rsel] * _wt) / wtot)
+            _specL_perbin.append(np.sum(specL[rsel] * _wt[:, np.newaxis]) 
+                                 / wtot)
+            _maxspecL_perbin.append(np.sum(maxspecL[rsel] 
+                                           * _wt[:, np.newaxis]) / wtot)
             _wtvals_perbin.append(wtot)
         wtd_specL.append(_specL_perbin)
         wtd_maxspecL.append(_maxspecL_perbin)
@@ -377,14 +382,82 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
     return rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot
 
 def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
-                       wtlabels, wtcolors, wtstyles):
+                       specL_ref,
+                       wtlabels, wtcolors, wtstyles, title=None):
     # plot delta(wt, ref wt at cen)
     # plot delta(wt, prev. weight)
     # plot planar fractions
     # plot radial dist.
     # different weights in different colors
     # different plots for different haloes
-    pass
+    fontsize = 12
+
+    fig = plt.figure(figsize=(7., 8.))
+    grid = gsp.GridSpec(ncols=2, nrows=3, hspace=0.3,
+                        wspace=0.2)
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    rc = 0.5 * (rbins_rvir[:-1] + rbins_rvir[1:])
+
+    ax = fig.add_subplot(grid[0, 0])
+    for i, _sL in enumerate(wtd_specL):
+        normin = np.einsum('ij,j->i', _sL, specL_ref) \
+                 / np.sqrt(np.sum(_sL**2, axis=1) * np.sum(specL_ref**2))
+        angle = np.arccos(normin)
+        ax.plot(rc, angle, label=wtlabels[i], color=wtcolors[i], 
+                **wtstyles[i])
+    ax.set_ylabel('angle with ref. L [rad]')
+    ax.tick_params(which='both', top=True, right=True, 
+                   labelsize=fontsize - 1., direction='in')
+    
+    ax = fig.add_subplot(grid[0, 1])
+    for i, _sL in enumerate(wtd_specL):
+        normin = np.einsum('ij,ij->i', _sL[1:], _sL[:-1]) \
+                 / np.sum(_sL[1:]**2, axis=1) \
+                 / np.sum(_sL[:-1]**2, axis=1)
+        angle = np.arccos(normin)
+        ax.plot(rc[1:], angle, label=wtlabels[i], color=wtcolors[i], 
+                **wtstyles[i])
+    ax.set_ylabel('L angle with prev. radius [rad]')
+    ax.tick_params(which='both', top=True, right=True, 
+                   labelsize=fontsize - 1., direction='in')
+    
+    ax = fig.add_subplot(grid[1, 0])
+    for i, (_sL, _sLm) in enumerate(zip(wtd_specL, wtd_maxspecL)):
+        frac = np.sqrt(np.sum(_sL**2, axis=1)) / _sLm
+        ax.plot(rc, frac, label=wtlabels[i], color=wtcolors[i], 
+                **wtstyles[i])
+    ax.set_ylabel('$\\Sigma_{i} w_i \xrightarrow{r} \\times '
+                  '\xrightarrow{v} \\,/\\,'
+                  '\\Sigma_{i} w_i |\xrightarrow{r}|\\,'
+                  '|\xrightarrow{v}|$',
+                  fontsize=fontsize)
+    ax.tick_params(which='both', top=True, right=True, 
+                   labelsize=fontsize - 1., direction='in')
+    ax.set_xlabel('$\\mathrm{r}_{\\mathrm{3D}} \\,'
+                  ' [\\mathrm{R}_{\\mathrm{vir}}]$',
+                  fontsize=fontsize)
+    
+    ax = fig.add_subplot(grid[1, 1])
+    for i, wt in enumerate(wts_tot):
+        frac = wt / np.sum(wt) / np.diff(rbins_rvir)
+        ax.plot(rc, frac, label=wtlabels[i], color=wtcolors[i], 
+                **wtstyles[i])
+    ax.set_ylabel('$\\Delta \\, \\mathrm{weight}\\,\\mathrm{frac.} \\,//\\,'
+                  '\\Delta \\, \\mathrm{r}$',
+                  fontsize=fontsize)
+    ax.tick_params(which='both', top=True, right=True, 
+                   labelsize=fontsize - 1., direction='in')
+    ax.set_xlabel('$\\mathrm{r}_{\\mathrm{3D}} \\,'
+                  ' [\\mathrm{R}_{\\mathrm{vir}}]$',
+                  fontsize=fontsize)
+
+    lax = fig.add_subplot(grid[2, :])
+    lax.axis('off')
+    handles = [mlines.Line2D((), (), color=c, label=lab, **st)
+               for lab, c, st in zip(wtlabels, wtcolors, wtstyles)]
+    lax.legend(handles, fontsize=fontsize, ncols=3, 
+               loc='upper center', bbox_to_anchor=(0.5, 0.65))
 
     
 

@@ -621,20 +621,23 @@ class MockFireSpec:
             self._units.update(units)
         self.toCGS = np.NaN
         self._csm = {'a': 0.5, 'z': 1.0, 'omegalambda': 0.7, 'omegam': 0.3, 
-                     'h': 0.7, 'boxsize': 60.}
+                     'h': 0.7, 'boxsize': 60., 'omegab': 0.16 * 0.3}
         if cosmopars is not None:
             self._csm.update(cosmopars)
         self.cosmopars = Cosmopars(self._csm)
-        
-    def readarray_emulateEAGLE(self, field, subsample=1, errorflag=np.nan):
+
+    def readarray(self, field, subsample=1, subindex=None, errorflag=np.nan):
         self.toCGS = np.NaN
-        if subsample == 1:
-            sel = slice(None, None, None)
-        else:
-            sel = slice(None, None, subsample)
+        sel = slice(None, None, subsample)
+        if subindex is not None:
+            sel = (sel, subindex)
         out = np.copy(self._dict[field][sel])
         self.toCGS = self._units[field]
         return out
+    
+    def readarray_emulateEAGLE(self, *args, **kwargs):
+        return self.readarray(*args, **kwargs)
+    
     
     
 

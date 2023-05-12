@@ -113,7 +113,7 @@ def getweightfilter(simname, snapnum, selqty, selqty_args,
     return out
 
 def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False,
-               rcen=False):
+               vtot=False, rcen=False):
     '''
     returns positions in pkpc, velocities in km/s, and Rvir in pkpc
     '''
@@ -135,6 +135,10 @@ def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False,
         coords_todo = coords_todo + [{'vel': 'vrad'}]
         vri = basei
         basei += 1
+    if vtot:
+        coords_todo = coords_todo + [{'vel': 'vtot'}]
+        vti = basei
+        basei += 1
     if rcen:
         coords_todo = coords_todo + [{'pos': 'rcen'}]
         rci = basei
@@ -148,6 +152,9 @@ def getkininfo(simname, snapnum, filterdct=None, parttype=0, vr=False,
     if vr:
         vr_kmps = valspv[vri] * (toCGSpv[vri] / (1e5))
         out = out + (vr_kmps,)
+    if vtot:
+        vt_kmps = valspv[vti] * (toCGSpv[vti] / (1e5))
+        out = out + (vt_kmps,)
     if rcen:
         rc_pkpc = valspv[rci] * (toCGSpv[rci] /  (c.cm_per_mpc * 1e-3))
         out = out + (rc_pkpc,)
@@ -338,13 +345,21 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
     snap = rfd.get_Firesnap(simpath, snapnum)
     sf = getspacefilter(simname, snapnum, rbins_rvir[-1], parttype=parttype)
     sfd = {'filter': sf}
-    pall_pkpc, vall_kmps, vrall_kmps, rcall_pkpc, rvir_pkpc = getkininfo(
-        simname, snapnum, filterdct=sfd, parttype=parttype, vr=True, rcen=True)
+    pall_pkpc, vall_kmps, vtotall_kmps, rcall_pkpc, rvir_pkpc =\
+        getkininfo(simname, snapnum, filterdct=sfd, parttype=parttype, 
+                   vr=False, vtot=True, rcen=True)
+    print('Calculating L, max L')
     specL = np.cross(pall_pkpc, vall_kmps, axis=1)
-    maxspecL = rcall_pkpc * vrall_kmps
+    maxspecL = rcall_pkpc * vtotall_kmps
+    del pall_pkpc, vall_kmps, vtotall_kmps
     
+    print('Finding bin indices')
     rbins_pkpc = np.array(rbins_rvir) * rvir_pkpc
     rinds = np.searchsorted(rbins_pkpc, rcall_pkpc) - 1 
+    print(rbins_pkpc)
+    del rcall_pkpc
+
+    print('Starting wt loop')
     if selqtys is None:
         selqtys = [None] * len(wtqtys)
         selqtys_args = [None] * len(wtqtys)
@@ -354,6 +369,7 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
     wts_tot = []
     for wtqty, wtqty_args, _selqtys, _selqtys_args, _selqtys_minmax in zip(
             wtqtys, wtqtys_args, selqtys, selqtys_args, selqtys_minmax):
+        print(f'Loop: {wtqty}, {wtqty_args}, subsample: {_selqtys}')
         _specL_perbin = []
         _maxspecL_perbin = []
         _wtvals_perbin = []
@@ -371,15 +387,44 @@ def calcangmomprofile(simname, snapnum, rbins_rvir,
             rsel = rinds == ri
             _wt = wtvals[rsel]
             wtot = np.sum(_wt)
-            _specL_perbin.append(np.sum(specL[rsel] * _wt[:, np.newaxis]) 
+            _specL_perbin.append(np.sum(specL[rsel] * _wt[:, np.newaxis], axis=0) 
                                  / wtot)
-            _maxspecL_perbin.append(np.sum(maxspecL[rsel] 
-                                           * _wt[:, np.newaxis]) / wtot)
+            _maxspecL_perbin.append(np.sum(maxspecL[rsel] * _wt) / wtot)
             _wtvals_perbin.append(wtot)
         wtd_specL.append(_specL_perbin)
         wtd_maxspecL.append(_maxspecL_perbin)
         wts_tot.append(_wtvals_perbin)
     return rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot
+
+def getangmomprofile_gvs(simname, snapnum):
+
+    wtqtys_g = ['Mass', 'Mass', 'Volume']
+    wtqtys_args_g = [{}, {}, {}]
+    selqtys_g = [None, ['sim-direct'], None]
+    selqtys_args_g = [None, [{'field': 'Temperature'}], None]
+    selqtys_minmax_g = [None, [(1e5, np.inf)], None]
+    rbins = np.array([0.0, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 
+                      0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3])
+    
+    rbins_rvir, wtd_specL_g, wtd_maxspecL_g, wts_tot_g = \
+        calcangmomprofile(simname, snapnum, rbins,
+                          wtqtys_g, wtqtys_args_g, 
+                          selqtys=selqtys_g, selqtys_args=selqtys_args_g, 
+                          selqtys_minmax=selqtys_minmax_g,
+                          parttype=0)
+    rbins_rvir, wtd_specL_s, wtd_maxspecL_s, wts_tot_s = \
+        calcangmomprofile(simname, snapnum, rbins,
+                          ['Mass'], [{}], 
+                          selqtys=None, selqtys_args=None, 
+                          selqtys_minmax=None,
+                          parttype=4)
+    labels = ['Mass', 'Mass > 1e5 K', 'Volume', 'Stars']
+    out = (rbins_rvir, 
+           np.array(wtd_specL_g + wtd_specL_s), 
+           np.array(wtd_maxspecL_g + wtd_maxspecL_s),
+           np.array(wts_tot_g +  wts_tot_s),
+           labels)
+    return out
 
 def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
                        specL_ref,
@@ -390,17 +435,21 @@ def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
     # plot radial dist.
     # different weights in different colors
     # different plots for different haloes
+    # m12f AGN-CR: looks like a dang mess.
     fontsize = 12
 
-    fig = plt.figure(figsize=(7., 8.))
-    grid = gsp.GridSpec(ncols=2, nrows=3, hspace=0.3,
-                        wspace=0.2)
+    fig = plt.figure(figsize=(7., 6.))
+    grid = gsp.GridSpec(ncols=2, nrows=3, hspace=0.2,
+                        wspace=0.3,
+                        height_ratios=[3., 3., 1.])
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
     rc = 0.5 * (rbins_rvir[:-1] + rbins_rvir[1:])
 
     ax = fig.add_subplot(grid[0, 0])
     for i, _sL in enumerate(wtd_specL):
+        print(_sL)
+        print(specL_ref)
         normin = np.einsum('ij,j->i', _sL, specL_ref) \
                  / np.sqrt(np.sum(_sL**2, axis=1) * np.sum(specL_ref**2))
         angle = np.arccos(normin)
@@ -413,9 +462,10 @@ def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
     ax = fig.add_subplot(grid[0, 1])
     for i, _sL in enumerate(wtd_specL):
         normin = np.einsum('ij,ij->i', _sL[1:], _sL[:-1]) \
-                 / np.sum(_sL[1:]**2, axis=1) \
-                 / np.sum(_sL[:-1]**2, axis=1)
+                 / np.sqrt(np.sum(_sL[1:]**2, axis=1) \
+                           * np.sum(_sL[:-1]**2, axis=1))
         angle = np.arccos(normin)
+        print(normin)
         ax.plot(rc[1:], angle, label=wtlabels[i], color=wtcolors[i], 
                 **wtstyles[i])
     ax.set_ylabel('L angle with prev. radius [rad]')
@@ -427,10 +477,9 @@ def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
         frac = np.sqrt(np.sum(_sL**2, axis=1)) / _sLm
         ax.plot(rc, frac, label=wtlabels[i], color=wtcolors[i], 
                 **wtstyles[i])
-    ax.set_ylabel('$\\Sigma_{i} w_i \xrightarrow{r} \\times '
-                  '\xrightarrow{v} \\,/\\,'
-                  '\\Sigma_{i} w_i |\xrightarrow{r}|\\,'
-                  '|\xrightarrow{v}|$',
+    ax.set_ylabel('$\\Sigma_{i} \\, w_i \\, \\vec{r} \\times '
+                  '\\vec{v} \\,/\\,'
+                  '\\Sigma_{i} \\, w_i \\, |\\vec{r}| \\, |\\vec{v}|$',
                   fontsize=fontsize)
     ax.tick_params(which='both', top=True, right=True, 
                    labelsize=fontsize - 1., direction='in')
@@ -451,12 +500,13 @@ def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
     ax.set_xlabel('$\\mathrm{r}_{\\mathrm{3D}} \\,'
                   ' [\\mathrm{R}_{\\mathrm{vir}}]$',
                   fontsize=fontsize)
+    ax.set_yscale('log')
 
     lax = fig.add_subplot(grid[2, :])
     lax.axis('off')
     handles = [mlines.Line2D((), (), color=c, label=lab, **st)
                for lab, c, st in zip(wtlabels, wtcolors, wtstyles)]
-    lax.legend(handles, fontsize=fontsize, ncols=3, 
+    lax.legend(handles=handles, fontsize=fontsize, ncol=3, 
                loc='upper center', bbox_to_anchor=(0.5, 0.65))
 
     

@@ -532,3 +532,29 @@ class CoordinateWranger:
                                 if _s in self.dependencies])):
                     del self.coords_stored[self.kcur]
             del self.kcur        
+
+def rotmatrix_from_zdir(newzdir):
+    '''
+    calculate a rotation matrix that will move vector newzdir to
+    along the new z axis.
+    The new x axis is chosen along the initial x direction, unless
+    the angle with newzdir is too small. In that case, the y 
+    direction is used.
+    '''
+    # input might be something like an ang. mom. vector; 
+    # normalize first 
+    znew = newzdir / np.sqrt(np.sum(newzdir**2))
+    xinit = np.array([1., 0., 0.])
+    xin = np.inner(znew, xinit)
+    if xin <= 0.9:
+        xnew = xinit - xin * znew
+        xnew = xnew / np.sqrt(np.sum(xnew**2))
+        ynew = np.cross(znew, xnew)
+    else:
+        yinit = np.array([0., 1., 0.])
+        yin = np.inner(znew, yinit)
+        ynew = yinit - yin * znew
+        ynew = ynew / np.sqrt(np.sum(ynew**2))
+        xnew = np.cross(ynew, znew)
+    rotmat = np.array([xnew, ynew, znew])
+    return rotmat

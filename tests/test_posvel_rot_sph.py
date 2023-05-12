@@ -92,7 +92,7 @@ def plot_posvelquiver(poss, vels, colors=None):
 
 def run_rottests():
     '''
-    plot and check by eye
+    plot and check by eye, just the rotation matrix
     '''
     zdir_tests = [np.array([1., 1., 1.]),
                   np.array([-1., -1., -1.]),
@@ -113,6 +113,9 @@ def run_rottests():
                        colors=['red', 'green', 'blue', 'gray', 'black'])
         
 def check_rot_cartesian():
+    '''
+    check p, v rotation through get_qty, CoordinateWrangler
+    '''
     zdir_tests = [np.array([1., 1., 1.]),
                   np.array([1., -1., 0.])]
     pos_in =  2. * np.diag(np.ones(3))

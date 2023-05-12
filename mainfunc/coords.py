@@ -64,10 +64,11 @@ class CoordinateWranger:
                 msg = ('Rotation matrix should have shape (3, 3) not input'
                        f'{self.rotmatrix.shape} for matrix\n{self.rotmatrix}')
                 raise ValueError(msg)
-            if not (np.allclose(self.rotmatrix.T, self.rotmatrix) 
+            if not (np.allclose(np.matmul(self.rotmatrix.T, self.rotmatrix),
+                                np.diag(np.ones((3,)))) 
                     and np.isclose(np.linalg.det(self.rotmatrix), 1.)):
                 msg = ('input was not a valid rotation matrix.\n'
-                       'transpose (should be same):\n'
+                       'transpose (should be inverse):\n'
                        f'{self.rotmatrix.T}, {self.rotmatrix}\n'
                        'determinant (should be 1.): '
                        f'{np.linalg.det(self.rotmatrix)}')
@@ -138,15 +139,15 @@ class CoordinateWranger:
     def __rotate_pos(self):
         self.rotmatrix = np.asarray(self.rotmatrix, 
                                     dtype=self.coords_simxyz.dtype)
-        self.coords_rotxyz = np.tensordot(self.rotmatrix, self.coords_simxyz,
-                                          axes=([1], [self.coordaxis]))
+        self.coords_rotxyz = np.einsum('kj,ij->ik', self.rotmatrix,
+                                       self.coords_simxyz)
         self.toCGS_coords_rotxyz = self.toCGS_coords_simxyz
     
     def __rotate_vel(self):
         self.rotmatrix = np.asarray(self.rotmatrix, 
                                     dtype=self.vel_simxyz.dtype)
-        self.vel_rotxyz = np.tensordot(self.rotmatrix, self.vel_simxyz,
-                                       axes=([1], [self.coordaxis]))
+        self.vel_rotxyz = np.einsum('kj,ij->ik', self.rotmatrix, 
+                                    self.vel_simxyz)
         self.toCGS_vel_rotxyz = self.toCGS_vel_simxyz
     
     def __center_pos(self):

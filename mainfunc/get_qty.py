@@ -395,6 +395,9 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
                 Where to center the velocities, along the simulation
                 x, y, z axes. Required argument for 'vel' quantities.
                 Units: physical cm/s
+            'rotmatrix': float array, shape (3, 3)
+                matrix to rotate the simulation coordinates. Done after
+                centering, before anything else.
 
     Returns:
     --------
@@ -582,7 +585,12 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
             msg = ('specify a center (center_cm) for coordinate quantities. '
                    f'gave maptype_args:\n{maptype_args}')
             raise ValueError(msg)
-        coordobj = coords.CoordinateWranger(snap, center_cm, rotmatrix=None,
+        if 'rotmatrix' in maptype_args:
+            rotmatrix = maptype_args['rotmatrix']
+        else:
+            rotmatrix = None
+        coordobj = coords.CoordinateWranger(snap, center_cm, 
+                                            rotmatrix=rotmatrix,
                                             parttype=parttype, periodic=False, 
                                             vcen_cmps=vcen_cmps,
                                             filterdct=filterdct)

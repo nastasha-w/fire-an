@@ -609,5 +609,35 @@ def findclosestzs_snaps(basedir, simnames, zvals):
         print(','.join(snapnums))
         print()
     return None    
+
+class MockFireSpec:
+    '''
+    class to pass to functions expecting a snapshot object for testing
+    '''
+    def __init__(self, data: dict, units=None, cosmopars=None):
+        self._dict = data
+        self._units = {key: 1. for key in self._dict}
+        if units is not None:
+            self._units.update(units)
+        self.toCGS = np.NaN
+        self._csm = {'a': 0.5, 'z': 1.0, 'omegalambda': 0.7, 'omegam': 0.3, 
+                     'h': 0.7, 'boxsize': 60.}
+        if cosmopars is not None:
+            self._csm.update(cosmopars)
+        self.cosmopars = Cosmopars(self._csm)
+        
+    def readarray_emulateEAGLE(self, field, subsample=1, errorflag=np.nan):
+        self.toCGS = np.NaN
+        if subsample == 1:
+            sel = slice(None, None, None)
+        else:
+            sel = slice(None, None, subsample)
+        out = np.copy(self._dict[field][sel])
+        self.toCGS = self._units[field]
+        return out
     
+    
+
+
+
         

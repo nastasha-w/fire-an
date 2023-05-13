@@ -387,7 +387,7 @@ class CoordinateWranger:
         del self._r, self._in
         self._out = np.arccos(self._rat)
         self.coords_stored[self.scur] = (self._out, 1., self._todoc_cur)
-        del self.scur, self._out, self._todoc_cur, self._in, self._rat
+        del self.scur, self._out, self._todoc_cur, self._rat
 
     def __calc_posphi(self, specs):
         '''
@@ -477,12 +477,12 @@ class CoordinateWranger:
     def __calc_velphi(self, specs):
         self.scur = specs[0]
         self._in = self.coords_stored[('vel', 'allcart')]
-        self._phi = self.coords_stored[('pos', 'phi')]
-        self._phidir = np.zeros(self._in.shape, dtype=self._in.dtype)
+        self._phi = self.coords_stored[('pos', 'phi')][0]
+        self._phidir = np.zeros(self._in[0].shape, dtype=self._in[0].dtype)
         self._phidir[:, 0] = - np.sin(self._phi)
         self._phidir[:, 1] = np.cos(self._phi)
         del self._phi
-        self._out = np.einsum('ij,ij->i', self._phidir, self._in)
+        self._out = np.einsum('ij,ij->i', self._phidir, self._in[0])
         self._units = self.coords_stored[('vel', 'allcart')][1]
         self._todoc_cur = self._in[2].copy()
         del self._todoc_cur['rotcoord_index']
@@ -498,7 +498,7 @@ class CoordinateWranger:
         self._in = self.coords_stored[('vel', 'allcart')]
         self._phi = self.coords_stored[('pos', 'phi')][0]
         self._azi = self.coords_stored[('pos', 'azimuth')][0]
-        self._phidir = np.zeros(self._in.shape, dtype=self._in.dtype)
+        self._phidir = np.zeros(self._in[0].shape, dtype=self._in[0].dtype)
         self._phidir[:, 0] = np.cos(self._azi) * np.cos(self._phi)
         self._phidir[:, 1] = np.cos(self._azi) * np.sin(self._phi)
         self._phidir[:, 2] =  - np.sin(self._azi)

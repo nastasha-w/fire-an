@@ -498,12 +498,12 @@ class CoordinateWranger:
         self._in = self.coords_stored[('vel', 'allcart')]
         self._phi = self.coords_stored[('pos', 'phi')][0]
         self._azi = self.coords_stored[('pos', 'azimuth')][0]
-        self._phidir = np.zeros(self._in[0].shape, dtype=self._in[0].dtype)
-        self._phidir[:, 0] = np.cos(self._azi) * np.cos(self._phi)
-        self._phidir[:, 1] = np.cos(self._azi) * np.sin(self._phi)
-        self._phidir[:, 2] =  - np.sin(self._azi)
+        self._thetadir = np.zeros(self._in[0].shape, dtype=self._in[0].dtype)
+        self._thetadir[:, 0] = np.cos(self._azi) * np.cos(self._phi)
+        self._thetadir[:, 1] = np.cos(self._azi) * np.sin(self._phi)
+        self._thetadir[:, 2] =  - np.sin(self._azi)
         del self._phi, self._azi
-        self._out = np.einsum('ij,ij->i', self._phidir, self._in[0])
+        self._out = np.einsum('ij,ij->i', self._thetadir, self._in[0])
         self._units = self._in[1]
         self._todoc_cur = self._in[2].copy()
         del self._todoc_cur['rotcoord_index']
@@ -512,7 +512,7 @@ class CoordinateWranger:
         self.coords_stored[self.scur] = (self._out, self._units, 
                                          self._todoc_cur)
         del self.scur, self._out, self._todoc_cur, self._in, self._units
-        del self._phidir
+        del self._thetadir
 
     def __update_out_todo(self, specs):
         # update output list

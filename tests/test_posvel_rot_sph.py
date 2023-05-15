@@ -178,7 +178,7 @@ def test_sph_coords():
     theta_exp_phiring = 0.5 * np.pi * np.ones(8)
     r_exp_phiring = np.array([1., 2.**0.5] * 4)
     phivel_exp_phiring = np.array([1., 2**0.5] * 4)
-    thetavel_exp_phiring = np.array([1., -1] * 4)
+    thetavel_exp_phiring = np.array([-1., 1.] * 4)
     rvel_exp_phiring = np.zeros(8)
 
     thetaslices = np.array([[0., 0., 1.],
@@ -186,7 +186,7 @@ def test_sph_coords():
                             [1., 0., 1.],
                             [1., 0., -1.],
                             [0., 1., 1.],
-                            [0., -1., 1.],
+                            [0., 1., -1.],
                             [-1, 0., 1.],
                             [-1., 0, -1.],
                             [0., -1., 1.],
@@ -211,8 +211,8 @@ def test_sph_coords():
                                      [0.25 * np.pi, 0.75 * np.pi] * 4)
     r_exp_thetaslices = np.array([1.] * 2 + [2**0.5] * 8)
     phivel_exp_thetaslices = np.zeros(10)
-    thetavel_exp_thetaslices = np.array([0., 0.] + [2**0.5] * 7 + [-2**0.5])
-    rvel_exp_thetaslices = np.zeros(10)
+    thetavel_exp_thetaslices = np.array([0., 0.] + [-2**0.5] * 7 +[2**0.5])
+    rvel_exp_thetaslices = np.array([1., -1.] + [0.] * 8)
 
     # just swap axes x -> y -> z -> x, see if the phiring is still ok   
     rm_axswap = np.array([[0., 1., 0.], 
@@ -246,7 +246,7 @@ def test_sph_coords():
                                         filterdct=None)
     vtheta, vphi, vr, ptheta, pphi, pr = pv
     phiring_match = True
-    _m = np.allclose(pphi, phi_exp_phiring)
+    _m = np.allclose(pphi % (2 * np.pi), phi_exp_phiring % (2. * np.pi))
     print('phiring, phi: ', _m)
     phiring_match &= _m
     _m = np.allclose(ptheta, theta_exp_phiring)
@@ -260,6 +260,8 @@ def test_sph_coords():
     phiring_match &= _m
     _m = np.allclose(vtheta, thetavel_exp_phiring)
     print('phiring, vtheta: ', _m)
+    print(vtheta)
+    print(thetavel_exp_phiring)
     phiring_match &= _m
     _m = np.allclose(vr, rvel_exp_phiring)
     print('phiring, vr: ', _m)
@@ -279,7 +281,7 @@ def test_sph_coords():
                                         filterdct=None)
     vtheta, vphi, vr, ptheta, pphi, pr = pv
     thetaring_match = True
-    _m = np.allclose(pphi, phi_exp_thetaslices)
+    _m = np.allclose(pphi % (2 * np.pi), phi_exp_thetaslices % (2 * np.pi))
     print('thetaring, phi: ', _m)
     thetaring_match &= _m
     _m = np.allclose(ptheta, theta_exp_thetaslices)
@@ -313,7 +315,7 @@ def test_sph_coords():
                                         filterdct=None)
     vtheta, vphi, vr, ptheta, pphi, pr = pv
     phiring_rot_match = True
-    _m = np.allclose(pphi, phi_exp_phiring)
+    _m = np.allclose(pphi % (2 * np.pi), phi_exp_phiring % (2 * np.pi))
     print('phiring_rot, phi: ', _m)
     phiring_rot_match &= _m
     _m = np.allclose(ptheta, theta_exp_phiring)

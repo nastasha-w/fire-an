@@ -337,6 +337,175 @@ def runplots_selset(hset='m12', selset=2):
             quiverplots(pvs, alpha=0.2, vscales=vscales, axtitles=labels,
                         outname=outname, title=title)
 
+def getcengalcen(simname, snapnum, startrad_rvir=0.3,
+                 vcenrad_rvir=0.05):
+    '''
+    starting from the all-types halo center of mass, find the 
+    central galaxy center of mass and center of velocity
+    (halo centering gets close, but ~1 kpc off is too much for 
+    angular momentum calculations)
+    '''
+    todoc = {}
+
+    simpath = getpath(simname)
+    halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
+    posstart_cm = np.array([halodat[0]['Xc_cm'], halodat[0]['Yc_cm'], 
+                            halodat[0]['Zc_cm']])
+    rvir_cm = halodat[0]['Rvir_cm']
+    todoc['halodata'] = halodat
+    snapobj = rfd.get_Firesnap(simpath, snapnum)
+    spos_simu = snapobj.readarray('PartType4/Coordinates')
+    spos_toCGS = snapobj.toCGS
+    stard2 = np.sum((spos_simu - posstart_cm / spos_toCGS)**2, axis=1)  
+    starsel = stard2 <= (startrad_rvir * rvir_cm / spos_toCGS)
+    del stard2
+    spos_simu = spos_simu[starsel]
+    smass_simu = snapobj.readarray('PartType4/Masses')[starsel]
+    smass_toCGS = snapobj.toCGS
+    coordsmassesdict = {'coords': spos_simu,
+                        'masses': smass_simu}
+
+    kwargs_calccen = {'shrinkfrac': 0.025, 
+                      'minparticles': 1000, 
+                      'initialradiusfactor': 1.}
+    todoc['kwargs_calchalocen_stars'] = kwargs_calccen
+    todoc['startrad_rvir'] = startrad_rvir
+    todoc['vcenrad_rvir'] = vcenrad_rvir
+
+    scen_simu, _, _ = hp.calchalocen(coordsmassesdict, **kwargs_calccen)
+    stard2 = np.sum((spos_simu - scen_simu)**2, axis=1)
+    starsel2 = stard2 <= (vcenrad_rvir * rvir_cm / spos_toCGS)
+    starsel[starsel] = starsel2
+    smass_simu = smass_simu[starsel2]
+    svel_simu = snapobj.readarray('PartType4/Velocities')[starsel]
+    svel_toCGS = snapobj.toCGS
+    vcom_simu = np.sum(svel_simu * smass_simu[:, np.newaxis], axis=0) \
+                / np.sum(smass_simu)
+    vcom_cmps = vcom_simu * svel_toCGS
+    pcen_cm = scen_simu * spos_toCGS
+    todoc['starcen_cm'] = pcen_cm
+    todoc['starvcom_cmps'] = vcom_cmps
+    return pcen_cm, vcom_cmps, todoc
+
+def plotcenter_check(pos, vel, cenpos, cenvel, vscale=0.005, alpha=0.2):
+    fig = plt.figure()
+    ax = m3d.Axes3D(fig)
+    _vel = (vel - cenvel[np.newaxis, :]) * vscale
+    _pos = pos - cenpos[np.newaxis, :]
+    ax.quiver(_pos[:, 0], _pos[:, 1], _pos[:, 2],
+              _vel[:, 0], _vel[:, 1], _vel[:, 2],
+              alpha=alpha)
+    plt.show()
+
+def plotcenter_check2(pos, cenpos, alpha=0.2):
+    fig = plt.figure()
+    ax = m3d.Axes3D(fig)
+    _pos = pos - cenpos[np.newaxis, :]
+    ax.scatter(_pos[:, 0], _pos[:, 1], _pos[:, 2], color='gray',
+               alpha=alpha)
+    ax.scatter([0.], [0.], [0.], color='black')
+    plt.show()
+
+def checkcentering_stars(simname, snapnum, outname=None, title=None,
+                         vscale=0.005, alpha=0.1):
+    pcen_cm, vcom_cmps, todoc = getcengalcen(simname, snapnum, 
+                                             startrad_rvir=0.3,
+                                             vcenrad_rvir=0.05)
+    simpath = getpath(simname)
+    halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
+    rvir_cm = halodat[0]['Rvir_cm']
+
+    snapobj = rfd.get_Firesnap(simpath, snapnum)
+    spos_simu = snapobj.readarray('PartType4/Coordinates')
+    spos_toCGS = snapobj.toCGS
+    stard2 = np.sum((spos_simu - pcen_cm / spos_toCGS)**2, axis=1)  
+    starsel = stard2 <= (0.3 * rvir_cm / spos_toCGS)
+    spos_simu = spos_simu[starsel]
+    spos_pkpc = spos_simu * (spos_toCGS / (1e-3 * c.cm_per_mpc))
+
+    svel_simu = snapobj.readarray('PartType4/Velocities')[starsel]
+    svel_toCGS = snapobj.toCGS
+    svel_kmps = svel_simu * (svel_toCGS / 1e5)
+    
+    filterdct = {'filter': starsel}
+    subfilter = getweightfilter(simname, snapnum, 'Mass', {}, 
+                                filterdct=filterdct, samplesize=200,
+                                parttype=4, 
+                                strictselqtys=None, strictselqtys_args=None,
+                                strictselqtys_minmax=None)
+    
+    fig = plt.figure(figsize=(9., 4.5))
+    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+    if title is not None:
+        fig.suptitle(title)
+
+    _vel = (svel_kmps[subfilter, :] -  vcom_cmps[np.newaxis, :] * 1e-5) \
+           * vscale
+    _pos = spos_pkpc[subfilter, :] \
+           - pcen_cm[np.newaxis, :] / (1e-3 * c.cm_per_mpc)
+    ax1.quiver(_pos[:, 0], _pos[:, 1], _pos[:, 2],
+               _vel[:, 0], _vel[:, 1], _vel[:, 2],
+               alpha=alpha)
+    ax1.scatter([0.], [0.], [0.], color='black')
+    ax2.scatter(_pos[:, 0], _pos[:, 1], _pos[:, 2],
+                alpha=alpha)
+    ax2.scatter([0.], [0.], [0.], color='black')
+
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+    print('\nShowing ', simname, snapnum)
+    print()
+    plt.show()
+
+def runset_centeringcheck_stars(hset='m12'):
+    if hset == 'm12':
+        sims = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ]
+    else:
+        sims = sl.m13_agnnocr_clean2 \
+               + sl.m13_agncr_clean2 + sl.m13_nobh_clean2
+    snaps_hr = [sl.snaps_hr[0], sl.snaps_hr[-1]]
+    snaps_sr = [sl.snaps_sr[0], sl.snaps_sr[-1]]
+    hrset = sl.m12_hr_all2 + sl.m13_hr_all2
+    srset = sl.m12_sr_all2 + sl.m13_sr_all2
+    zs = [1.0, 0.5]
+    zstrs = ['1p0', '0p5']
+
+    outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
+    outname_temp = 'starrecen_check_try1_{ic}_{phys}_z{zstr}_vscale_0p005.pdf'
+    title_temp = ('{ic} {phys} z={z:.1f}, pos.: pkpc, '
+                    'vel: km/s * 0.005')
+    vscale = 0.005
+    for sim in sims:
+        ic = sim.split('_')[0]
+        phys = ('noBH' if '_sdp1e10_' in sim 
+                else 'AGN-CR' if '_MHDCRspec1_' in sim 
+                else 'AGN-noCR')
+        for zi in range(len(zs)):
+            zstr = zstrs[zi]
+            zv = zs[zi]
+            snap = (snaps_hr[zi] if sim in hrset 
+                    else snaps_sr[zi] if sim in srset 
+                    else None)
+            outname = outname_temp.format(ic=ic, phys=phys, zstr=zstr)
+            outname = outdir + outname
+            title = title_temp.format(ic=ic, phys=phys, z=zv)
+
+            checkcentering_stars(sim, snap, outname=outname, title=title,
+                                 vscale=vscale, alpha=0.1)
+
 def calcangmomprofile(simname, snapnum, rbins_rvir,
                       wtqtys, wtqtys_args, 
                       selqtys=None, selqtys_args=None, selqtys_minmax=None,

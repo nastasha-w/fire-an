@@ -786,6 +786,128 @@ def runset_angmomprof_starrecen(hset='m12'):
                                ['stars'], ['blue'], [{}], title=title)
             plt.savefig(outname, bbox_inches='tight')
             plt.show()
+
+def setup_vizcheck_outflow_Lstarrecen(simname, snapnum, galrad_rvir=0.1):
+    '''
+    Just do Volume and Mass > 1e5 K, those seemed to show
+    outflows best in terms of basic properties.
+    '''
+    specL_perbin, maxspecL_perbin, wtvals_perbin, rbins_rvir = \
+        calcangmomprofile_stars(simname, snapnum, 
+                                rbins_rvir=np.array([0., galrad_rvir]))
+    Ldir = specL_perbin[0] / np.sqrt(np.sum(specL_perbin**2))
+    
+    maxradius_rvir = 1.1
+    selqtys = ['Mass', 'Volume']
+    selqtys_args = [{}, {}]
+    strictselqtyss = [['sim-direct'], None]
+    strictselqtyss_args = [[{'field': 'Temperature'}], None]
+    strictselqtyss_minmax = [[(1e5, np.inf)], None]
+    pvs, rvir_pkpc = get_selkin(simname, snapnum, maxradius_rvir, 
+                                selqtys, selqtys_args, samplesize=300,
+                                parttype=0, strictselqtyss=strictselqtyss, 
+                                strictselqtyss_args=strictselqtyss_args,
+                                strictselqtyss_minmax=strictselqtyss_minmax)
+    return pvs, Ldir, rvir_pkpc
+
+def plot_vizcheck_outflow_Lstarrecen(posvels, Ldir, rvir_pkpc,
+                                     title=None, axtitles=None, outname=None,
+                                     alpha=0.2, vscales=0.1):
+    ncmax = 4
+    npanels = len(posvels)
+    ncols = min(ncmax, npanels)
+    nrows = (npanels - 1) // ncols + 1
+    panelsize = 4.
+    fig = plt.figure(figsize=(panelsize * ncols, panelsize * nrows))
+    axes = [fig.add_subplot(nrows, ncols, i + 1, projection='3d') 
+            for i in range(len(posvels))]
+    if not hasattr(vscales, '__len__'):
+        vscales = [vscales] * npanels
+    vmax = max([np.max(np.abs(_pv[2])) for _pv in posvels])
+    vmin = -1. * vmax 
+    for i, (_p, _v, _vr) in enumerate(posvels):
+        ax = axes[i]
+        __v = vscales[i] * _v
+        __p = np.copy(_p)
+        cmap = mpl.cm.get_cmap('cool_r')
+        cvals = cmap((_vr - vmin) / (vmax  - vmin))
+        cvals[:, 3] = alpha
+        out = ax.quiver(__p[:, 0], __p[:, 1], __p[:, 2],
+                        __v[:, 0], __v[:, 1], __v[:, 2],
+                        colors=cvals)
+        # head color mismatch on quest + system anaconda3 
+        # is a matplotlib bug.
+        # np.repeat(cvals, 3, axis=0)
+        # np.tile(cvals, (3, 1))
+        Lvec = rvir_pkpc * Ldir
+        Lvec2 = - rvir_pkpc * Ldir
+        ax.quiver([0., 0.], [0., 0.], [0., 0.],
+                  [Lvec[0], Lvec2[0]], 
+                  [Lvec[1], Lvec2[1]], 
+                  [Lvec[2], Lvec2[2]], color='black')
+        if axtitles is not None:
+            ax.set_title(axtitles[i])
+    if title is not None:
+        fig.suptitle(title)
+    if outname is not None:
+        outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
+        plt.savefig(outdir + outname, bbox_inches='tight')
+    plt.show()   
+
+def run_vizcheck_outflow_Lstarrecen(hset='m12'):
+    if hset == 'm12':
+        sims = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ]
+    else:
+        sims = sl.m13_agnnocr_clean2 \
+               + sl.m13_agncr_clean2 + sl.m13_nobh_clean2
+    snaps_hr = [sl.snaps_hr[0], sl.snaps_hr[-1]]
+    snaps_sr = [sl.snaps_sr[0], sl.snaps_sr[-1]]
+    hrset = sl.m12_hr_all2 + sl.m13_hr_all2
+    srset = sl.m12_sr_all2 + sl.m13_sr_all2
+    zs = [1.0, 0.5]
+    zstrs = ['1p0', '0p5']
+    axtitles = ['Mass < 1e5 K', 'Volume']
+
+    outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
+    outname_temp = 'dircheck_outflow_Lstarrecen_try1_{ic}_{phys}_z{zstr}.pdf'
+    title_temp = ('{ic} {phys} z={z:.1f}; pos: pkpc, vel: km/s * 0.2;'
+                  ' black: star L (< 0.1 Rvir)')
+    for sim in sims:
+        ic = sim.split('_')[0]
+        phys = ('noBH' if '_sdp1e10_' in sim 
+                else 'AGN-CR' if '_MHDCRspec1_' in sim 
+                else 'AGN-noCR')
+        for zi in range(len(zs)):
+            zstr = zstrs[zi]
+            zv = zs[zi]
+            snap = (snaps_hr[zi] if sim in hrset 
+                    else snaps_sr[zi] if sim in srset 
+                    else None)
+            outname = outname_temp.format(ic=ic, phys=phys, zstr=zstr)
+            #outname = outdir + outname
+            title = title_temp.format(ic=ic, phys=phys, z=zv)
+            
+            pvs, Ldir, rvir_pkpc = setup_vizcheck_outflow_Lstarrecen(
+                sim, snap, galrad_rvir=0.1)
+            plot_vizcheck_outflow_Lstarrecen(pvs, Ldir, rvir_pkpc,
+                                     title=title, axtitles=axtitles, 
+                                     outname=outname,
+                                     alpha=0.2, vscales=0.2)
+     
+
+
             
 
 

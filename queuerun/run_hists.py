@@ -513,7 +513,7 @@ def run_hist_rad_vrad_weighted(opt):
     axbin = axbins + atplusbins[ati]
 
     runit = 'Rvir'
-    rbins = np.append(np.linspace(0.0, 1.3, 27))
+    rbins = np.linspace(0.0, 1.3, 27)
 
     # directory is halo name + resolution 
     dp2 = '_'.join(simname.split('_')[:2])

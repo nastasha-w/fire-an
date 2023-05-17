@@ -224,7 +224,7 @@ def fromcommandline(index):
         # 15448 - 15687: m13-hr (240 inds)
         # 15688 - 15927: m12-sr (240 inds)
         # 15928 - 16407: m12-hr (480 inds)
-        rhs.run_hist_rad_vrad_weighted(opt - 14968)
+        rhs.run_hist_rad_vrad_weighted(index - 14968)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

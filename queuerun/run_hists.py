@@ -432,6 +432,110 @@ def run_hist_vtotrad(opt):
                          center='shrinksph', rbins=rbins, runit=runit,
                          logweights=True, logaxes=False, axbins=axbins,
                          outfilen=outfilen, overwrite=True)
+    
+def run_hist_rad_vrad_weighted(opt):
+    # different ions, Z, weights in rad-vrad space
+    # sample clean2 (excl. bug runs), later maybe all2
+    # 2 axes * 10 weights = 20 runs per sim/snap
+    if opt >= 0 and opt < 480:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 480 indices
+        ind = opt - 0
+        simnames = sl.m13_sr_clean2 # len 4
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 480 and opt < 720:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-hr
+        # 240 indices
+        ind = opt - 1080
+        simnames = sl.m13_hr_clean2 # len 2
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 720 and opt < 960:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 240 indices
+        ind = opt - 1224
+        simnames = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')] # len 2
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 960 and opt < 1440:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-hr
+        # 480 indices
+        ind = opt - 1512
+        simnames = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5')] # len 4
+        snaps = sl.snaps_hr # len 6
+    
+    wts = ['Mass', 'Volume', 'Metal', 'Metal'] + ['ion'] * 6
+    wtargs = [{}, {}, 
+              {'element': 'Neon'},
+              {'element': 'Oxygen'},
+              {'ion': 'O6', 'ps20depletion': False},
+              {'ion': 'O7', 'ps20depletion': False},
+              {'ion': 'O8', 'ps20depletion': False},
+              {'ion': 'Ne8', 'ps20depletion': False},
+              {'ion': 'Ne9', 'ps20depletion': False},
+              {'ion': 'Ne10', 'ps20depletion': False},
+              ]
+    ats = ['coords']
+    atargs = [{'vel': 'vrad'}]
+    axbins = [5e5]
+
+    atsplus = [['sim-direct'], ['Metal']]
+    atplusargs = [[{'field': 'Temperature'}],
+                  [{'element': 'Hydrogen', 'density': True}]]
+    atplusbins = [[0.1], [0.1]]
+    logaxes = [False, True]
+
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_clean2_nobug/'
+    simi = ind // (len(snaps) * len(wts) * len(atsplus))
+    snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
+           // (len(wts) * len(atsplus))
+    wti = (ind % (len(wts) * len(atsplus))) // len(atsplus)
+    ati = ind % len(atsplus)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    wt = wts[wti]
+    wtarg = wtargs[wti]
+    at = ats + atsplus[ati]
+    atarg = atargs + atplusargs[ati]
+    axbin = axbins + atplusbins[ati]
+
+    runit = 'Rvir'
+    rbins = np.append(np.linspace(0.0, 1.3, 27))
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+
+    atstr = 'rcen_vcen_' + ['temperature', 'hdens'][ati]
+    wtstr = 'gasmass' if wt == 'Mass' else\
+            'gasvol' if wt == 'Volume' else\
+            wtarg['ion'] if wt == 'ion' else \
+            wtarg['element'] 
+    outfilen = outdir +\
+               (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
+                '_bins1_v1_hvcen.hdf5')
+
+    mh.histogram_radprof(dirpath, snapnum,
+                         wt, wtarg, at, atarg,
+                         particle_type=0, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=logaxes, axbins=axbin,
+                         outfilen=outfilen, overwrite=True)
 
 
 

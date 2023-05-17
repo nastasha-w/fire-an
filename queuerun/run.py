@@ -218,6 +218,13 @@ def fromcommandline(index):
         # 13384 - 13671: m12-sr (288 indices)
         # 13672 - 14967: m12-hr (1296 indices)
         rhs.run_hist_vtotrad(index - 12160)
+    elif index >= 14968 and index < 16408:
+        # clean2_nobug r, vr, nH/T for different weights
+        # 14968 - 15447: m13-sr (480 inds)
+        # 15448 - 15687: m13-hr (240 inds)
+        # 15688 - 15927: m12-sr (240 inds)
+        # 15928 - 16407: m12-hr (480 inds)
+        rhs.run_hist_rad_vrad_weighted(opt - 14968)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

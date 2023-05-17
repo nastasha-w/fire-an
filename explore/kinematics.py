@@ -506,6 +506,61 @@ def runset_centeringcheck_stars(hset='m12'):
             checkcentering_stars(sim, snap, outname=outname, title=title,
                                  vscale=vscale, alpha=0.1)
 
+def calcangmomprofile_stars(simname, snapnum, rbins_rvir=None):
+    if rbins_rvir is None:
+        rbins_rvir = np.arange(0., 0.205, 0.01)
+    simpath = getpath(simname)
+    scen_cm, svcom_cmps, todoc = getcengalcen(simname, snapnum, 
+                                              startrad_rvir=0.3,
+                                              vcenrad_rvir=0.05)
+    halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
+    rvir_cm = halodat[0]['Rvir_cm']
+    snapobj = rfd.get_Firesnap(simpath, snapnum)
+    spos_simu = snapobj.readarray('PartType4/Coordinates')
+    spos_toCGS = snapobj.toCGS
+    spos_simu -= scen_cm[np.newaxis, :] / spos_toCGS
+    sel = np.sum(spos_simu**2, axis=1) \
+          <= (rbins_rvir[-1] * rvir_cm / spos_toCGS)**2
+    spos_simu = spos_simu[sel]
+    svel_simu = snapobj.readarray('PartType4/Velocities')[sel]
+    svel_toCGS = snapobj.toCGS
+    svel_simu -= svcom_cmps[np.newaxis, :] / svel_toCGS
+
+    specL = np.cross(spos_simu, svel_simu, axis=1)
+    rcen_simu = np.sqrt(np.sum(spos_simu**2, axis=1))
+    maxspecL = rcen_simu * np.sqrt(np.sum(svel_simu**2, axis=1))
+    weight = snapobj.readarray('PartType4/Masses')[sel]
+    wt_toCGS = snapobj.toCGS
+    del spos_simu, svel_simu
+
+    rvir_simu = rvir_cm / spos_toCGS
+    
+    print('Finding bin indices')
+    rbins_pkpc = np.array(rbins_rvir) * rvir_simu
+    rinds = np.searchsorted(rbins_pkpc, rcen_simu) - 1 
+    print(rbins_pkpc)
+    del rcen_simu
+
+    specL_perbin = []
+    maxspecL_perbin = []
+    wtvals_perbin = []
+    for ri in range(len(rbins_pkpc) - 1):
+        rsel = rinds == ri
+        _wt = weight[rsel]
+        wtot = np.sum(_wt)
+        specL_perbin.append(np.sum(specL[rsel] * _wt[:, np.newaxis], axis=0) 
+                                / wtot)
+        maxspecL_perbin.append(np.sum(maxspecL[rsel] * _wt) / wtot)
+        wtvals_perbin.append(wtot)
+    specL_perbin = np.array(specL_perbin)
+    maxspecL_perbin = np.array(maxspecL_perbin)
+    wtvals_perbin = np.array(wtvals_perbin)
+    specL_perbin *= (spos_toCGS * svel_toCGS) / (1e-3 * c.cm_per_mpc * 1e5)
+    maxspecL_perbin *= (spos_toCGS * svel_toCGS) / (1e-3 * c.cm_per_mpc * 1e5)
+    wtvals_perbin *= (wt_toCGS / c.solar_mass)
+    return specL_perbin, maxspecL_perbin, wtvals_perbin, rbins_rvir
+
+
 def calcangmomprofile(simname, snapnum, rbins_rvir,
                       wtqtys, wtqtys_args, 
                       selqtys=None, selqtys_args=None, selqtys_minmax=None,
@@ -678,7 +733,61 @@ def plot_angmomprofile(rbins_rvir, wtd_specL, wtd_maxspecL, wts_tot,
     lax.legend(handles=handles, fontsize=fontsize, ncol=3, 
                loc='upper center', bbox_to_anchor=(0.5, 0.65))
 
-    
+def runset_angmomprof_starrecen(hset='m12'):
+    if hset == 'm12':
+        sims = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                 '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                 '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ]
+    else:
+        sims = sl.m13_agnnocr_clean2 \
+               + sl.m13_agncr_clean2 + sl.m13_nobh_clean2
+    snaps_hr = [sl.snaps_hr[0], sl.snaps_hr[-1]]
+    snaps_sr = [sl.snaps_sr[0], sl.snaps_sr[-1]]
+    hrset = sl.m12_hr_all2 + sl.m13_hr_all2
+    srset = sl.m12_sr_all2 + sl.m13_sr_all2
+    zs = [1.0, 0.5]
+    zstrs = ['1p0', '0p5']
+
+    outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
+    outname_temp = 'angmomprof_starrecen_try1_{ic}_{phys}_z{zstr}.pdf'
+    title_temp = ('{ic} {phys} z={z:.1f}; ref: weighted. av. < 0.1 Rvir')
+    for sim in sims:
+        ic = sim.split('_')[0]
+        phys = ('noBH' if '_sdp1e10_' in sim 
+                else 'AGN-CR' if '_MHDCRspec1_' in sim 
+                else 'AGN-noCR')
+        for zi in range(len(zs)):
+            zstr = zstrs[zi]
+            zv = zs[zi]
+            snap = (snaps_hr[zi] if sim in hrset 
+                    else snaps_sr[zi] if sim in srset 
+                    else None)
+            outname = outname_temp.format(ic=ic, phys=phys, zstr=zstr)
+            outname = outdir + outname
+            title = title_temp.format(ic=ic, phys=phys, z=zv)
+            
+            specL_perbin, maxspecL_perbin, wtvals_perbin, rbins_rvir = \
+                calcangmomprofile_stars(sim, snap, rbins_rvir=None)
+            ref = np.sum(specL_perbin[:10, :] 
+                         * wtvals_perbin[:10, np.newaxis], axis=0)\
+                  / np.sum(wtvals_perbin[:10])
+            plot_angmomprofile(rbins_rvir, [specL_perbin], [maxspecL_perbin], 
+                               [wtvals_perbin], ref,
+                               ['stars'], ['blue'], [{}], title=title)
+            plt.savefig(outname, bbox_inches='tight')
+            plt.show()
+            
+
 
     
 

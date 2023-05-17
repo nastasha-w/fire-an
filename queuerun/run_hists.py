@@ -448,14 +448,14 @@ def run_hist_rad_vrad_weighted(opt):
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m13-hr
         # 240 indices
-        ind = opt - 1080
+        ind = opt - 480
         simnames = sl.m13_hr_clean2 # len 2
         snaps = sl.snaps_hr # len 6
     elif opt >= 720 and opt < 960:
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-sr
         # 240 indices
-        ind = opt - 1224
+        ind = opt - 720
         simnames = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
                      '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
                     ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
@@ -465,7 +465,7 @@ def run_hist_rad_vrad_weighted(opt):
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-hr
         # 480 indices
-        ind = opt - 1512
+        ind = opt - 960
         simnames = [('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
                      '_sdp2e-4_gacc31_fa0.5'),
                     ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'

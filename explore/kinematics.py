@@ -881,9 +881,9 @@ def run_vizcheck_outflow_Lstarrecen(hset='m12'):
     axtitles = ['Mass < 1e5 K', 'Volume']
 
     outdir = '/projects/b1026/nastasha/imgs/vel3dcomp/3dplots_clean2/'
-    outname_temp = 'dircheck_outflow_Lstarrecen_try1_{ic}_{phys}_z{zstr}.pdf'
+    outname_temp = 'dircheck_outflow_Lstarrecen_try3_{ic}_{phys}_z{zstr}.pdf'
     title_temp = ('{ic} {phys} z={z:.1f}; pos: pkpc, vel: km/s * 0.2;'
-                  ' black: star L (< 0.1 Rvir)')
+                  ' black: star L (< 0.025 Rvir)')
     for sim in sims:
         ic = sim.split('_')[0]
         phys = ('noBH' if '_sdp1e10_' in sim 
@@ -900,7 +900,7 @@ def run_vizcheck_outflow_Lstarrecen(hset='m12'):
             title = title_temp.format(ic=ic, phys=phys, z=zv)
             
             pvs, Ldir, rvir_pkpc = setup_vizcheck_outflow_Lstarrecen(
-                sim, snap, galrad_rvir=0.1)
+                sim, snap, galrad_rvir=0.025)
             plot_vizcheck_outflow_Lstarrecen(pvs, Ldir, rvir_pkpc,
                                      title=title, axtitles=axtitles, 
                                      outname=outname,

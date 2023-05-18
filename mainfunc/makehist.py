@@ -224,7 +224,7 @@ def histogram_radprof(dirpath, snapnum,
         if hasattr(axb, '__len__') \
                 or (isinstance(axb, num.Number) and not isinstance(axb, int)):
             if logax:
-                pass
+                _axb = axb
                 # log differences independent of units. smh.
                 #_axb = axb - np.log10(toCGS)
             else:

@@ -521,7 +521,7 @@ def run_hist_rad_vrad_weighted(opt):
         dp2 = dp2.replace('m13h02', 'm13h002')
     dirpath = '/'.join([_dirpath, dp2, simname])
 
-    atstr = 'rcen_vcen_' + ['temperature', 'hdens'][ati]
+    atstr = 'rcen_vcen_' + ['temperature', 'density'][ati]
     wtstr = 'gasmass' if wt == 'Mass' else\
             'gasvol' if wt == 'Volume' else\
             wtarg['ion'] if wt == 'ion' else \

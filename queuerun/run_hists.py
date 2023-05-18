@@ -491,9 +491,9 @@ def run_hist_rad_vrad_weighted(opt):
     atargs = [{'vel': 'vrad'}]
     axbins = [5e5]
 
-    atsplus = [['sim-direct'], ['Metal']]
+    atsplus = [['sim-direct'], ['sim-direct']]
     atplusargs = [[{'field': 'Temperature'}],
-                  [{'element': 'Hydrogen', 'density': True}]]
+                  [{'field': 'Density'}]]
     atplusbins = [[0.1], [0.1]]
     logaxes = [False, True]
 
@@ -535,7 +535,7 @@ def run_hist_rad_vrad_weighted(opt):
                          particle_type=0, 
                          center='shrinksph', rbins=rbins, runit=runit,
                          logweights=True, logaxes=logaxes, axbins=axbin,
-                         outfilen=outfilen, overwrite=True)
+                         outfilen=outfilen, overwrite=False)
 
 
 

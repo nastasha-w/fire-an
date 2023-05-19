@@ -10,9 +10,12 @@ Contains a number of general utility functions for making plots
 import numpy as np
 import matplotlib as mpl
 import mpl_toolkits.axes_grid1 as axgrid
+import matplotlib.colors as mcolors
 import matplotlib.lines as mlines
 import matplotlib.legend_handler as mlh
 import matplotlib.patheffects as mppe 
+
+import fire_an.makeplots.tol_colors as tc
 
 # default
 fontsize = 12
@@ -482,3 +485,22 @@ def getoutline(linewidth):
                #mppe.Stroke(linewidth=linewidth + 0.5, foreground="white"),
                mppe.Normal()]
     return patheff
+
+# specific to redshift stuff, but I use this sort of thing a lot
+def getzcolorfunc(zvals, ztol=1e-3):
+    nz = len(zvals)
+    zvals.sort()
+    _colors = tc.tol_cmap('rainbow_discrete', nz)
+    zticks = np.linspace(0.5 / nz, 1. - 0.5 / nz, nz)
+    colors = _colors(zticks)
+    colors = [mcolors.to_rgb(col) for col in colors]
+    def getzcolor(zval):
+        zmatch = np.where(np.isclose(zval, zvals, rtol=ztol, atol=ztol))[0]
+        if len(zmatch) != 0:
+            msg = (f'redshift {zval} is too far from any of {zvals}, '
+                   f'or too close (within {ztol}) to more than one.')
+            raise ValueError(msg)
+        zkey = zvals[zmatch[0]]
+        color = colors[zkey]
+        return color
+    return getzcolor

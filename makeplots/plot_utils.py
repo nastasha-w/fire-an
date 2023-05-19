@@ -487,7 +487,7 @@ def getoutline(linewidth):
     return patheff
 
 # specific to redshift stuff, but I use this sort of thing a lot
-def getzcolorfunc(zvals, ztol=1e-3):
+def getzcolorfunc(zvals, ztol=1e-2):
     nz = len(zvals)
     zvals.sort()
     _colors = tc.tol_cmap('rainbow_discrete', nz)
@@ -496,11 +496,10 @@ def getzcolorfunc(zvals, ztol=1e-3):
     colors = [mcolors.to_rgb(col) for col in colors]
     def getzcolor(zval):
         zmatch = np.where(np.isclose(zval, zvals, rtol=ztol, atol=ztol))[0]
-        if len(zmatch) != 0:
+        if len(zmatch) != 1:
             msg = (f'redshift {zval} is too far from any of {zvals}, '
                    f'or too close (within {ztol}) to more than one.')
             raise ValueError(msg)
-        zkey = zvals[zmatch[0]]
-        color = colors[zkey]
+        color = colors[zmatch[0]]
         return color
     return getzcolor

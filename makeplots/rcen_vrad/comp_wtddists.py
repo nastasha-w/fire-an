@@ -21,7 +21,11 @@ def getphys(simname):
 def get_kindist(filen, rrange_rvir=(0.1, 1.0),
                 vrrange=None,
                 vrrange_units='kmps',
-                dist_target='vr'):
+                dist_target='vr', vrbin_fac=4):
+    '''
+    when plotting vdists, those 5 km/s bins make
+    for some seriously noisy lines.
+    '''
     with h5py.File(filen, 'r') as f:
         hist = f['histogram/histogram'][:]
         islog = bool(f['histogram'].attrs['log'])
@@ -79,8 +83,24 @@ def get_kindist(filen, rrange_rvir=(0.1, 1.0),
             hsel[1] = slice(vimin, vimax, None) 
         cosmopars = {key: val for key, val 
                      in f['Header/cosmopars'].attrs.items()}
-        _hist = np.sum(hist[hsel], axes=sumaxes)
-        _edges = f[f'axis_{binaxis}/bins'][:] * binconv
+        _hist = np.sum(hist[tuple(hsel)], axis=sumaxes)
+        _edges = f[f'axis_{binaxis}/bins'][:]
+        if dist_target == 'vr' and vrbin_fac != 1:
+            rest = len(_hist) % vrbin_fac
+            __edges = _edges[slice(None, None, vrbin_fac)]
+            if rest != 0:
+                _hist = np.append(_hist, np.zeros(vrbin_fac - rest))
+                __edges = np.append(__edges, _edges[-1])
+            _edges = __edges
+            newshape = (len(_hist) // vrbin_fac, vrbin_fac)
+            _hist = np.sum(_hist.reshape(newshape), axis=1)
+        if np.any(np.logical_not(np.isfinite(_hist))):
+            print(f'filen: inf/nan values in histogram')
+            print(_hist)
+        if np.any(np.logical_not(np.isfinite(_edges))):
+            print(f'filen: inf/nan values in edges')
+            print(_edges)
+        _edges = _edges * binconv
     out = {'cosmopars': cosmopars,
            'vescvir_kmps': vescvir_kmps,
            'mvir_g': mvir_g,
@@ -89,22 +109,29 @@ def get_kindist(filen, rrange_rvir=(0.1, 1.0),
            'hist': _hist}
     return out
 
+def fmtdcts(str, *args):
+    dct = {}
+    for arg in args:
+        dct.update(arg)
+    _str = str.format(**dct)
+    return _str
+
 def get_kindists(filen_temp, weights, simnames,
                  **kwargs):
-    snaps_sr = sl.snaps_sr
-    snaps_hr = sl.snaps_hr
+    ssel = [0, 2, 5]
+    snaps_sr = [sl.snaps_sr[i] for i in ssel]
+    snaps_hr = [sl.snaps_hr[i] for i in ssel]
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
-    sfills = {'simname': simname for simname in simnames}
-    wfills = {'weight': weight for weight in weights}
-    zfills = [{'snapnum': snap for snap in snaps_sr}
+    sfills = [{'simname': simname} for simname in simnames]
+    wfills = [{'weight': weight} for weight in weights]
+    zfills = [[{'snapnum': snap} for snap in snaps_sr]
               if simname in sims_sr else 
-              {'snapnum': snap for snap in snaps_hr}
+              [{'snapnum': snap} for snap in snaps_hr]
               if simname in sims_hr else
               None
               for simname in simnames]
-    out = [[[get_kindist(filen_temp.format(**(sfill | wfill | zfill)),
-                          **kwargs)
+    out = [[[get_kindist(fmtdcts(filen_temp, sfill, wfill, zfill), **kwargs)
              for zfill in zlist]
             for sfill, zlist in zip(sfills, zfills)]
            for wfill in wfills]
@@ -128,7 +155,7 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
     if weightlabels is None:
         weightlabels = weights
     zvals = np.linspace(0.5, 1., 6)
-    get_zcolors = pu.getzcolorfunc(zvals, ztol=1e-3)
+    get_zcolors = pu.getzcolorfunc(zvals, ztol=1e-2)
     fontsize = 12
     physstyles = {'noBH': 'dashed',
                   'AGN-noCR': 'solid',
@@ -149,7 +176,8 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
         xlabel = ('$\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}}'
                   ' \\; [\\mathrm{cm}^{-3}]$')
         yl_add = '\\partial \\, \\log_{10} \\,\\mathrm{n}_{\\mathrm{H}}'
-    ylabel = f'$\\partial \\, \\mathrm{{weight frac.}} \\,/\\, {yl_add}$'
+    ylabel = ('$\\partial \\, \\mathrm{weight} \\,/\\, \\mathrm{tot.}'
+              f' \\,/\\, {yl_add}$')
 
     data = get_kindists(filen_temp, weights, simnames,
                         rrange_rvir=rrange_rvir,
@@ -176,18 +204,18 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
                         height_ratios=height_ratios,
                         width_ratios=width_ratios,
                         hspace=hspace, wspace=wspace)
-    axes = [fig.add_subplot(grid[i % ncols, i // ncols]) for i in range(nw)]
+    axes = [fig.add_subplot(grid[i // ncols, i % ncols]) for i in range(nw)]
     lax = fig.add_subplot(grid[-1, :])
     lax.axis('off')
 
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
     
-    yminmax = np.inf
+    ymaxmax = -np.inf
     xminmin = np.inf
     xmaxmax = -np.inf
     xmar = 0.05
-    yrange = 4.
+    yrange = 2.5
     ymar_top = 0.07
     
     for wi, (wdata, wlabel) in enumerate(zip(data, weightlabels)):
@@ -197,7 +225,7 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
         ax.tick_params(which='both', labelsize=fontsize - 1.,
                        direction='in', right=True, top=True,
                        labelleft=left, labelbottom=bottom)
-        ax.grid(visible=True, which='both')
+        ax.grid(visible=True, which='major')
         ax.set_yscale('log')
         if left:
             ax.set_ylabel(ylabel, fontsize=fontsize)
@@ -212,24 +240,36 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
             for datum in sdata:
                 _hist = datum['hist']
                 _edges = datum['edges']
+                if np.sum(_hist) == 0.:
+                    print('zero weight for ', wlabel, 
+                          ' Rvir ranges: ', rrange_rvir,
+                          ' simname: ', simname)
+                    continue
                 phist = _hist / np.sum(_hist) / np.diff(_edges)
-                phist = np.append(phist, [0.])
+                #phist = np.append(phist, [0.])
                 zv = datum['cosmopars']['z']
                 color = get_zcolors(zv)
-                ax.step(_edges, phist, where='post', color=color,
+                #ax.step(_edges, phist, where='post', color=color,
+                #        linestyle=linestyle, linewidth=linewidth,
+                #        path_effects=patheff)
+                bcens = 0.5 * (_edges[:-1] + _edges[1:])
+                ax.plot(bcens, phist, color=color,
                         linestyle=linestyle, linewidth=linewidth,
-                        patheffects=patheff)
+                        path_effects=patheff)
                 _ymax = np.max(phist)
-                yminmax = min(yminmax, _ymax)
+                ymaxmax = max(ymaxmax, _ymax)
                 goodinds = np.where(phist >= _ymax * 10**(-yrange))[0]
                 _xmin = _edges[goodinds[0]]
                 _xmax = _edges[goodinds[-1] + 1]
-                xminmin = min(xminmin, _xmin)
-                xmaxmax = max(xmaxmax, _xmax)
+                if np.isfinite(_xmin):
+                    xminmin = min(xminmin, _xmin)
+                if np.isfinite(_xmax):
+                    xmaxmax = max(xmaxmax, _xmax)
     
-    ymax = yminmax
+    ymax = ymaxmax
     ymin = ymax * 10**(-yrange)
-    ymax = ymax + (ymax - ymin) * ymar_top
+    print(ymax, ymin)
+    ymax = ymax * 10**((np.log10(ymax) - np.log10(ymin)) * ymar_top)
     [ax.set_ylim((ymin, ymax)) for ax in axes]
     xmar = xmar * (xmaxmax - xminmin)
     xmin = xminmin - xmar
@@ -237,15 +277,15 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
     [ax.set_xlim((xmin, xmax)) for ax in axes]
 
     handles1 = [mlines.Line2D((), (), color='gray', linestyle=physstyles[phys],
-                              linewidth=linewidth, patheffects=patheff,
+                              linewidth=linewidth, path_effects=patheff,
                               label=phys)
                 for phys in physstyles]
     handles2 = [mlines.Line2D((), (), color=get_zcolors(zv), linestyle='solid',
-                              linewidth=linewidth, patheffects=patheff,
+                              linewidth=linewidth, path_effects=patheff,
                               label=f'z={zv:.1f}')
                 for zv in zvals]
     lax.legend(handles=handles1 + handles2, fontsize=fontsize,
-               ncol=ncol_legend, legend_loc='upper center',
+               ncol=ncol_legend, loc='upper center',
                bbox_to_anchor=(0.5, 0.65))
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
@@ -253,7 +293,7 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
             
 def plot_vr_dists():
     ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
-    filetemp = ('hist_rcen_vcen_temperature_by_{{weight}}_{simname}'
+    filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
     weights = ['gasmass', 'gasvol', 'Oxygen', 'Neon',
@@ -285,7 +325,7 @@ def plot_vr_dists():
             ics.append(ic)
             simsets.append([simname])
     for ic, _simnames in zip(ics, simsets):
-        for rrange_rvir in [(0.1, 1.), (0.15, 0.15), 
+        for rrange_rvir in [(0.1, 1.), (0.15, 0.25), 
                             (0.45, 0.55), (0.9, 1.0)]:
             filen_temp = ddir + filetemp
             title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '

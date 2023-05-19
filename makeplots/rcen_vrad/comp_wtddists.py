@@ -84,7 +84,11 @@ def get_kindist(filen, rrange_rvir=(0.1, 1.0),
         cosmopars = {key: val for key, val 
                      in f['Header/cosmopars'].attrs.items()}
         _hist = np.sum(hist[tuple(hsel)], axis=sumaxes)
-        _edges = f[f'axis_{binaxis}/bins'][:]
+        esel = slice(hsel[binaxis].start, 
+                     hsel[binaxis].stop if hsel[binaxis].stop is None
+                     else hsel[binaxis].stop + 1,
+                     hsel[binaxis].step)
+        _edges = f[f'axis_{binaxis}/bins'][esel]
         if dist_target == 'vr' and vrbin_fac != 1:
             rest = len(_hist) % vrbin_fac
             __edges = _edges[slice(None, None, vrbin_fac)]
@@ -291,7 +295,7 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
         plt.savefig(outname, bbox_inches='tight')
     
             
-def plot_vr_dists():
+def plot_vr_dists(plottype='vr_fixedr'):
     ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
     filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
@@ -328,23 +332,132 @@ def plot_vr_dists():
         for rrange_rvir in [(0.1, 1.), (0.15, 0.25), 
                             (0.45, 0.55), (0.9, 1.0)]:
             filen_temp = ddir + filetemp
-            title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
-                     f'{rrange_rvir[-1]:.2f} \\,'
-                     ' \\mathrm{R}_{\\mathrm{vir}}$')
-            _outname = (f'dists_vr_{ic}_phys_z_wt_comp_{rrange_rvir[0]:.2f}'
-                        f'_to_{rrange_rvir[0]:.2f}_Rvir')
-            _outname = _outname.replace('.', 'p')
-            outname = outdir +  _outname + '.pdf'
-            plot_1Ddists_zphysweightcomp(filen_temp, weights,
-                                        _simnames, 
-                                        weightlabels=weightlabels, 
-                                        rrange_rvir=rrange_rvir,
-                                        vrrange=None,
-                                        vrrange_units='kmps',
-                                        outname=outname,
-                                        dist_target='vr',
-                                        title=title)
-
-        
+            if plottype == 'vr_fixedr':
+                title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                        f'{rrange_rvir[-1]:.2f} \\,'
+                        ' \\mathrm{R}_{\\mathrm{vir}}$')
+                _outname = (f'dists_vr_{ic}_phys_z_wt_comp'
+                            f'_{rrange_rvir[0]:.2f}'
+                            f'_to_{rrange_rvir[0]:.2f}_Rvir')
+                _outname = _outname.replace('.', 'p')
+                outname = outdir +  _outname + '.pdf'
+                plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                            _simnames, 
+                                            weightlabels=weightlabels, 
+                                            rrange_rvir=rrange_rvir,
+                                            vrrange=None,
+                                            vrrange_units='kmps',
+                                            outname=outname,
+                                            dist_target='vr',
+                                            title=title)
+            elif plottype == 'rdist':
+                title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                        f'{rrange_rvir[-1]:.2f} \\,'
+                        ' \\mathrm{R}_{\\mathrm{vir}}$')
+                _outname = (f'dists_r_{ic}_phys_z_wt_comp'
+                            f'_{rrange_rvir[0]:.2f}'
+                            f'_to_{rrange_rvir[0]:.2f}_Rvir')
+                _outname = _outname.replace('.', 'p')
+                outname = outdir +  _outname + '.pdf'
+                plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                            _simnames, 
+                                            weightlabels=weightlabels, 
+                                            rrange_rvir=rrange_rvir,
+                                            vrrange=None,
+                                            vrrange_units='kmps',
+                                            outname=outname,
+                                            dist_target='r',
+                                            title=title)
+            elif plottype == 'Tdist_rranges':
+                title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                        f'{rrange_rvir[-1]:.2f} \\,'
+                        ' \\mathrm{R}_{\\mathrm{vir}}$')
+                _outname = (f'dists_T_{ic}_phys_z_wt_comp'
+                            f'_{rrange_rvir[0]:.2f}'
+                            f'_to_{rrange_rvir[0]:.2f}_Rvir')
+                _outname = _outname.replace('.', 'p')
+                outname = outdir +  _outname + '.pdf'
+                plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                            _simnames, 
+                                            weightlabels=weightlabels, 
+                                            rrange_rvir=rrange_rvir,
+                                            vrrange=None,
+                                            vrrange_units='kmps',
+                                            outname=outname,
+                                            dist_target='T',
+                                            title=title)
+            elif plottype == 'nHdist_rranges':
+                filetemp = ('hist_rcen_vcen_hdens_by_{weight}_{simname}'
+                            '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+                filen_temp = ddir + filetemp
+                title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                        f'{rrange_rvir[-1]:.2f} \\,'
+                        ' \\mathrm{R}_{\\mathrm{vir}}$')
+                _outname = (f'dists_nH_{ic}_phys_z_wt_comp'
+                            f'_{rrange_rvir[0]:.2f}'
+                            f'_to_{rrange_rvir[0]:.2f}_Rvir')
+                _outname = _outname.replace('.', 'p')
+                outname = outdir +  _outname + '.pdf'
+                plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                            _simnames, 
+                                            weightlabels=weightlabels, 
+                                            rrange_rvir=rrange_rvir,
+                                            vrrange=None,
+                                            vrrange_units='kmps',
+                                            outname=outname,
+                                            dist_target='nH',
+                                            title=title)
+                
+            elif plottype == 'Tdist_vr_r_ranges':
+                for vrrange in [(-np.inf, -0.5), (-0.5, 0.5), (0.5, np.inf)]:
+                    vrrange_units = 'vesc'
+                    title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                            f'{rrange_rvir[-1]:.2f} \\,'
+                            ' \\mathrm{R}_{\\mathrm{vir}}, '
+                            f' {vrrange[0]:.1f} \\endash {vrrange[-1]:.1f}'
+                            '\\, v_{\\mathrm{esc}}$')
+                    _outname = (f'dists_T_{ic}_phys_z_wt_comp'
+                                f'_{rrange_rvir[0]:.2f}'
+                                f'_to_{rrange_rvir[-1]:.2f}_Rvir'
+                                f'_vr_{vrrange[0]:.1f}_to_{vrrange[-1]:.1f}'
+                                f'_{vrrange_units}')
+                    _outname = _outname.replace('.', 'p')
+                    outname = outdir +  _outname + '.pdf'
+                    plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                                _simnames, 
+                                                weightlabels=weightlabels, 
+                                                rrange_rvir=rrange_rvir,
+                                                vrrange=vrrange,
+                                                vrrange_units=vrrange_units,
+                                                outname=outname,
+                                                dist_target='T',
+                                                title=title)
+            elif plottype == 'nHdist_vr_r_ranges':
+                for vrrange in [(-np.inf, -0.5), (-0.5, 0.5), (0.5, np.inf)]:
+                    filetemp = ('hist_rcen_vcen_hdens_by_{weight}_{simname}'
+                                '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+                    filen_temp = ddir + filetemp
+                    vrrange_units = 'vesc'
+                    title = (f'{ic}, ${rrange_rvir[0]:.2f} \\endash '
+                            f'{rrange_rvir[-1]:.2f} \\,'
+                            ' \\mathrm{R}_{\\mathrm{vir}}, '
+                            f' {vrrange[0]:.1f} \\endash {vrrange[-1]:.1f}'
+                            '\\, v_{\\mathrm{esc}}$')
+                    _outname = (f'dists_nH_{ic}_phys_z_wt_comp'
+                                f'_{rrange_rvir[0]:.2f}'
+                                f'_to_{rrange_rvir[-1]:.2f}_Rvir'
+                                f'_vr_{vrrange[0]:.1f}_to_{vrrange[-1]:.1f}'
+                                f'_{vrrange_units}')
+                    _outname = _outname.replace('.', 'p')
+                    outname = outdir +  _outname + '.pdf'
+                    plot_1Ddists_zphysweightcomp(filen_temp, weights,
+                                                _simnames, 
+                                                weightlabels=weightlabels, 
+                                                rrange_rvir=rrange_rvir,
+                                                vrrange=vrrange,
+                                                vrrange_units=vrrange_units,
+                                                outname=outname,
+                                                dist_target='nH',
+                                                title=title)
 
 

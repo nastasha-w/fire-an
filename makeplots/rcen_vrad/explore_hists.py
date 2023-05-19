@@ -259,9 +259,9 @@ def plot_r_vr_medmap(filen_temp, weightfills, weightlabels=None,
     if 'temperature' in filen_temp:
         vmin = 5.0
         vmax = 7.0
-    elif 'density' in filen_temp:
-        vmin = -31.
-        vmax = -15.
+    elif 'hdens' in filen_temp:
+        vmin = -6.
+        vmax = -1.
     extend = 'both'
     xlabel = '$r \\; [\\mathrm{R}_{\\mathrm{vir}}]$'
     ylabel = '$v_{\\mathrm{r}}\\; [\\mathrm{km}\\, \\mathrm{s}^{-1}]$'
@@ -364,7 +364,7 @@ def plot_r_vr_medmap(filen_temp, weightfills, weightlabels=None,
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
-def plotset_r_vr_weights(hset='core'):
+def plotset_r_vr_medmap(hset='core'):
     if hset == 'core':
         ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
         filetemp = ('hist_rcen_vcen_{axis2}_by_{{weight}}_{simname}'
@@ -373,10 +373,10 @@ def plotset_r_vr_weights(hset='core'):
                    'O6', 'Ne8', 'O7', 'Ne9', 'O8', 'Ne10']
         weightlabels = ['Mass', 'Volume', 'Oxygen', 'Neon',
                         'O VI', 'Ne VIII', 'O VII', 'Ne IX', 'O VIII', 'Ne X']
-        axes2 = ['temperature', 'density']
+        axes2 = ['temperature', 'hdens']
         clabels = ['median $\\log_{10} \\, \\mathrm{T} \\; [\\mathrm{K}]$',
-                   ('median $\\log_{10} \\, \\rho \\; [\\mathrm{g} \\;'
-                    ' \\mathrm{cm}^{-3}]$')]
+                   ('median $\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}} \\;'
+                    ' [\\mathrm{cm}^{-3}]$')]
         simnames = sl.m13_hr_clean2 + sl.m13_sr_clean2 +\
                    [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
                      '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
@@ -425,4 +425,3 @@ def plotset_r_vr_weights(hset='core'):
                                  weightlabels=weightlabels,
                                  title=title, outname=_outname,
                                  clabel=clabel)
-        break

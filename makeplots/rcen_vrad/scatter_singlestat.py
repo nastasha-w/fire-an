@@ -146,7 +146,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
     if ncols is None:
         ncmax = 4
         ncols = min(ncmax, npanels)
-    nrows = (npanels - 1) // ncmax + 1
+    nrows = (npanels - 1) // ncols + 1
     panelsize = 2.5
     laxspace = 1.5
     width_ratios = [panelsize] * ncols
@@ -514,3 +514,141 @@ def plotset_vmean_ion_vs_halo(haloweight='Volume'):
                                    rrange_rvir=rrange,
                                    title=title, 
                                    outname=outname)
+            
+def plot_thermcomp_vrange_medscat(simnames, vrranges, vrranges_units,
+                                  compqty='T',
+                                  rrange_rvir=(0.1, 1.),
+                                  title=None, outname=None):
+    wqty = 'gasvol'
+    snaps_sr = sl.snaps_sr
+    snaps_hr = sl.snaps_hr
+    sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
+    sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    filen_temp = ('hist_rcen_vcen_{compqty}_by_{weight}_{simname}'
+                  '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    if compqty == 'T':
+        fqty = 'temperature'
+        flab = '\\log_{10} \\, \\mathrm{T}'
+        funits = '\\mathrm{K}'
+    elif compqty == 'nH':
+        fqty = 'hdens'
+        flab = '\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}}'
+        funits = '\\mathrm{cm}^{-3}'
+
+    xlabel = (f'$ {flab} \\; [{funits}]$')
+    ylabel = (f'$ {flab} \\; [{funits}],'
+              'v_{\\mathrm{rad}}\\,\\mathrm{sel.}$')
+    showperc = (0.1, 0.5, 0.9)
+    fontsize = 12
+    
+    snaplists = [snaps_sr if simname in sims_sr
+                 else snaps_hr if simname in sims_hr
+                 else None
+                 for simname in simnames]
+    datay = {simname: [{vrrange: 
+                        getthemperc_rbins(ddir + filen_temp.format(
+                        weight=wqty, simname=simname, snapnum=snap,
+                        compqty=fqty), 
+                                          rrange_rvir=rrange_rvir,
+                                          vrrange=vrrange, 
+                                          vrrange_units=vrrange_units,
+                                          perc=np.array(showperc))
+              for vrrange, vrrange_units in zip(vrranges, vrranges_units)}
+             for snap in snaplist]
+            for snaplist, simname in zip(snaplists, simnames)}
+    allvkey = (-np.inf, np.inf)
+    datax = {simname: [{allvkey: 
+                        getthemperc_rbins(ddir + filen_temp.format(
+                        weight=wqty, simname=simname, snapnum=snap,
+                        compqty=fqty), 
+                                          rrange_rvir=rrange_rvir,
+                                          vrrange=None, 
+                                          vrrange_units=None,
+                                          perc=np.array(showperc))
+              for _ in range(1)}
+             for snap in snaplist]
+            for snaplist, simname in zip(snaplists, simnames)}
+    yweightmap = vrranges
+    xweightmap = [allvkey] * len(vrranges)
+    fig, axes, lax, axdoc = plotdata_censcatter(datax, datay, xweightmap,
+                                                yweightmap, xlabel=xlabel,
+                                                ylabel=ylabel,
+                                                ncols=None,
+                                                fontsize=fontsize)
+    xmin = axdoc['xmin']
+    xmax = axdoc['xmax']
+    ymin = axdoc['ymin']
+    ymax = axdoc['ymax']
+    eqp = (max(xmin, ymin), min(xmax, ymax))
+    [ax.plot(eqp, eqp, color='black', linestyle='dotted', linewidth=1,
+             zorder=-1) for ax in axes]
+    fontsize = axdoc['fontsize']
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    for vi, (vrsel, vru) in enumerate(zip(vrranges, vrranges_units)):
+        if vru == 'kmps':
+            upart = '\\mathrm{km} \\, / \\, \\mathrm{s}'
+            v0 = f'{vrsel[0]:.0f}'
+            v1 = f'{vrsel[1]:.0f}'
+        elif vru == 'vesc':
+            upart = 'v_{\\mathrm{esc}}'
+            v0 = f'{vrsel[0]:.2f}'
+            v1 = f'{vrsel[1]:.2f}'
+        if np.isfinite(vrsel[0]) and np.isfinite(vrsel[1]):
+            rpart = f'{v0}\\endash{v1}'
+        elif np.isfinite(vrsel[0]):
+            rpart = f'>{v0}'
+        elif np.isfinite(vrsel[1]):
+            rpart = f'<{v1}'
+        vlabel = f'$v_{{\\mathrm{{rad}}}} {rpart} \\; {upart}$'
+        axes[vi].text(0.05, 0.95, vlabel, fontsize=fontsize,
+                      horizontalalignment='left', verticalalignment='top',
+                      transform=axes[vi].transAxes)
+    
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+def plotset_thermcomp_vrange_medscat(qty='T'):
+    rranges_rvir = [(0.1, 1.), (0.15, 0.25), (0.45, 0.55),
+                    (0.9, 1.0)]
+    vrranges = [(50., np.inf), (100., np.inf), (150., np.inf),
+                (0.5, np.inf),
+                (-np.inf, -50.), (-np.inf, -100.), (-np.inf, -150.),
+                (-np.inf, -0.5)]
+    vrranges_units = (['kmps'] * 3 + ['vesc']) * 2
+    simnames_m12 = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                     '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5'),
+                    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp2e-4_gacc31_fa0.5'),
+                    ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                     '_sdp1e10_gacc31_fa0.5')]
+    simnames_m13 = sl.m13_hr_clean2 + sl.m13_sr_clean2
+    
+    for rrange in rranges_rvir:
+        for simset, simsetname in zip([simnames_m12, simnames_m13],
+                                    ['m12', 'm13']):
+            title = (f'{simsetname}, '
+                    f'${rrange[0]:.2f} \\endash {rrange[-1]:.2f}'
+                    ' \\, \\mathrm{R}_{\\mathrm{vir}}$')
+            outdir = '/projects/b1026/nastasha/imgs/summary_plots/'
+            _outname = (f'vbias_{simsetname}_{qty}_med_scatter'
+                            '_0.10_0.90'
+                        f'_{rrange[0]:.2f}'
+                        f'_{rrange[-1]:.2f}_Rvir_'
+                        f'vrrangevar_v1')
+            _outname = _outname.replace('.', 'p')
+            outname = outdir + _outname + '.pdf'
+                        
+            plot_thermcomp_vrange_medscat(simset, vrranges, 
+                                          vrranges_units,
+                                          compqty=qty,
+                                          rrange_rvir=rrange,
+                                          title=title, 
+                                          outname=outname)

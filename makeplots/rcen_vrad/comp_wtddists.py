@@ -10,7 +10,7 @@ import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
-from pyparsing import line
+import fire_an.utils.math_utils as mu
 
 def getphys(simname):
     phys = ('noBH' if '_sdp1e10_' in simname 
@@ -121,8 +121,8 @@ def fmtdcts(str, *args):
     return _str
 
 def get_kindists(filen_temp, weights, simnames,
+                 ssel=[0, 2, 5],
                  **kwargs):
-    ssel = [0, 2, 5]
     snaps_sr = [sl.snaps_sr[i] for i in ssel]
     snaps_hr = [sl.snaps_hr[i] for i in ssel]
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
@@ -293,7 +293,6 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
                bbox_to_anchor=(0.5, 0.65))
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
-    
             
 def plot_vr_dists(plottype='vr_fixedr'):
     ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
@@ -460,4 +459,572 @@ def plot_vr_dists(plottype='vr_fixedr'):
                                                 dist_target='nH',
                                                 title=title)
 
+def comp_vdists_physmodels(filen_temp, simnames, weight='Volume',
+                           title=None, outname=None,
+                           rrange_rvir=(0.1, 1.), label_weightpart=None):
+    
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    filen_temp = ddir + _filen_temp
+    if label_weightpart is None:
+        label_weightpart = '\\mathrm{weight}'
+    xlabel = '$v_{\\mathrm{rad}} \\; [\\mathrm{km} \\, \\mathrm{s}^{-1}]$'
+    ylabel = (f'$\\partial {label_weightpart} \\,/\\, '
+              f'{label_weightpart}'
+              '\\,/\\, \\partial v_{\\mathrm{rad}}'
+              '\\;[\\mathrm{km}^{-1}\\mathrm{s}]$')
 
+    data = get_kindists(filen_temp, [weight], simnames,
+                        rrange_rvir=rrange_rvir,
+                        vrrange=None,
+                        vrrange_units='kmps',
+                        dist_target='vr', vrbin_fac=4,
+                        ssel=range(6))
+    # out = {'cosmopars': cosmopars,
+    #       'vescvir_kmps': vescvir_kmps,
+    #       'mvir_g': mvir_g,
+    #       'rvir_cm': rvir_cm,
+    #       'edges': _edges,
+    #       'hist': _hist}
+    # out = [[[get_kindist(fmtdcts(filen_temp, sfill, wfill, zfill), **kwargs)
+    #         for zfill in zlist]
+    #        for sfill, zlist in zip(sfills, zfills)]
+    #       for wfill in wfills]
+    data = data[0]
+    zs = list({np.round(datum['cosmopars']['z'], 2) 
+               for l1 in data for datum in l1})
+    zs.sort()
+    get_zcolors = pu.getzcolorfunc(zs)
+    
+    panelsize = 2.5
+    ncmax = 3
+    ns = len(simnames)
+    ncols = min(ncmax, ns)
+    nrows = (ns - 1) // ncols + 1
+    hspace = 0.
+    wspace = 0.
+    lspace = 2.
+    height_ratios = [panelsize] * nrows + [lspace]
+    width_ratios = [panelsize] * ncols
+    width = sum(width_ratios)
+    height = sum(height_ratios)
+    ncol_legend = int(np.floor(1.7 * ncols))
+
+    fig = plt.figure(figsize=(width, height))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1,
+                        height_ratios=height_ratios,
+                        width_ratios=width_ratios,
+                        hspace=hspace, wspace=wspace)
+    axes = [fig.add_subplot(grid[i // ncols, i % ncols]) for i in range(ns)]
+    lax = fig.add_subplot(grid[-1, :])
+    lax.axis('off')
+
+    fontsize = 12
+    linewidth = 1.5
+    patheff = pu.getoutline(linewidth)
+
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    
+    ymaxmax = -np.inf
+    xminmin = np.inf
+    xmaxmax = -np.inf
+    xmar = 0.05
+    yrange = 2.5
+    ymar_top = 0.07
+    
+    for si, simname in enumerate(simnames):
+        ax = axes[si]
+        sdata = data[si]
+        bottom = si >= ns - ncols
+        left = si % ncols == 0
+        ax.tick_params(which='both', labelsize=fontsize - 1.,
+                       direction='in', right=True, top=True,
+                       labelleft=left, labelbottom=bottom)
+        ax.grid(visible=True, which='both')
+        ax.set_yscale('log')
+        if left:
+            ax.set_ylabel(ylabel, fontsize=fontsize)
+        if bottom:
+            ax.set_xlabel(xlabel, fontsize=fontsize)
+        ic = simname.split('_')[0]
+        phys = getphys(simname)
+        axlabel = f'{ic}, {phys}'
+        ax.text(0.98, 0.98, axlabel, fontsize=fontsize,
+                horizontalalignment='right', verticalalignment='top',
+                transform=ax.transAxes, color='black')
+        linestyle = 'solid'
+        for datum in sdata:
+            _hist = datum['hist']
+            _edges = datum['edges']
+            if np.sum(_hist) == 0.:
+                print('zero weight for ', axlabel, 
+                      ' Rvir ranges: ', rrange_rvir,
+                      ' simname: ', simname)
+                continue
+            phist = _hist / np.sum(_hist) / np.diff(_edges)
+            #phist = np.append(phist, [0.])
+            zv = datum['cosmopars']['z']
+            color = get_zcolors(zv)
+            #ax.step(_edges, phist, where='post', color=color,
+            #        linestyle=linestyle, linewidth=linewidth,
+            #        path_effects=patheff)
+            bcens = 0.5 * (_edges[:-1] + _edges[1:])
+            ax.plot(bcens, phist, color=color,
+                    linestyle=linestyle, linewidth=linewidth,
+                    path_effects=patheff)
+            _ymax = np.max(phist)
+            ymaxmax = max(ymaxmax, _ymax)
+            goodinds = np.where(phist >= _ymax * 10**(-yrange))[0]
+            _xmin = _edges[goodinds[0]]
+            _xmax = _edges[goodinds[-1] + 1]
+            if np.isfinite(_xmin):
+                xminmin = min(xminmin, _xmin)
+            if np.isfinite(_xmax):
+                xmaxmax = max(xmaxmax, _xmax)
+    
+    ymax = ymaxmax
+    ymin = ymax * 10**(-yrange)
+    print(ymax, ymin)
+    ymax = ymax * 10**((np.log10(ymax) - np.log10(ymin)) * ymar_top)
+    [ax.set_ylim((ymin, ymax)) for ax in axes]
+    xmar = xmar * (xmaxmax - xminmin)
+    xmin = xminmin - xmar
+    xmax = xmaxmax + xmar
+    [ax.set_xlim((xmin, xmax)) for ax in axes]
+
+    #handles1 = [mlines.Line2D((), (), color='gray', linestyle=physstyles[phys],
+    #                          linewidth=linewidth, path_effects=patheff,
+    #                          label=phys)
+    #            for phys in physstyles]
+    handles2 = [mlines.Line2D((), (), color=get_zcolors(zv), linestyle='solid',
+                              linewidth=linewidth, path_effects=patheff,
+                              label=f'z={zv:.1f}')
+                for zv in zs]
+    lax.legend(handles=handles2, fontsize=fontsize,
+               ncol=ncol_legend, loc='upper center',
+               bbox_to_anchor=(0.5, 0.65))
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+def compsets_vdists_physmodels():
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
+
+    simnames_m13 = sl.m13_hr_clean2 + sl.m13_sr_clean2
+    simnames_m12 = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5')]
+    simnames_m13.sort()
+    simnames_m12.sort()
+    simsets = [simnames_m12, simnames_m13]
+    simsetnames = ['m12', 'm13']
+    for simset, simsetn in zip(simsets, simsetnames):
+        for rrange in [(0.1, 1.), (0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]:
+            filen_temp = ddir + filetemp
+            title = (f'{simsetn}, '
+                     f'${rrange[0]:.2f} \\endash {rrange[-1]:.2f}'
+                      ' \\, \\mathrm{R}_{\\mathrm{vir}}$')
+            _outname = (f'vdists_physcomp_{simsetn}'
+                        f'_{rrange[0]:.2f}'
+                        f'_{rrange[-1]:.2f}_Rvir_v1')
+            _outname = _outname.replace('.', 'p')
+            outname = outdir + _outname + '.pdf'
+
+            comp_vdists_physmodels(filen_temp, simset, weight='gasvol',
+                                   title=title, outname=outname,
+                                   rrange_rvir=rrange, 
+                                   label_weightpart='\\mathrm{V}')
+            
+def comp_vperc_physmodels(filen_temp, simnames, weight='gasvol',
+                          title=None, outname=None,
+                          rrange_rvir=(0.1, 1.), label_weightpart=None):
+    
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    filen_temp = ddir + _filen_temp
+    if label_weightpart is None:
+        label_weightpart = '\\mathrm{weight}'
+    ylabel = (f'$v_{{\\mathrm{{rad}}}} ({label_weightpart})'
+              '\\; [\\mathrm{km} \\, \\mathrm{s}^{-1}]$')
+    xlabel = '$z$'
+    stats = ('mean', 'p10', 'p90')
+    statlabels = ['mean', 'perc. 10', 'perc. 90']
+
+    data = get_kindists(filen_temp, [weight], simnames,
+                        rrange_rvir=rrange_rvir,
+                        vrrange=None,
+                        vrrange_units='kmps',
+                        dist_target='vr', vrbin_fac=1,
+                        ssel=range(6))
+    data = data[0]
+    zs = list({np.round(datum['cosmopars']['z'], 2) 
+               for l1 in data for datum in l1})
+    zs.sort()
+    panelsize = 2.5
+    nrows = len(stats)
+    ncols = 3
+    hspace = 0.
+    wspace = 0.
+    lspace = 2.
+    height_ratios = [panelsize] * nrows + [lspace]
+    width_ratios = [panelsize] * ncols
+    width = sum(width_ratios)
+    height = sum(height_ratios)
+    ncol_legend = int(np.floor(1.7 * ncols))
+    physcols = {'noBH': 0,
+                'AGN-noCR': 1,
+                'AGN-CR': 2}
+
+    fig = plt.figure(figsize=(width, height))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1,
+                        height_ratios=height_ratios,
+                        width_ratios=width_ratios,
+                        hspace=hspace, wspace=wspace)
+    axes = [[fig.add_subplot(grid[i, j]) 
+             for j in range(3)]
+            for i in range(len(stats))]
+    lax = fig.add_subplot(grid[-1, :])
+    lax.axis('off')
+
+    fontsize = 12
+    linewidth = 1.0
+    iccolors = sl.m12_iccolors
+    iccolors.update(sl.m13_iccolors)
+
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    
+    for pi, phys in enumerate(physcols):
+        for si, statl in enumerate(statlabels):
+            ax = axes[si][pi]
+            bottom = si == len(stats) - 1
+            left = pi == 0
+            ax.tick_params(which='both', labelsize=fontsize - 1.,
+                           direction='in', right=True, top=True,
+                           labelleft=left, labelbottom=bottom)
+            ax.grid(visible=True, which='both')
+            if left:
+                ax.set_ylabel(ylabel, fontsize=fontsize)
+            if bottom:
+                ax.set_xlabel(xlabel, fontsize=fontsize)
+            
+            axlabel = f'{phys}, {statl}'
+            ax.text(0.98, 0.98, axlabel, fontsize=fontsize,
+                    horizontalalignment='right', verticalalignment='top',
+                    transform=ax.transAxes, color='black')
+    ics = []
+    for smi, simname in enumerate(simnames):
+        ic = simname.split('_')[0]
+        ics.append(ic)
+        phys = getphys(simname)
+        coli = physcols[phys]
+        sdata = data[smi]
+        color = iccolors[ic]
+        xs_toplot = [[] for _ in range(len(stats))]
+        ys_toplot = [[] for _ in range(len(stats))]
+        for datum in sdata:
+            _hist = datum['hist']
+            _edges = datum['edges']
+            zv = datum['cosmopars']['z']
+            if np.sum(_hist) == 0.:
+                print('zero weight for ', axlabel, 
+                      ' Rvir ranges: ', rrange_rvir,
+                      ' simname: ', simname)
+                continue
+            for si, stat in enumerate(stats):
+                if stat == 'mean':
+                    bcens = 0.5 * (_edges[:-1] + _edges[1:])
+                    av = np.average(bcens, weights=_hist)
+                    ys_toplot[si].append(av)
+                elif stat.startswith('p'):
+                    pval = np.array([float(stat[1:]) / 100.])
+                    perc = mu.percentiles_from_histogram(_hist, _edges, 
+                                                         axis=0,
+                                                         percentiles=pval)
+                    ys_toplot[si].append(perc[0])
+                xs_toplot[si].append(zv)
+        for si, (xp, yp) in enumerate(zip(xs_toplot, ys_toplot)):
+            xp = np.array(xp)
+            yp = np.array(yp)
+            xsort = np.argsort(xp)
+            xp = xp[xsort]
+            yp = yp[xsort]
+            axes[si][coli].plot(xp, yp, color=color,
+                                linestyle='solid', linewidth=linewidth,
+                                marker='o', markersize=5.)
+    
+    ylims = [[ax.get_ylim() for ax in l1] for l1 in axes ]
+    ymin = [min([ylim[0] for ylim in l1]) for l1 in ylims]
+    ymax = [max([ylim[1] for ylim in l1]) for l1 in ylims]
+    [[ax.set_ylim((ymin[i], ymax[i])) for ax in l1] 
+     for i, l1 in enumerate(axes)]
+    xlims = [[ax.get_xlim() for ax in l1] for l1 in axes ]
+    xmin = [min([xlim[0] for xlim in l1]) for l1 in xlims]
+    xmax = [max([xlim[1] for xlim in l1]) for l1 in xlims]
+    [[ax.set_xlim((xmin[i], xmax[i])) for ax in l1] 
+     for i, l1 in enumerate(axes)]
+
+    ics = list(set(ics))
+    ics.sort()
+    handles2 = [mlines.Line2D((), (), color=iccolors[ic], 
+                              linestyle='solid',
+                              linewidth=linewidth, marker='o',
+                              markersize=5.,
+                              label=ic)
+                for ic in ics]
+    lax.legend(handles=handles2, fontsize=fontsize,
+               ncol=ncol_legend, loc='upper center',
+               bbox_to_anchor=(0.5, 0.65))
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+    
+def compset_vperc_physmodels():
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
+
+    simnames_m13 = sl.m13_hr_clean2 + sl.m13_sr_clean2
+    simnames_m12 = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5')]
+    simnames_m13.sort()
+    simnames_m12.sort()
+    simsets = [simnames_m12, simnames_m13]
+    simsetnames = ['m12', 'm13']
+    for simset, simsetn in zip(simsets, simsetnames):
+        for rrange in [(0.1, 1.), (0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]:
+            filen_temp = ddir + filetemp
+            title = (f'{simsetn}, '
+                     f'${rrange[0]:.2f} \\endash {rrange[-1]:.2f}'
+                      ' \\, \\mathrm{R}_{\\mathrm{vir}}$')
+            _outname = (f'vperc_physcomp_{simsetn}'
+                        f'_{rrange[0]:.2f}'
+                        f'_{rrange[-1]:.2f}_Rvir_v1')
+            _outname = _outname.replace('.', 'p')
+            outname = outdir + _outname + '.pdf'
+
+            comp_vperc_physmodels(filen_temp, simset, weight='gasvol',
+                                  title=title, outname=outname,
+                                  rrange_rvir=rrange, 
+                                  label_weightpart='\\mathrm{V}')
+
+def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
+                          title=None, outname=None,
+                          rrange_rvir=(0.1, 1.), 
+                          label_weightpart=None,
+                          vrranges=[(-np.inf, np.inf)],
+                          vrranges_units=['kmps']):
+    
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    filen_temp = ddir + _filen_temp
+    if label_weightpart is None:
+        label_weightpart = '\\mathrm{weight}'
+    ylabel = (f'${label_weightpart}\\, \\mathrm{{frac.}}$')
+    xlabel = '$z$'
+    allvkey = (-np.inf, np.inf)
+    _vrranges = [allvkey] + vrranges
+    _vrranges_units = ['kmps'] + vrranges_units
+    data = {vrrange: get_kindists(filen_temp, [weight], simnames,
+                                  rrange_rvir=rrange_rvir,
+                                  vrrange=vrrange,
+                                  vrrange_units=vrrange_units,
+                                  dist_target='vr', vrbin_fac=1,
+                                  ssel=range(6))[0]
+            for vrrange, vrrange_units in zip(_vrranges, _vrranges_units)}
+    zs = list({np.round(datum['cosmopars']['z'], 2) 
+               for key in data for l1 in data[key] for datum in l1})
+    zs.sort()
+    panelsize = 2.5
+    nrows = len(vrranges)
+    ncols = 3
+    hspace = 0.
+    wspace = 0.
+    lspace = 2.
+    height_ratios = [panelsize] * nrows + [lspace]
+    width_ratios = [panelsize] * ncols
+    width = sum(width_ratios)
+    height = sum(height_ratios)
+    ncol_legend = int(np.floor(1.7 * ncols))
+    physcols = {'noBH': 0,
+                'AGN-noCR': 1,
+                'AGN-CR': 2}
+
+    fig = plt.figure(figsize=(width, height))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1,
+                        height_ratios=height_ratios,
+                        width_ratios=width_ratios,
+                        hspace=hspace, wspace=wspace)
+    axes = [[fig.add_subplot(grid[i, j]) 
+             for j in range(3)]
+            for i in range(len(vrranges))]
+    lax = fig.add_subplot(grid[-1, :])
+    lax.axis('off')
+
+    fontsize = 12
+    linewidth = 1.0
+    iccolors = sl.m12_iccolors
+    iccolors.update(sl.m13_iccolors)
+
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    
+    for pi, phys in enumerate(physcols):
+        for vi, (vrrange, vrrange_units) in enumerate(zip(vrranges,
+                                                          vrranges_units)):
+            ax = axes[vi][pi]
+            bottom = vi == len(vrranges) - 1
+            left = pi == 0
+            ax.tick_params(which='both', labelsize=fontsize - 1.,
+                           direction='in', right=True, top=True,
+                           labelleft=left, labelbottom=bottom)
+            ax.grid(visible=True, which='both')
+            if left:
+                ax.set_ylabel(ylabel, fontsize=fontsize)
+            if bottom:
+                ax.set_xlabel(xlabel, fontsize=fontsize)
+            if vrrange_units == 'kmps':
+                upart = '\\mathrm{km} \\, / \\, \\mathrm{s}'
+                v0 = f'{vrrange[0]:.0f}'
+                v1 = f'{vrrange[1]:.0f}'
+            elif vrrange_units == 'vesc':
+                upart = 'v_{\\mathrm{esc}}'
+                v0 = f'{vrrange[0]:.2f}'
+                v1 = f'{vrrange[1]:.2f}'
+            if np.isfinite(vrrange[0]) and np.isfinite(vrrange[1]):
+                rpart = f'{v0}\\endash{v1}'
+            elif np.isfinite(vrrange[0]):
+                rpart = f'>{v0}'
+            elif np.isfinite(vrrange[1]):
+                rpart = f'<{v1}'
+            vlabel = f'$v_{{\\mathrm{{rad}}}} {rpart} \\; {upart}$'
+            axlabel = f'{vlabel}\n{phys}'
+            ax.text(0.98, 0.98, axlabel, fontsize=fontsize,
+                    horizontalalignment='right', verticalalignment='top',
+                    transform=ax.transAxes, color='black')
+    ics = []
+    for smi, simname in enumerate(simnames):
+        ic = simname.split('_')[0]
+        ics.append(ic)
+        phys = getphys(simname)
+        coli = physcols[phys]
+        color = iccolors[ic]
+        xs_toplot = [[] for _ in range(len(vrranges))]
+        ys_toplot = [[] for _ in range(len(vrranges))]
+        for vi, vrrange in enumerate(vrranges):
+            _data_sub = data[vrrange][smi]
+            _data_all = data[allvkey][smi]
+            for dtot, dsub in zip(_data_all, _data_sub):
+                _sub = np.sum(dsub['hist'])
+                _tot = np.sum(dtot['hist'])
+                zv = dsub['cosmopars']['z']
+                ys_toplot[vi].append(_sub / _tot)
+                xs_toplot[vi].append(zv)
+        for vi, (xp, yp) in enumerate(zip(xs_toplot, ys_toplot)):
+            xp = np.array(xp)
+            yp = np.array(yp)
+            xsort = np.argsort(xp)
+            xp = xp[xsort]
+            yp = yp[xsort]
+            axes[vi][coli].plot(xp, yp, color=color,
+                                linestyle='solid', linewidth=linewidth,
+                                marker='o', markersize=5.)
+    
+    ylims = [[ax.get_ylim() for ax in l1] for l1 in axes ]
+    ymin = [min([ylim[0] for ylim in l1]) for l1 in ylims]
+    ymax = [max([ylim[1] for ylim in l1]) for l1 in ylims]
+    [[ax.set_ylim((ymin[i], ymax[i])) for ax in l1] 
+     for i, l1 in enumerate(axes)]
+    xlims = [[ax.get_xlim() for ax in l1] for l1 in axes ]
+    xmin = [min([xlim[0] for xlim in l1]) for l1 in xlims]
+    xmax = [max([xlim[1] for xlim in l1]) for l1 in xlims]
+    [[ax.set_xlim((xmin[i], xmax[i])) for ax in l1] 
+     for i, l1 in enumerate(axes)]
+
+    ics = list(set(ics))
+    ics.sort()
+    handles2 = [mlines.Line2D((), (), color=iccolors[ic], 
+                              linestyle='solid',
+                              linewidth=linewidth, marker='o',
+                              markersize=5.,
+                              label=ic)
+                for ic in ics]
+    lax.legend(handles=handles2, fontsize=fontsize,
+               ncol=ncol_legend, loc='upper center',
+               bbox_to_anchor=(0.5, 0.65))
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+def compset_vfrac_physmodels():
+    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
+
+    simnames_m13 = sl.m13_hr_clean2 + sl.m13_sr_clean2
+    simnames_m12 = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5'),
+                ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+                    '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp2e-4_gacc31_fa0.5'),
+                ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+                    '_sdp1e10_gacc31_fa0.5')]
+    simnames_m13.sort()
+    simnames_m12.sort()
+    simsets = [simnames_m12, simnames_m13]
+    simsetnames = ['m12', 'm13']
+    for simset, simsetn in zip(simsets, simsetnames):
+        for rrange in [(0.1, 1.), (0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]:
+            filen_temp = ddir + filetemp
+            title = (f'{simsetn}, '
+                     f'${rrange[0]:.2f} \\endash {rrange[-1]:.2f}'
+                      ' \\, \\mathrm{R}_{\\mathrm{vir}}$')
+            _outname = (f'vpfrac_physcomp_{simsetn}'
+                        f'_{rrange[0]:.2f}'
+                        f'_{rrange[-1]:.2f}_Rvir_v1')
+            _outname = _outname.replace('.', 'p')
+            outname = outdir + _outname + '.pdf'
+            if simsetn == 'm12':
+                vrranges = [(-np.inf, -0.5), (-np.inf, -100.),
+                            (0.5, np.inf), (100., np.inf)]
+            elif simsetn == 'm13':
+                vrranges = [(-np.inf, -0.5), (-np.inf, -150.),
+                            (0.5, np.inf), (150., np.inf)]
+            vrranges_units = (['vesc'] + ['kmps']) * 2
+
+            comp_vfrac_physmodels(filen_temp, simset, weight='gasvol',
+                                  title=title, outname=outname,
+                                  rrange_rvir=rrange, 
+                                  label_weightpart='\\mathrm{V}',
+                                  vrranges=vrranges,
+                                  vrranges_units=vrranges_units)

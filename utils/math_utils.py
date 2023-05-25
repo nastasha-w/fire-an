@@ -450,3 +450,68 @@ def match(arr1, arr2, arr2_sorted=False, arr2_index=None):
     ptr = np.where(ptr>= 0, ind[ptr], -1)
     
     return ptr
+
+def peakfinder1d(array3d, axisedges, axis=2,
+                 minsepdecr=0.5, mintotval=10**12.5,
+                 maxcomponents=4, 
+                 componentedge_meanfrac=0.05):
+    '''
+    find 1d peaks in array3d along axis
+    (intended for absorption peaks in p-p-v histograms)
+
+    returns 3 3d arrays, with peak properties
+    replacing weights in the selected axis. The inds array
+    has and extra dimension (last) for first/last inds.
+
+    Returns:
+    --------
+    cens, tots, inds
+    cens: component centers (weighted mean, axisedges units)
+    tots: total weight in component
+    inds: indices along axis marking each component. 
+          start and stop attributes for 'slice', i.e.
+          first is the first included bin and second is
+          one more than the last included bin.
+    NaN values mean the numbered component was not found.
+    '''
+    dims = list(range(len(array3d.shape)))
+    dims.remove(axis)
+    itershape = [array3d.shape[i] for i in dims]
+    numdims = len(dims)
+    lend1 = itershape[0]
+    lend2 = itershape[1]
+    pos1 = dims[0]
+    pos2 = dims[1]
+    outshape = list(array3d.shape)
+    outshape[axis] = maxcomponents
+    outcen = np.zeros(tuple(outshape), dtype=np.float32) / 0.
+    outtot = np.zeros(tuple(outshape), dtype=np.float32) / 0.
+    outind = np.zeros(tuple(outshape) + (2,), dtype=np.float32) / 0.
+    for i1 in range(lend1):
+        for i2 in range(lend2):
+            subsel = [None for _ in range(numdims)]
+            subsel[pos1] = i1
+            subsel[pos2] = i2
+            searcharr = array3d[tuple(subsel)]
+            if np.sum(searcharr) < mintotval:
+                continue
+            ## find starting peak candidates (noisy)
+            #peak: 1st derivative changes sign pos -> neg
+            # e.g.: 
+            # searcharr: [5,  5,  3, 2, 4,  6, 5,  6,  1, 0, 6]
+            # delta1:    [0, -2, -1, 2, 2, -1, 1, -5, -1, 6]
+            # delta1 > 0:[T,  F,  F, T, T,  F, T,  F,  F, T]
+            # wherepos:  [0, 3, 4, 6, 9]
+            # wherejump: [0, 2, 3]
+            # ci_s:      [1, 5, 7]
+            delta1 = np.diff(searcharr)
+            wherepos = np.where(delta1 >= 0.)[0]
+            wherejump = np.where(np.diff(wherepos) > 1.1)[0]
+            ci_s = wherepos[wherejump] + 1
+            # if last index is a peak, cannot find a jump after it.
+            if delta1[-1] > 0:
+                ci_s = np.append(ci_s, len(delta1))
+            ## merge initial peaks if insufficient decrement between
+            ## them
+
+

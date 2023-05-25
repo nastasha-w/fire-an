@@ -21,7 +21,7 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
             maptype='Mass', maptype_args=None,
             weighttype=None, weighttype_args=None,
             save_weightmap=False, logmap=True,
-            logweightmap=True):
+            logweightmap=True, losradius_rvir=None):
     '''
     Creates a mass map projected perpendicular to a line of sight axis
     by assuming the simulation resolution elements divide their mass 
@@ -77,6 +77,9 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     save_weightmap: bool
         if obtaining a weighted quantity map, also save the projected
         weights? (If true, both maps are stored in the same hdf5 file.)
+    losradius_rvir: None or float
+        half length along the line of sight direction, Rvir units. If
+        None, radius_rvir is used.
     Output:
     -------
     massW: 2D array of floats
@@ -141,6 +144,8 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
     # calculate pixel numbers and projection region based
     # on target size and extended for integer pixel number
     target_size_cm = np.array([2. * radius_rvir * rvir_cm] * 3)
+    if losradius_rvir is not None:
+        target_size_cm[Axis3] = 2. * losradius_rvir * rvir_cm
     pixel_cm = pixsize_pkpc * c.cm_per_mpc * 1e-3
     npix3 = (np.ceil(target_size_cm / pixel_cm)).astype(int)
     npix_x = npix3[Axis1]
@@ -298,6 +303,10 @@ def massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
         igrp.attrs.create('snapfiles', np.array([np.string_(fn) for fn in snap.filens]))
         igrp.attrs.create('dirpath', np.string_(dirpath))
         igrp.attrs.create('radius_rvir', radius_rvir)
+        if losradius_rvir is None:
+            igrp.attrs.create('losradius_rvir', np.string_('None'))
+        else: 
+            igrp.attrs.create('losradius_rvir', losradius_rvir)
         igrp.attrs.create('particle_type', particle_type)
         igrp.attrs.create('pixsize_pkpc', pixsize_pkpc)
         igrp.attrs.create('axis', np.string_(axis))

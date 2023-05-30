@@ -1,6 +1,7 @@
 
 import sys
 
+import fire_an.explore.run_partsel_pv as spv
 import fire_an.mainfunc.haloprop as hp
 import fire_an.tests.test_haloprops as th
 import fire_an.tests.test_maps as tm
@@ -232,6 +233,8 @@ def fromcommandline(index):
         # 18136 - 18711: m12-sr (576 inds)
         # 18712 - 19863: m12-hr (1152 inds)
         rim.run_vlosmaps(opt=index - 16408)
+    elif index >= 19864 and index < 20080:
+        spv.run_selkin_box_clean2(index - 19864)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

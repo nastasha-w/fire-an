@@ -231,7 +231,6 @@ def fromcommandline(index):
         # 17560 - 18135: m13-hr (576 inds)
         # 18136 - 18711: m12-sr (576 inds)
         # 18712 - 19863: m12-hr (1152 inds)
-
         rim.run_vlosmaps(opt=index - 16408)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))

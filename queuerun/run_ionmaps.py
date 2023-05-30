@@ -1145,6 +1145,9 @@ def run_vlosmaps(opt=0):
     if ion == 'Mass':
         maptype = 'Mass'
         maptype_argss = [{}]
+    elif ion == 'Volume':
+        maptype = 'Volume'
+        maptype_argss = [{}]
     elif ion in ['Hydrogen', 'Helium', 'Carbon', 'Nitrogen', 'Oxygen',
                  'Neon', 'Magnesium', 'Silicon', 'Iron']:
         maptype = 'Metal'

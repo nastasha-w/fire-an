@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+import os
 
 import fire_an.mainfunc.get_qty as gq
 import fire_an.mainfunc.haloprop as hp
@@ -313,6 +314,9 @@ def run_selkin_box_clean2(opt):
                                         llos=0.1, los=axis,
                                         samplesize=samplesize)
     print('file to produce: ', outname)
+    if os.path.isfile(outname):
+        print(f'Skipping file {outname}; already exists')
+        return None
     save_selkin_box(simname, snapnum, boxradii_rvir, 
                     selqtys, selqtys_args, outname,
                     samplesize=samplesize,

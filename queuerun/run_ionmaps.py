@@ -1181,6 +1181,8 @@ def run_vlosmaps(opt=0):
             qt = maptype_args['element']
         elif maptype == 'Mass':
             qt = 'gas-mass'
+        elif maptype == 'Volume':
+            qt = 'gas-vol'
 
         outfilen = outdir + _outfilen.format(sc=simname, sn=snapnum, 
                                              depl=depl, qt=qt, los=los,

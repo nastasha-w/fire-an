@@ -280,7 +280,7 @@ def run_selkin_box_clean2(opt):
         snaps = sl.snaplists['m13_hr'] # len 6
     elif opt >= 108 and opt < 144:
         # m12sr: 36 indices
-        ind = opt - 1728
+        ind = opt - 108
         simnames = [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
                      '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
                     ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'

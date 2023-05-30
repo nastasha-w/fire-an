@@ -265,8 +265,8 @@ def run_selkin_box_clean2(opt):
     _outfilen = ('weightedsel_{samplesize}_{sc}_snap{sn}'
                  '_shrink-sph-cen_BN98'
                  '_depth_{llos:.1f}rvir_{los}-slice_v1.hdf5')
-    #outdir = '/scratch1/08466/tg877653/output/slicepv_wtdsel_clean2/'
-    outdir = './'
+    outdir = '/scratch1/08466/tg877653/output/slicepv_wtdsel_clean2/'
+    #outdir = './'
     if opt >= 0 and opt < 72:
         # m13sr: 72 indices
         ind = opt - 0

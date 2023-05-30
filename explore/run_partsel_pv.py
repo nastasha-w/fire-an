@@ -196,7 +196,9 @@ def save_selkin_box(simname, snapnum, boxradii_rvir,
         hed.attrs.create('samplesize', samplesize)
         hed.attrs.create('parttype', parttype)
         hgrp = hed.create_group('halodata')
-        h5u.savedict_hdf5(hgrp, hdata)
+        h5u.savedict_hdf5(hgrp, hdata[0])
+        _hgrp = hgrp.create_group('doc')
+        h5u.savedict_hdf5(_hgrp, hdata[1])
         
         for si, (selqty, selqty_args, selqty_todoc, 
                  sselqtys, sselqtys_args, sseltqys_minmax, sselqtys_todoc) \
@@ -213,7 +215,7 @@ def save_selkin_box(simname, snapnum, boxradii_rvir,
                 sgrp.attrs.create('selqty_args', np.string_('None'))
             else:
                 sgrp.attrs.create('selqty_args', np.string_('dict'))
-                _grp = sgrp.attrs.create('selqty_args_dict')
+                _grp = sgrp.create_group('selqty_args_dict')
                 h5u.savedict_hdf5(_grp, selqty_args)
             _grp = sgrp.create_group('selqty_doc')
             h5u.savedict_hdf5(_grp, selqty_todoc)
@@ -240,7 +242,7 @@ def save_selkin_box(simname, snapnum, boxradii_rvir,
                     else:
                         sgrp.attrs.create('strictselqty_args', 
                                           np.string_('dict'))
-                        __grp = sgrp.attrs.create('strictselqty_args_dict')
+                        __grp = sgrp.create_group('strictselqty_args_dict')
                         h5u.savedict_hdf5(__grp, _ssel_args)
                         __grp.attrs.create('min_cgs', _ssel_mm[0])
                         __grp.attrs.create('max_cgs', _ssel_mm[1])
@@ -259,10 +261,12 @@ def run_selkin_box_clean2(opt):
                     {'ion': 'O7', 'density': False},
                     {'ion': 'O8', 'density': False},
                     {'ion': 'Ne8', 'density': False}]
+    samplesize = 150
     _outfilen = ('weightedsel_{samplesize}_{sc}_snap{sn}'
                  '_shrink-sph-cen_BN98'
                  '_depth_{llos:.1f}rvir_{los}-slice_v1.hdf5')
-    outdir = '/scratch1/08466/tg877653/output/slicepv_wtdsel_clean2/'
+    #outdir = '/scratch1/08466/tg877653/output/slicepv_wtdsel_clean2/'
+    outdir = './'
     if opt >= 0 and opt < 72:
         # m13sr: 72 indices
         ind = opt - 0
@@ -306,10 +310,12 @@ def run_selkin_box_clean2(opt):
     boxradii_rvir = boxradiis_rvir[axi]
     
     outname = outdir + _outfilen.format(sc=simname, sn=snapnum,
-                                        llos=0.1, los=axis)
+                                        llos=0.1, los=axis,
+                                        samplesize=samplesize)
+    print('file to produce: ', outname)
     save_selkin_box(simname, snapnum, boxradii_rvir, 
                     selqtys, selqtys_args, outname,
-                    samplesize=150,
+                    samplesize=samplesize,
                     parttype=0, strictselqtyss=None, 
                     strictselqtyss_args=None,
                     strictselqtyss_minmax=None)

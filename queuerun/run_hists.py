@@ -1,7 +1,6 @@
 
-
-
 import numpy as np
+import os
 
 from fire_an.ionrad.ion_utils import Linetable_PS20
 import fire_an.mainfunc.makehist as mh
@@ -636,7 +635,9 @@ def run_hist_rad_vrad_weighted(opt):
     outfilen = outdir +\
                (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
                 '_bins1_v1_hvcen.hdf5')
-
+    if os.path.isfile(outfilen):
+        print(outfilen, ' already exists; skipping')
+        return None
     mh.histogram_radprof(dirpath, snapnum,
                          wt, wtarg, at, atarg,
                          particle_type=0, 

@@ -437,6 +437,13 @@ def run_hist_rad_vrad_weighted(opt):
     # different ions, Z, weights in rad-vrad space
     # sample clean2 (excl. bug runs), later maybe all2
     # 2 axes * 10 weights = 20 runs per sim/snap
+    atsplus = [['sim-direct'], ['Metal']]
+    atplusargs = [[{'field': 'Temperature'}],
+                  [{'element': 'Hydrogen', 'density': True}]]
+    atplusbins = [[0.1], [0.1]]
+    logaxes = [False, True]
+    atlabels = ['temperature', 'density']
+
     if opt >= 0 and opt < 480:
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m13-sr
@@ -475,6 +482,104 @@ def run_hist_rad_vrad_weighted(opt):
                     ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
                      '_sdp1e10_gacc31_fa0.5')] # len 4
         snaps = sl.snaps_hr # len 6
+    ## supplement clean2_nobug to all2:
+    elif opt >= 1440 and opt < 2760:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 1320 indices
+        ind = opt - 1440
+        simnames = sl.m13_sr_all2
+        for _sn in sl.m13_sr_clean2:
+            simnames.remove(_sn)
+        # len 11
+        snaps = sl.snaps_sr # len 6
+    # m13-hr: all in the clean sample
+    elif opt >= 2760 and opt < 3000:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 240 indices
+        ind = opt - 2760
+        simnames_done = [
+            ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+             '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+            ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+             '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')] # len 2
+        simnames = sl.m12_sr_all2
+        for _sn in simnames_done:
+            simnames.remove(_sn)
+        # len 2
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 3000 and opt < 4680:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-hr
+        # 1680 indices
+        ind = opt - 3000
+        simnames_done = [
+            ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp2e-4_gacc31_fa0.5'),
+            ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp1e10_gacc31_fa0.5'),
+            ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp2e-4_gacc31_fa0.5'),
+            ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp1e10_gacc31_fa0.5')]
+        simnames = sl.m12_hr_all2
+        for _sn in simnames_done:
+            simnames.remove(_sn)
+        # len 14
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 4680 and opt < 6480:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 1800 indices
+        atsplus = [['sim-direct'], ['sim-direct']]
+        atplusargs = [[{'field': 'ElementAbundance/Oxygen'}],
+                      [{'field': 'ElementAbundance/Neon'}]]
+        atplusbins = [[0.1], [0.1]]
+        logaxes = [False, True]
+        atlabels = ['OxygenAbundance', 'NeonAbundance']
+        ind = opt - 4680
+        simnames = sl.m13_sr_all2 # len 15
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 6480 and opt < 6720:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-hr
+        # 240 indices
+        atsplus = [['sim-direct'], ['sim-direct']]
+        atplusargs = [[{'field': 'ElementAbundance/Oxygen'}],
+                      [{'field': 'ElementAbundance/Neon'}]]
+        atplusbins = [[0.1], [0.1]]
+        logaxes = [False, True]
+        atlabels = ['OxygenAbundance', 'NeonAbundance']
+        ind = opt - 6480
+        simnames = sl.m13_hr_all2 # len 2
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 6720 and opt < 7200:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 480 indices
+        atsplus = [['sim-direct'], ['sim-direct']]
+        atplusargs = [[{'field': 'ElementAbundance/Oxygen'}],
+                      [{'field': 'ElementAbundance/Neon'}]]
+        atplusbins = [[0.1], [0.1]]
+        logaxes = [False, True]
+        atlabels = ['OxygenAbundance', 'NeonAbundance']
+        ind = opt - 6720
+        simnames = sl.m12_sr_all2 # len 4
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 7200 and opt < 9360:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 2160 indices
+        atsplus = [['sim-direct'], ['sim-direct']]
+        atplusargs = [[{'field': 'ElementAbundance/Oxygen'}],
+                      [{'field': 'ElementAbundance/Neon'}]]
+        atplusbins = [[0.1], [0.1]]
+        logaxes = [False, True]
+        atlabels = ['OxygenAbundance', 'NeonAbundance']
+        ind = opt - 7200
+        simnames = sl.m12_hr_all2 # len 18
+        snaps = sl.snaps_hr # len 6
     
     wts = ['Mass', 'Volume', 'Metal', 'Metal'] + ['ion'] * 6
     wtargs = [{}, {}, 
@@ -490,12 +595,6 @@ def run_hist_rad_vrad_weighted(opt):
     ats = ['coords']
     atargs = [{'vel': 'vrad'}]
     axbins = [5e5]
-
-    atsplus = [['sim-direct'], ['Metal']]
-    atplusargs = [[{'field': 'Temperature'}],
-                  [{'element': 'Hydrogen', 'density': True}]]
-    atplusbins = [[0.1], [0.1]]
-    logaxes = [False, True]
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
     outdir = '/scratch1/08466/tg877653/output/hists/r_vr_clean2_nobug/'
@@ -521,11 +620,11 @@ def run_hist_rad_vrad_weighted(opt):
         dp2 = dp2.replace('m13h02', 'm13h002')
     dirpath = '/'.join([_dirpath, dp2, simname])
 
-    atstr = 'rcen_vcen_' + ['temperature', 'density'][ati]
+    atstr = 'rcen_vcen_' + atlabels[ati]
     wtstr = 'gasmass' if wt == 'Mass' else\
             'gasvol' if wt == 'Volume' else\
             wtarg['ion'] if wt == 'ion' else \
-            wtarg['element'] 
+            wtarg['element']
     outfilen = outdir +\
                (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
                 '_bins1_v1_hvcen.hdf5')

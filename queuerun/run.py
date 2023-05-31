@@ -235,6 +235,17 @@ def fromcommandline(index):
         rim.run_vlosmaps(opt=index - 16408)
     elif index >= 19864 and index < 20080:
         spv.run_selkin_box_clean2(index - 19864)
+    elif index >= 20080 and index < 28000:
+        ## supplement r_vr_T/nH clean2 -> all2
+        # 20080 - 21399: m13-sr (1320 inds)
+        # 21400 - 21639: m12-sr ( 240 inds)
+        # 21640 - 23319: m12-hr (1680 inds)
+        ## add r_vr_O/Ne all2
+        # 23320 - 25119: m13-sr (1800 inds)
+        # 25120 - 25359: m13-hr ( 240 inds)
+        # 25360 - 25839: m12-sr ( 480 inds)
+        # 25840 - 27999: m12-hr (2160 inds)
+        rhs.run_hist_rad_vrad_weighted(index - 20080 + 1440)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

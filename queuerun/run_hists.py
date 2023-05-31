@@ -443,6 +443,7 @@ def run_hist_rad_vrad_weighted(opt):
     atplusbins = [[0.1], [0.1]]
     logaxes = [False, True]
     atlabels = ['temperature', 'density']
+    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_clean2_nobug/'
 
     if opt >= 0 and opt < 480:
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
@@ -484,6 +485,7 @@ def run_hist_rad_vrad_weighted(opt):
         snaps = sl.snaps_hr # len 6
     ## supplement clean2_nobug to all2:
     elif opt >= 1440 and opt < 2760:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_nHT_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m13-sr
         # 1320 indices
@@ -495,6 +497,7 @@ def run_hist_rad_vrad_weighted(opt):
         snaps = sl.snaps_sr # len 6
     # m13-hr: all in the clean sample
     elif opt >= 2760 and opt < 3000:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_nHT_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-sr
         # 240 indices
@@ -510,6 +513,7 @@ def run_hist_rad_vrad_weighted(opt):
         # len 2
         snaps = sl.snaps_sr # len 6
     elif opt >= 3000 and opt < 4680:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_nHT_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-hr
         # 1680 indices
@@ -528,7 +532,9 @@ def run_hist_rad_vrad_weighted(opt):
             simnames.remove(_sn)
         # len 14
         snaps = sl.snaps_hr # len 6
+    ## add all2 O/Ne axis
     elif opt >= 4680 and opt < 6480:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_ONe_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m13-sr
         # 1800 indices
@@ -542,6 +548,7 @@ def run_hist_rad_vrad_weighted(opt):
         simnames = sl.m13_sr_all2 # len 15
         snaps = sl.snaps_sr # len 6
     elif opt >= 6480 and opt < 6720:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_ONe_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m13-hr
         # 240 indices
@@ -555,6 +562,7 @@ def run_hist_rad_vrad_weighted(opt):
         simnames = sl.m13_hr_all2 # len 2
         snaps = sl.snaps_hr # len 6
     elif opt >= 6720 and opt < 7200:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_ONe_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-sr
         # 480 indices
@@ -568,6 +576,7 @@ def run_hist_rad_vrad_weighted(opt):
         simnames = sl.m12_sr_all2 # len 4
         snaps = sl.snaps_sr # len 6
     elif opt >= 7200 and opt < 9360:
+        outdir = '/scratch1/08466/tg877653/output/hists/r_vr_ONe_all2/'
         # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         # m12-sr
         # 2160 indices
@@ -597,7 +606,6 @@ def run_hist_rad_vrad_weighted(opt):
     axbins = [5e5]
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
-    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_clean2_nobug/'
     simi = ind // (len(snaps) * len(wts) * len(atsplus))
     snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
            // (len(wts) * len(atsplus))

@@ -386,11 +386,58 @@ def plotset_clean_samephys_xyz(hset='m12-pax', weight='Ne8'):
                     for pax in ['x', 'y', 'z']]
         collabels = [pax + '-projection' for pax in ['x', 'y', 'z']]
         comp = 'pax_comp'
+    elif hset == 'm12-phys':
+        simsets = [
+            [('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+              '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+             ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+              '_sdp2e-4_gacc31_fa0.5'),
+             ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+              '_sdp1e10_gacc31_fa0.5')],
+            [('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+              '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+             ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+              '_sdp2e-4_gacc31_fa0.5'),
+             ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+              '_sdp1e10_gacc31_fa0.5')]
+              ]
+        simlabels = ['m12q', 'm12f']
+        vmax = 100.
+        vmark = 100.
+        colfills = [{'weight': ('gas-mass' if weight == 'Mass' 
+                                else 'gas-vol' if weight == 'Volume'
+                                else weight), 
+                     'pax': 'z'}] * 3
+        collabels = ['AGN-CR', 'AGN-noCR', 'noBH']
+        comp = 'phys_comp_zproj'
+    elif hset == 'm13-phys':
+        simsets = [
+            [('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+              '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+             ('m13h113_m3e4_MHD_fire3_fireBH_Sep182021'
+              '_hr_crdiffc690_sdp1e-4_gacc31_fa0.5'),
+             ('m13h113_m3e5_MHD_fire3_fireBH_Sep182021'
+              '_crdiffc690_sdp1e10_gacc31_fa0.5')],
+            [('m13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+              '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+             ('m13h206_m3e4_MHD_fire3_fireBH_Sep182021'
+              '_hr_crdiffc690_sdp3e-4_gacc31_fa0.5'),
+             ('m13h206_m3e5_MHD_fire3_fireBH_Sep182021'
+              '_crdiffc690_sdp1e10_gacc31_fa0.5')],
+            ]
+        simlabels = ['m13h113', 'm13h206']
+        vmax = 150.
+        vmark = 150.
+        colfills = [{'weight': ('gas-mass' if weight == 'Mass' 
+                                else 'gas-vol' if weight == 'Volume'
+                                else weight), 
+                     'pax': 'z'}] * 3
+        collabels = ['AGN-CR', 'AGN-noCR', 'noBH']
+        comp = 'phys_comp_zproj'
 
     for (simnames, simlabel) in zip(simsets, simlabels):
         outname = outdir + outfile.format(weight=weight, comp=comp,
                                           simset=simlabel)
-        'maps_{weight}dens_vlos_{comp}_{simset}.pdf'
         plotgrid_velweight(filen_temp_map, filen_temp_pv, 
                         simnames, colfills, weight=weight,
                         vmark=vmark,

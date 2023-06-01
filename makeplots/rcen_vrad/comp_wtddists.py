@@ -33,7 +33,7 @@ def get_kindist(filen, rrange_rvir=(0.1, 1.0),
             hist = 10**hist
         mvir_g = f['Header/inputpars/halodata'].attrs['Mvir_g']
         rvir_cm = f['Header/inputpars/halodata'].attrs['Rvir_cm']
-        vescvir_kmps = np.sqrt(c.gravity * mvir_g / rvir_cm) \
+        vescvir_kmps = np.sqrt(2. * c.gravity * mvir_g / rvir_cm) \
                        * 1e-5
         hsel = [slice(None, None, None)] * 3
         if dist_target == 'vr':

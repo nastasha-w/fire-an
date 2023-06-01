@@ -106,8 +106,8 @@ def plot_r_vr_weights(filen_temp, weightfills, weightlabels=None,
                             datum['lognormedhist'].T, cmap=cmap,
                             vmin=vmin, vmax=vmax, rasterized=True)
         ax.axvline(1., linestyle='dotted', color='black', ymax=0.8)
-        vescvir = np.sqrt(c.gravity * datum['mvir_g'] / datum['rvir_cm']) \
-                  * 1e-5
+        vescvir = np.sqrt(2. * c.gravity * datum['mvir_g'] 
+                          / datum['rvir_cm']) * 1e-5
         ax.axhline(vescvir, linestyle='solid', color='black')
         ax.axhline(0., linestyle='solid', color='black')
         ax.axhline(-vescvir, linestyle='solid', color='black')
@@ -311,8 +311,8 @@ def plot_r_vr_medmap(filen_temp, weightfills, weightlabels=None,
                             cmap=cmap,
                             vmin=vmin, vmax=vmax, rasterized=True)
         ax.axvline(1., linestyle='dotted', color='black', ymax=0.8)
-        vescvir = np.sqrt(c.gravity * datum['mvir_g'] / datum['rvir_cm']) \
-                  * 1e-5
+        vescvir = np.sqrt(2. * c.gravity * datum['mvir_g'] 
+                          / datum['rvir_cm']) * 1e-5
         ax.axhline(vescvir, linestyle='solid', color='black')
         ax.axhline(0., linestyle='solid', color='black')
         ax.axhline(-vescvir, linestyle='solid', color='black')

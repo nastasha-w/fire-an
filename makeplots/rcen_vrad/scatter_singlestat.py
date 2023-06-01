@@ -1,3 +1,4 @@
+from types import NoneType
 import h5py 
 import matplotlib.gridspec as gsp
 import matplotlib.lines as mlines
@@ -118,7 +119,9 @@ def getthemperc_rbins(filen, rrange_rvir=(0.1, 1.),
             
 def plotdata_censcatter(datax, datay, xweightmap,
                         yweightmap, xlabel=None, ylabel=None,
-                        ncols=None, fontsize=12):
+                        ncols=None, fontsize=12,
+                        wspace=0.0, hspace=0.0,
+                        syncaxlims=True):
     '''
     plot data points against each other, with x/y points matched
     by ics/phys. model/snapshot. 
@@ -151,12 +154,14 @@ def plotdata_censcatter(datax, datay, xweightmap,
     laxspace = 1.5
     width_ratios = [panelsize] * ncols
     height_ratios = [panelsize] * nrows + [laxspace]
-    width = sum(width_ratios)
-    height = sum(height_ratios)
+    width = sum(width_ratios) \
+            * (1. + wspace * sum(width_ratios) / len(width_ratios)) 
+    height = sum(height_ratios) \
+             * (1. + hspace * sum(height_ratios) / len(height_ratios))
 
     fig = plt.figure(figsize=(width, height))
-    grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1, hspace=0.0,
-                        wspace=0.0, width_ratios=width_ratios,
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1, hspace=hspace,
+                        wspace=wspace, width_ratios=width_ratios,
                         height_ratios=height_ratios)
     axes = [fig.add_subplot(grid[i // ncols, i % ncols])
             for i in range(npanels)]
@@ -277,8 +282,9 @@ def plotdata_censcatter(datax, datay, xweightmap,
     xmax = xmax + xran
     ymin = ymin - xran
     ymax = ymax + xran
-    [ax.set_xlim((xmin, xmax)) for ax in axes]
-    [ax.set_ylim((ymin, ymax)) for ax in axes]
+    if syncaxlims:
+        [ax.set_xlim((xmin, xmax)) for ax in axes]
+        [ax.set_ylim((ymin, ymax)) for ax in axes]
     
     axdoc = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
              'fontsize': fontsize}
@@ -535,10 +541,20 @@ def plot_thermcomp_vrange_medscat(simnames, vrranges, vrranges_units,
         fqty = 'hdens'
         flab = '\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}}'
         funits = '\\mathrm{cm}^{-3}'
+    elif compqty == 'O':
+        fqty = 'OxygenAbundance'
+        flab = '\\log_{10} \\, \\mathrm{Z}\\mathrm{O}}'
+        funits = ''
+    elif compqty == 'Ne':
+        fqty = 'NeonAbundance'
+        flab = '\\log_{10} \\, \\mathrm{Z}\\mathrm{Ne}}'
+        funits = ''
 
-    xlabel = (f'$ {flab} \\; [{funits}]$')
-    ylabel = (f'$ {flab} \\; [{funits}],'
-              'v_{\\mathrm{rad}}\\,\\mathrm{sel.}$')
+    xlabel = (f'$ {flab} \\; [{funits}]$' if funits != '' 
+              else f'$ {flab}$')
+    ylabel = ((f'$ {flab} \\; [{funits}],' if funits != '' 
+               else f'$ {flab}$')
+              + 'v_{\\mathrm{rad}}\\,\\mathrm{sel.}$')
     showperc = (0.1, 0.5, 0.9)
     fontsize = 12
     
@@ -652,3 +668,152 @@ def plotset_thermcomp_vrange_medscat(qty='T'):
                                           rrange_rvir=rrange,
                                           title=title, 
                                           outname=outname)
+
+def summaryplot_ionvolcomp(simset='m12_clean2', rrange_rvir=(0.45, 0.55),
+                           outname=None):
+    ions = ['O6', 'Ne8', 'O7', 'O8']
+    ionlabels = ['O VI', 'Ne VIII', 'O VII', 'O VIII']
+    haloweight = 'gasvol'
+    fqtys = ['temperature', 'hdens', 'OxygenAbundance', 'temperature']
+    targetvals = ['T', 'nH', 'O', 'vr']
+    showperc = (0.1, 0.5, 0.9)
+    errbperc = (0.1, 0.9)
+
+    buglist = sl.buglist1
+    bugics = {simname.split('_')[0] for simname in buglist}
+    bugics = list(bugics)
+    if simset == 'm12_clean2':
+        simnames = sl.m12_hr_clean2 + sl.m12_sr_clean2
+        toscan = simnames.copy()
+        for simname in toscan:
+            if simname.split('_')[0] in bugics:
+                simnames.remove(simname)
+    elif simset == 'm12_all2':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2
+        toscan = simnames.copy()
+        for simname in toscan:
+            if simname.split('_')[0] in buglist:
+                simnames.remove(simname)
+    elif simset == 'm13_clean2':
+        simnames = sl.m13_hr_clean2 + sl.m13_sr_clean2
+        toscan = simnames.copy()
+        for simname in toscan:
+            if simname.split('_')[0] in bugics:
+                simnames.remove(simname)
+    elif simset == 'm13_all2':
+        simnames = sl.m13_hr_all2 + sl.m13_sr_all2
+        toscan = simnames.copy()
+        for simname in toscan:
+            if simname.split('_')[0] in buglist:
+                simnames.remove(simname)
+
+    snaps_sr = sl.snaps_sr
+    snaps_hr = sl.snaps_hr
+    sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
+    sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
+    filen_temp = ('hist_rcen_vcen_{compqty}_by_{weight}_{simname}'
+                  '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+
+    ylabels = [('$\\langle\\log_{10} \\, \\mathrm{T}'
+                '\\rangle_{\\mathrm{ion}, \\mathrm{med.}}'
+                '\\; [\\mathrm{K}]$'),
+               ('$\\langle\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}}',
+                '\\rangle_{\\mathrm{ion}, \\mathrm{med.}}'
+                '\\; [\\mathrm{cm}^{-3}]$'),
+               ('$\\langle\\log_{10} \\, \\mathrm{Z}\\mathrm{O}}'
+                '\\rangle_{\\mathrm{ion}, \\mathrm{med.}}$'),
+               ('$\\langle v_{\\mathrm{rad}}$'
+                '\\rangle_{\\mathrm{ion}, \\mathrm{mean}}'
+                '[\\mathrm{km}\\, \\mathrm{s}^{-1}]$')]
+    xlabels = [ylabel.replace('ion', 'V') for ylabel in ylabels]
+    fontsize = 12
+    
+    snaplists = [snaps_sr if simname in sims_sr
+                 else snaps_hr if simname in sims_hr
+                 else None
+                 for simname in simnames]
+    datay = {simname: [{(weight, compqty): 
+                        getthemperc_rbins(ddir + filen_temp.format(
+                        weight=weight, simname=simname, snapnum=snap,
+                        compqty=compqty), 
+                                          rrange_rvir=rrange_rvir,
+                                          vrrange=None, 
+                                          vrrange_units=None,
+                                          perc=np.array(showperc))
+                        if targetval != 'vr' else
+                        getvperc_rbins(ddir + filen_temp.format(
+                        weight=weight, simname=simname, snapnum=snap,
+                        compqty=compqty), 
+                                       rrange_rvir=rrange_rvir,
+                                       vperc=errbperc)
+              for weight in ions 
+              for compqty, targetval in zip(fqtys, targetvals)}
+             for snap in snaplist]
+            for snaplist, simname in zip(snaplists, simnames)}
+    datax = {simname: [{(haloweight, targetval): 
+                        getthemperc_rbins(ddir + filen_temp.format(
+                        weight=haloweight, simname=simname, snapnum=snap,
+                        compqty=compqty), 
+                                          rrange_rvir=rrange_rvir,
+                                          vrrange=None, 
+                                          vrrange_units=None,
+                                          perc=np.array(showperc)) 
+                        if targetval != 'vr' else
+                        getvperc_rbins(ddir + filen_temp.format(
+                        weight=haloweight, simname=simname, snapnum=snap,
+                        compqty=compqty), 
+                                       rrange_rvir=rrange_rvir,
+                                       vperc=errbperc)
+              for compqty, targetval in zip(fqtys, targetvals)}
+             for snap in snaplist]
+            for snaplist, simname in zip(snaplists, simnames)}
+    yweightmap = [(weight, targetval) 
+                  for targetval in targetvals for weight in ions]
+    xweightmap = [(haloweight, targetval) 
+                  for targetval in targetvals for _ in ions]
+    fig, axes, lax, axdoc = plotdata_censcatter(datax, datay, xweightmap,
+                                                yweightmap, xlabel='',
+                                                ylabel='',
+                                                ncols=len(fqtys),
+                                                fontsize=fontsize,
+                                                syncaxlims=False)
+    fontsize = axdoc['fontsize']
+    nrows = len(fqtys)
+    ncols = len(ions)
+    for ri in range(nrows):
+        axsel = slice(ri * ncols, (ri + 1) * ncols)
+        xlims = [ax.get_xlim() for ax in axes[axsel]]
+        xmin = min([xlim[0] for xlim in xlims])
+        xmax = max([xlim[1] for xlim in xlims])
+        [ax.set_xlim(*(xmin, xmax)) for ax in axes[axsel]]
+        ylims = [ax.get_ylim() for ax in axes[axsel]]
+        ymin = min([ylim[0] for ylim in ylims])
+        ymax = max([ylim[1] for ylim in ylims])
+        [ax.set_ylim(*(ymin, ymax)) for ax in axes[axsel]]
+        eqp = (max(xmin, ymin), min(xmax, ymax))
+        for ci in range(len(ions)):
+            ax = axes[ri * ncols + ci]
+            ax.plot(eqp, eqp, color='black', linestyle='dotted', 
+                    linewidth=1, zorder=-1)
+            ax.set_xlabel(xlabels[ri], fontsize=fontsize)
+            if ci == 0:
+                ax.set_ylabel(ylabels[ri], fontsize=fontsize)
+            if ri == 0:
+                ax.set_title(ionlabels[ci], fontsize=fontsize)
+                
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+def runsummaryplots_ionvolcomp():
+    simsets = ['m12_clean2', 'm12_all2', 'm13_clean2', 'm13_all2']
+    rranges_rvir = [(0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]
+    outdir = '/projects/b1026/nastasha/imgs/summary_plots/'
+    for simset in simsets:
+        for rrange_rvir in rranges_rvir:
+            outname = (f's1_vol_vs_ions_TnHZvr_{simset}'
+                       f'_{rrange_rvir[0]:.2f}_to_{rrange_rvir[1]:.2f}'
+                       '_rvir')
+            outname = outdir + outname.replace('.', 'p') + '.pdf'
+            summaryplot_ionvolcomp(simset=simset, rrange_rvir=rrange_rvir,
+                                   outname=outname)

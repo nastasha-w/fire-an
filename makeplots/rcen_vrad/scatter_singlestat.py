@@ -295,7 +295,7 @@ def plot_thermcomp_medscat(simnames, compqty='T',
     snaps_hr = sl.snaps_hr
     sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
     sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filen_temp = ('hist_rcen_vcen_{compqty}_by_{weight}_{simname}'
                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     if haloweight == 'Volume':
@@ -418,7 +418,7 @@ def plot_vmean_ion_vs_halo(simnames, haloweight='Volume',
     snaps_hr = sl.snaps_hr
     sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
     sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                  '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     if haloweight == 'Volume':
@@ -524,7 +524,7 @@ def plot_thermcomp_vrange_medscat(simnames, vrranges, vrranges_units,
     snaps_hr = sl.snaps_hr
     sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
     sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filen_temp = ('hist_rcen_vcen_{compqty}_by_{weight}_{simname}'
                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     if compqty == 'T':

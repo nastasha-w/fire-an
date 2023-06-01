@@ -295,7 +295,7 @@ def plot_1Ddists_zphysweightcomp(filen_temp, weights,
         plt.savefig(outname, bbox_inches='tight')
             
 def plot_vr_dists(plottype='vr_fixedr'):
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
@@ -463,7 +463,7 @@ def comp_vdists_physmodels(filen_temp, simnames, weight='Volume',
                            title=None, outname=None,
                            rrange_rvir=(0.1, 1.), label_weightpart=None):
     
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                    '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     filen_temp = ddir + _filen_temp
@@ -609,7 +609,7 @@ def comp_vdists_physmodels(filen_temp, simnames, weight='Volume',
         plt.savefig(outname, bbox_inches='tight')
 
 def compsets_vdists_physmodels():
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
@@ -652,7 +652,7 @@ def comp_vperc_physmodels(filen_temp, simnames, weight='gasvol',
                           title=None, outname=None,
                           rrange_rvir=(0.1, 1.), label_weightpart=None):
     
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                    '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     filen_temp = ddir + _filen_temp
@@ -793,7 +793,7 @@ def comp_vperc_physmodels(filen_temp, simnames, weight='gasvol',
         plt.savefig(outname, bbox_inches='tight')
     
 def compset_vperc_physmodels():
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
@@ -839,7 +839,7 @@ def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
                           vrranges=[(-np.inf, np.inf)],
                           vrranges_units=['kmps']):
     
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                    '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     filen_temp = ddir + _filen_temp
@@ -981,7 +981,7 @@ def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
         plt.savefig(outname, bbox_inches='tight')
 
 def compset_vfrac_physmodels():
-    ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
                 '_snap{snapnum}_bins1_v1_hvcen.hdf5')
     outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'

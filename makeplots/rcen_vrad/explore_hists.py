@@ -157,7 +157,7 @@ def plot_r_vr_weights(filen_temp, weightfills, weightlabels=None,
 
 def plotset_r_vr_weights(hset='core'):
     if hset == 'core':
-        ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+        ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
         filetemp = ('hist_rcen_vcen_temperature_by_{{weight}}_{simname}'
                     '_snap{snapnum}_bins1_v1_hvcen.hdf5')
         weights = ['gasmass', 'gasvol', 'Oxygen', 'Neon',
@@ -366,7 +366,7 @@ def plot_r_vr_medmap(filen_temp, weightfills, weightlabels=None,
 
 def plotset_r_vr_medmap(hset='core'):
     if hset == 'core':
-        ddir = '/projects/b1026/nastasha/hists/r_vr_clean2_nobug/'
+        ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
         filetemp = ('hist_rcen_vcen_{axis2}_by_{{weight}}_{simname}'
                     '_snap{snapnum}_bins1_v1_hvcen.hdf5')
         weights = ['gasmass', 'gasvol', 'Oxygen', 'Neon',

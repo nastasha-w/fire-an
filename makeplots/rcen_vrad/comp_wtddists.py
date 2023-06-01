@@ -650,7 +650,8 @@ def compsets_vdists_physmodels():
             
 def comp_vperc_physmodels(filen_temp, simnames, weight='gasvol',
                           title=None, outname=None,
-                          rrange_rvir=(0.1, 1.), label_weightpart=None):
+                          rrange_rvir=(0.1, 1.), label_weightpart=None,
+                          simname_styles=None):
     
     ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
@@ -763,8 +764,12 @@ def comp_vperc_physmodels(filen_temp, simnames, weight='gasvol',
             xsort = np.argsort(xp)
             xp = xp[xsort]
             yp = yp[xsort]
+            if simname_styles is None:
+                ls = 'solid'
+            else:
+                ls = simname_styles[simname]
             axes[si][coli].plot(xp, yp, color=color,
-                                linestyle='solid', linewidth=linewidth,
+                                linestyle=ls, linewidth=linewidth,
                                 marker='o', markersize=5.)
     
     ylims = [[ax.get_ylim() for ax in l1] for l1 in axes ]
@@ -837,7 +842,8 @@ def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
                           rrange_rvir=(0.1, 1.), 
                           label_weightpart=None,
                           vrranges=[(-np.inf, np.inf)],
-                          vrranges_units=['kmps']):
+                          vrranges_units=['kmps'],
+                          simname_styles=None):
     
     ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     _filen_temp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
@@ -870,7 +876,7 @@ def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
     width_ratios = [panelsize] * ncols
     width = sum(width_ratios)
     height = sum(height_ratios)
-    ncol_legend = int(np.floor(1.7 * ncols))
+    ncol_legend = int(np.floor(1.4 * ncols))
     physcols = {'noBH': 0,
                 'AGN-noCR': 1,
                 'AGN-CR': 2}
@@ -951,14 +957,19 @@ def comp_vfrac_physmodels(filen_temp, simnames, weight='gasvol',
             xsort = np.argsort(xp)
             xp = xp[xsort]
             yp = yp[xsort]
+            if simname_styles is None:
+                ls = 'solid'
+            else:
+                ls = simname_styles[simname]
             axes[vi][coli].plot(xp, yp, color=color,
-                                linestyle='solid', linewidth=linewidth,
+                                linestyle=ls, linewidth=linewidth,
                                 marker='o', markersize=5.)
     
     ylims = [[ax.get_ylim() for ax in l1] for l1 in axes ]
     ymin = [min([ylim[0] for ylim in l1]) for l1 in ylims]
     ymax = [max([ylim[1] for ylim in l1]) for l1 in ylims]
-    [[ax.set_ylim((ymin[i], ymax[i])) for ax in l1] 
+    yrs = [_max - _min for _max, _min in zip(ymax, ymin)]
+    [[ax.set_ylim((ymin[i], ymax[i] + 0.15 * yrs[i])) for ax in l1]
      for i, l1 in enumerate(axes)]
     xlims = [[ax.get_xlim() for ax in l1] for l1 in axes ]
     xmin = [min([xlim[0] for xlim in l1]) for l1 in xlims]
@@ -1028,3 +1039,63 @@ def compset_vfrac_physmodels():
                                   label_weightpart='\\mathrm{V}',
                                   vrranges=vrranges,
                                   vrranges_units=vrranges_units)
+
+def compset_vfrac_physmodels_summaryversion():
+    ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
+    filetemp = ('hist_rcen_vcen_temperature_by_{weight}_{simname}'
+                '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+    outdir = '/projects/b1026/nastasha/imgs/r_vr_hists/'
+
+    simnames_m13 = sl.m13_hr_all2 + sl.m13_sr_all2
+    simnames_m12 = sl.m12_hr_all2 + sl.m12_sr_all2
+    for simname in sl.buglist1:
+        if simname in simnames_m13:
+            simnames_m13.remove(simname)
+        if simname in simnames_m12:
+            simnames_m12.remove(simname)
+    sn_all = simnames_m12 + simnames_m13
+    ics = []
+    icsets = []
+    for _sn in sn_all:
+        ic = _sn.split('_')[0]
+        if ic in ics:
+            ici = np.where([ic == _ic for _ic in ics])[0][0]
+            icsets[ici].append(_sn)
+        else:
+            ics.append(ic)
+            icsets.append([_sn])
+    icis_allphys = np.where([len(icset) == 3 for icset in icsets])
+    ics_allphys = np.array(ics)[icis_allphys]
+    simname_styles = {simname: ('solid' if np.any([simname.startswith(ic) 
+                                                  for ic in ics_allphys])
+                                 else 'dotted')
+                      for simname in sn_all}
+    simnames_m13.sort()
+    simnames_m12.sort()
+    simsets = [simnames_m12, simnames_m13]
+    simsetnames = ['m12', 'm13']
+    for simset, simsetn in zip(simsets, simsetnames):
+        for rrange in [(0.1, 1.), (0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]:
+            filen_temp = ddir + filetemp
+            #title = (f'{simsetn}, '
+            #         f'${rrange[0]:.2f} \\endash {rrange[-1]:.2f}'
+            #          ' \\, \\mathrm{R}_{\\mathrm{vir}}$')
+            title = None
+            _outname = (f's1_vpfrac_physcomp_{simsetn}'
+                        f'_{rrange[0]:.2f}'
+                        f'_{rrange[-1]:.2f}_Rvir')
+            _outname = _outname.replace('.', 'p')
+            outname = outdir + _outname + '.pdf'
+            if simsetn == 'm12':
+                vrranges = [(0.5, np.inf), (-np.inf, -0.5)]
+            elif simsetn == 'm13':
+                vrranges = [(0.5, np.inf), (-np.inf, -0.5)]
+            vrranges_units = ['vesc'] * 2
+
+            comp_vfrac_physmodels(filen_temp, simset, weight='gasvol',
+                                  title=title, outname=outname,
+                                  rrange_rvir=rrange, 
+                                  label_weightpart='\\mathrm{V}',
+                                  vrranges=vrranges,
+                                  vrranges_units=vrranges_units,
+                                  simname_styles=simname_styles)

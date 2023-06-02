@@ -416,6 +416,67 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
             halodat['Mvir_g'] = halodat['Mvir_g'][0]
         return halodat, todoc
 
+def getcengalcen(simpath, snapnum, startrad_rvir=0.3,
+                 vcenrad_rvir=0.05, mstarrad_rvir=0.1):
+    '''
+    starting from the all-types halo center of mass, find the 
+    central galaxy center of mass and center of velocity
+    (halo centering gets close, but ~1 kpc off is too much for 
+    angular momentum calculations)
+
+    This runs pretty fast.
+    '''
+    todoc = {}
+
+    halodat = gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
+    posstart_cm = np.array([halodat[0]['Xc_cm'], halodat[0]['Yc_cm'], 
+                            halodat[0]['Zc_cm']])
+    rvir_cm = halodat[0]['Rvir_cm']
+    todoc['halodata'] = halodat
+    snapobj = rf.get_Firesnap(simpath, snapnum)
+    spos_simu = snapobj.readarray('PartType4/Coordinates')
+    spos_toCGS = snapobj.toCGS
+    stard2 = np.sum((spos_simu - posstart_cm / spos_toCGS)**2, axis=1)  
+    starsel = stard2 <= (startrad_rvir * rvir_cm / spos_toCGS)
+    del stard2
+    spos_simu = spos_simu[starsel]
+    smass_simu = snapobj.readarray('PartType4/Masses')[starsel]
+    smass_toCGS = snapobj.toCGS
+    coordsmassesdict = {'coords': spos_simu,
+                        'masses': smass_simu}
+
+    kwargs_calccen = {'shrinkfrac': 0.025, 
+                      'minparticles': 1000, 
+                      'initialradiusfactor': 1.}
+    todoc['kwargs_calchalocen_stars'] = kwargs_calccen
+    todoc['startrad_rvir'] = startrad_rvir
+    todoc['vcenrad_rvir'] = vcenrad_rvir
+
+    scen_simu, _, _ = calchalocen(coordsmassesdict, **kwargs_calccen)
+    stard2 = np.sum((spos_simu - scen_simu)**2, axis=1)
+    starsel2 = stard2 <= (vcenrad_rvir * rvir_cm / spos_toCGS)
+    starsel[starsel] = starsel2
+    smass_simu = smass_simu[starsel2]
+    svel_simu = snapobj.readarray('PartType4/Velocities')[starsel]
+    svel_toCGS = snapobj.toCGS
+    vcom_simu = np.sum(svel_simu * smass_simu[:, np.newaxis], axis=0) \
+                / np.sum(smass_simu)
+    vcom_cmps = vcom_simu * svel_toCGS
+    pcen_cm = scen_simu * spos_toCGS
+    todoc['starcen_cm'] = pcen_cm
+    todoc['starvcom_cmps'] = vcom_cmps
+    
+    spos_simu = snapobj.readarray('PartType4/Coordinates')
+    stard2 = np.sum((spos_simu - scen_simu)**2, axis=1)
+    starsel = stard2 <= (mstarrad_rvir * rvir_cm / spos_toCGS)
+    mass_simu = snapobj.readarray('PartType4/Masses')[starsel]
+    mass_toCGS = snapobj.toCGS
+    starmass_g = np.sum(mass_simu) * mass_toCGS
+
+    todoc['mstarrad_rvir'] = mstarrad_rvir
+    todoc['mstar_gal_g'] = starmass_g
+    return pcen_cm, vcom_cmps, todoc
+    
 def adddata_cenrvir(rmtemp=False):
     '''
     put data in temporary cenrvir and vcom files into the main file

@@ -220,55 +220,7 @@ def runplots_selset(hset='m12', selset=2):
             quiverplots(pvs, alpha=0.2, vscales=vscales, axtitles=labels,
                         outname=outname, title=title)
 
-def getcengalcen(simname, snapnum, startrad_rvir=0.3,
-                 vcenrad_rvir=0.05):
-    '''
-    starting from the all-types halo center of mass, find the 
-    central galaxy center of mass and center of velocity
-    (halo centering gets close, but ~1 kpc off is too much for 
-    angular momentum calculations)
-    '''
-    todoc = {}
 
-    simpath = getpath(simname)
-    halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
-    posstart_cm = np.array([halodat[0]['Xc_cm'], halodat[0]['Yc_cm'], 
-                            halodat[0]['Zc_cm']])
-    rvir_cm = halodat[0]['Rvir_cm']
-    todoc['halodata'] = halodat
-    snapobj = rfd.get_Firesnap(simpath, snapnum)
-    spos_simu = snapobj.readarray('PartType4/Coordinates')
-    spos_toCGS = snapobj.toCGS
-    stard2 = np.sum((spos_simu - posstart_cm / spos_toCGS)**2, axis=1)  
-    starsel = stard2 <= (startrad_rvir * rvir_cm / spos_toCGS)
-    del stard2
-    spos_simu = spos_simu[starsel]
-    smass_simu = snapobj.readarray('PartType4/Masses')[starsel]
-    smass_toCGS = snapobj.toCGS
-    coordsmassesdict = {'coords': spos_simu,
-                        'masses': smass_simu}
-
-    kwargs_calccen = {'shrinkfrac': 0.025, 
-                      'minparticles': 1000, 
-                      'initialradiusfactor': 1.}
-    todoc['kwargs_calchalocen_stars'] = kwargs_calccen
-    todoc['startrad_rvir'] = startrad_rvir
-    todoc['vcenrad_rvir'] = vcenrad_rvir
-
-    scen_simu, _, _ = hp.calchalocen(coordsmassesdict, **kwargs_calccen)
-    stard2 = np.sum((spos_simu - scen_simu)**2, axis=1)
-    starsel2 = stard2 <= (vcenrad_rvir * rvir_cm / spos_toCGS)
-    starsel[starsel] = starsel2
-    smass_simu = smass_simu[starsel2]
-    svel_simu = snapobj.readarray('PartType4/Velocities')[starsel]
-    svel_toCGS = snapobj.toCGS
-    vcom_simu = np.sum(svel_simu * smass_simu[:, np.newaxis], axis=0) \
-                / np.sum(smass_simu)
-    vcom_cmps = vcom_simu * svel_toCGS
-    pcen_cm = scen_simu * spos_toCGS
-    todoc['starcen_cm'] = pcen_cm
-    todoc['starvcom_cmps'] = vcom_cmps
-    return pcen_cm, vcom_cmps, todoc
 
 def plotcenter_check(pos, vel, cenpos, cenvel, vscale=0.005, alpha=0.2):
     fig = plt.figure()
@@ -291,10 +243,10 @@ def plotcenter_check2(pos, cenpos, alpha=0.2):
 
 def checkcentering_stars(simname, snapnum, outname=None, title=None,
                          vscale=0.005, alpha=0.1):
-    pcen_cm, vcom_cmps, todoc = getcengalcen(simname, snapnum, 
-                                             startrad_rvir=0.3,
-                                             vcenrad_rvir=0.05)
     simpath = getpath(simname)
+    pcen_cm, vcom_cmps, todoc = hp.getcengalcen(simpath, snapnum, 
+                                               startrad_rvir=0.3,
+                                               vcenrad_rvir=0.05)
     halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
     rvir_cm = halodat[0]['Rvir_cm']
 
@@ -394,9 +346,9 @@ def calcangmomprofile_stars(simname, snapnum, rbins_rvir=None):
     if rbins_rvir is None:
         rbins_rvir = np.arange(0., 0.205, 0.01)
     simpath = getpath(simname)
-    scen_cm, svcom_cmps, todoc = getcengalcen(simname, snapnum, 
-                                              startrad_rvir=0.3,
-                                              vcenrad_rvir=0.05)
+    scen_cm, svcom_cmps, todoc = hp.getcengalcen(simpath, snapnum, 
+                                                 startrad_rvir=0.3,
+                                                 vcenrad_rvir=0.05)
     halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
     rvir_cm = halodat[0]['Rvir_cm']
     snapobj = rfd.get_Firesnap(simpath, snapnum)

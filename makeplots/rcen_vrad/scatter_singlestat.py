@@ -158,7 +158,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
     width = sum(width_ratios) \
             * (1. + wspace * sum(width_ratios) / (len(width_ratios) - 1)) 
     height = sum(height_ratios) \
-             * (1. + hspace * sum(height_ratios) / (len(height_ratios) - 1))
+            * (1. + hspace * sum(height_ratios) / (len(height_ratios) - 1))
 
     fig = plt.figure(figsize=(width, height))
     grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1, hspace=hspace,
@@ -834,10 +834,10 @@ def runsummaryplots_ionvolcomp():
 def summaryplot_inoutflowcomp(simset='m12_clean2', 
                               rrange_rvir=(0.45, 0.55),
                               outname=None):
-    vranges_y = [(0.5, np.inf), (-np.inf, -0.5)]
+    vranges_y = [(0.3, np.inf), (-np.inf, -0.3)]
     vranges_y_units = ['vesc', 'vesc']
-    vrlabels = ['$v_{\\mathrm{rad}} < -0.5 v_{\\mathrm{esc}}$',
-                '$v_{\\mathrm{rad}} > 0.5 v_{\\mathrm{esc}}$'
+    vrlabels = ['$v_{\\mathrm{rad}} > 0.3 v_{\\mathrm{esc}}$',
+                '$v_{\\mathrm{rad}} < -0.3 v_{\\mathrm{esc}}$'
                 ]
     haloweight = 'gasvol'
     fqtys = ['temperature', 'hdens', 'OxygenAbundance']
@@ -908,7 +908,7 @@ def summaryplot_inoutflowcomp(simset='m12_clean2',
               for compqty, targetval in zip(fqtys, targetvals)}
              for snap in snaplist]
             for snaplist, simname in zip(snaplists, simnames)}
-    datax = {simname: [{(haloweight, targetval): 
+    datax = {simname: [{('vall', targetval): 
                         getthemperc_rbins(ddir + filen_temp.format(
                         weight=haloweight, simname=simname, snapnum=snap,
                         compqty=compqty), 
@@ -920,9 +920,9 @@ def summaryplot_inoutflowcomp(simset='m12_clean2',
              for snap in snaplist]
             for snaplist, simname in zip(snaplists, simnames)}
     yweightmap = [(vrange, targetval) 
-                  for targetval in targetvals for vrange in vranges_y]
+                  for vrange in vranges_y for targetval in targetvals ]
     xweightmap = [('vall', targetval) 
-                  for targetval in targetvals for _ in vranges_y]
+                  for _ in vranges_y for targetval in targetvals]
     fig, axes, lax, axdoc = plotdata_censcatter(datax, datay, xweightmap,
                                                 yweightmap, xlabel='',
                                                 ylabel='',
@@ -933,8 +933,8 @@ def summaryplot_inoutflowcomp(simset='m12_clean2',
     fontsize = axdoc['fontsize']
     nrows = len(vranges_y)
     ncols = len(targetvals)
-    for ri in range(nrows):
-        axsel = slice(ri * ncols, (ri + 1) * ncols)
+    for ci in range(ncols):
+        axsel = slice(ci, None, ncols)
         xlims = [ax.get_xlim() for ax in axes[axsel]]
         xmin = min([xlim[0] for xlim in xlims])
         xmax = max([xlim[1] for xlim in xlims])
@@ -944,15 +944,16 @@ def summaryplot_inoutflowcomp(simset='m12_clean2',
         ymax = max([ylim[1] for ylim in ylims])
         [ax.set_ylim(*(ymin, ymax)) for ax in axes[axsel]]
         eqp = (max(xmin, ymin), min(xmax, ymax))
-        for ci in range(ncols):
+        for ri in range(nrows):
             ax = axes[ri * ncols + ci]
-            ax.tick_params(labelbottom=True)
+            ax.tick_params(labelleft=True)
             ax.plot(eqp, eqp, color='black', linestyle='dotted', 
                     linewidth=1, zorder=-1)
             if ri == nrows - 1:
-                ax.set_xlabel(xlabels[ri], fontsize=fontsize)
-            ax.set_ylabel(ylabels[ri][circle], fontsize=fontsize)
-            if ri == 0:
+                ax.set_xlabel(xlabels[ci], fontsize=fontsize)
+                ax.tick_params(labelbottom=True)
+            ax.set_ylabel(ylabels[ri][ci], fontsize=fontsize)
+            if ci == 0:
                 ax.text(0.05, 0.95, vrlabels[ri],
                         fontsize=fontsize, transform=ax.transAxes,
                         horizontalalignment='left',
@@ -971,5 +972,5 @@ def runsummaryplots_inoutflowcomp():
                        f'_{rrange_rvir[0]:.2f}_to_{rrange_rvir[1]:.2f}'
                        '_rvir')
             outname = outdir + outname.replace('.', 'p') + '.pdf'
-            summaryplot_ionvolcomp(simset=simset, rrange_rvir=rrange_rvir,
-                                   outname=outname)
+            summaryplot_inoutflowcomp(simset=simset, rrange_rvir=rrange_rvir,
+                                      outname=outname)

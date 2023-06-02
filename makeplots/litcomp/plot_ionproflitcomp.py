@@ -1,3 +1,6 @@
+'''
+First version.
+'''
 
 import h5py
 import numpy as np

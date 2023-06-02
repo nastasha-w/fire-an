@@ -5,7 +5,8 @@ import numpy as np
 import fire_an.utils.constants_and_units as c
 
 
-def get_rval_massmap(filen, units='pkpc'):
+def get_rval_massmap(filen, units='pkpc', weightmap=False,
+                     absvals=False):
     '''
     get radius and map quantity matched arrays
 
@@ -15,7 +16,10 @@ def get_rval_massmap(filen, units='pkpc'):
         file name including full path
     units: {'pkpc', 'Rvir', 'cm'}
         units for the radius (impact parameter)
-
+    weightmap: bool
+        get the 'weightmap' array instead of the 'map' array
+    absvals: bool
+        get absolute values
     Returns:
     --------
     radii: float array (1D)
@@ -24,7 +28,12 @@ def get_rval_massmap(filen, units='pkpc'):
         map values, matching impact parameters 
     '''
     with h5py.File(filen, 'r') as f:
-        _map = f['map'][:]
+        if weightmap:
+            _map = f['weightmap'][:]
+        else:
+            _map = f['map'][:]
+        if absvals:
+            _map = np.abs(_map)
         shape = _map.shape
         xinds, yinds = np.indices(shape).astype(np.float32)
         # centered on halo
@@ -45,7 +54,8 @@ def get_rval_massmap(filen, units='pkpc'):
     return dpix.flatten(), _map.flatten()
 
 def get_profile_massmap(filen, rbins, rbin_units='pkpc',
-                        profiles=[]):
+                        profiles=[], weightmap=False,
+                        absvals=False):
     '''
     get values with impact parameter from maps. If multiple files
     are given, averages, percentiles, etc. are taken over the full
@@ -82,8 +92,13 @@ def get_profile_massmap(filen, rbins, rbin_units='pkpc',
     first = True
     for _filen in filens:
         with h5py.File(_filen, 'r') as f:
-            _islog = bool(f['map'].attrs['log'])
-        rvals, mvs = get_rval_massmap(_filen, units=rbin_units)
+            if weightmap:
+                _islog = bool(f['weightmap'].attrs['log'])
+            else:
+                _islog = bool(f['map'].attrs['log'])
+        rvals, mvs = get_rval_massmap(_filen, units=rbin_units,
+                                      weightmap=weightmap,
+                                      absvals=absvals)
         
         # searchsorted index 0 means value < rbins[0], 
         # index len(rbins) means values > rbins[-1] 

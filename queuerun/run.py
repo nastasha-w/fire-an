@@ -246,6 +246,10 @@ def fromcommandline(index):
         # 25360 - 25839: m12-sr ( 480 inds)
         # 25840 - 27999: m12-hr (2160 inds)
         rhs.run_hist_rad_vrad_weighted(index - 20080 + 1440)
+    elif index >= 28000 and index < 28288:
+        rim.run_vlosmaps(opt=index - 28000 + 3456)
+        # Ne8 2 Rvir depth los maps for clean -> all m12 haloes
+        # indices 28000 - 28287
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

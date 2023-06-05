@@ -1121,6 +1121,43 @@ def run_vlosmaps(opt=0):
                      '_sdp1e10_gacc31_fa0.5'),
                     ] # len 4
         snaps = sl.snaplists['m12_hr'] # len 6
+    ## m12, Ne8 full sample
+    elif opt >= 3456 and opt < 3492:
+        # 3 axes, 6 snaps, 2 haloes -> 36 indices
+        ind = opt - 3456
+        ions = ['Ne8']
+        rloss_rvir = [2.]
+        simnames_done = [
+            ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+             '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'),
+            ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021'
+             '_crdiffc1_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000')] # len 2
+        simnames = sl.m12_sr_all2
+        for _sn in simnames_done:
+            simnames.remove(_sn)
+        # len 2
+        snaps = sl.snaps_sr
+    elif opt >= 3492 and opt < 3744:
+        # 3 axes, 6 snaps, 14 haloes -> 252 indices
+        ind = opt - 3492
+        ions = ['Ne8']
+        rloss_rvir = [2.]
+        simnames_done = [
+            ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp2e-4_gacc31_fa0.5'),
+            ('m12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp1e10_gacc31_fa0.5'),
+            ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp2e-4_gacc31_fa0.5'),
+            ('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
+             '_sdp1e10_gacc31_fa0.5')]
+        simnames = sl.m12_hr_all2
+        for _sn in simnames_done:
+            simnames.remove(_sn)
+        # len 14
+        snaps = sl.snaps_hr
+
+
         
     simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
     snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \

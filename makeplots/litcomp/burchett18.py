@@ -34,7 +34,8 @@ def addcoldata(ax, data_bur, labelmeas=None, labelul=None):
 def addveldata(ax, data_bur, label=None, absvals=True):
     isul = data_bur['log_N_Ne8_isUL'].copy()
     notul = np.logical_not(isul)
-    ydata = data_bur['v_kmps'][notul]
+    ydata = (data_bur['v_kmps'][notul]).astype(np.float)
+    print(ydata)
     if absvals: 
         ydata = np.abs(ydata)
     ax.errorbar(data_bur['impact_parameter_kpc'][notul], 
@@ -68,7 +69,7 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                'AGN-noCR': lambda x: ('_sdp1e10_' not in x 
                                       and '_MHDCRspec1_' not in x),
               }
-    otherfills = {'pax': 'x', 'pax': 'y', 'pax': 'z'}
+    otherfills = [{'pax': 'x'}, {'pax': 'y'}, {'pax': 'z'}]
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
 
@@ -128,9 +129,11 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
         if plottype == 'coldens':
             weightmap = True
             absvals = False
+            unitconv = 1.
         elif plottype == 'abslosvel':
-            weightmap = True
-            absvals = False
+            weightmap = False
+            absvals = True
+            unitconv = 1e-5
         plo, pmed, phi = gpr.get_profile_massmap(filens, rbins_pkpc,
                                                  rbin_units='pkpc',
                                                  profiles=['perc-0.1', 
@@ -149,15 +152,15 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
             if phystab[_plab](simn):
                 plab = _plab
                 break
-        ismain = simn in scatterics
+        ismain = simlabel in scatterics
         lw = lw_main if ismain else lw_sup
         ax = axes[np.where([plab == axt for axt in axtitles])[0][0]] 
         color = colors[simlabel]
         ls = 'solid'
-        ax.plot(rcens, pmed, color=color, linestyle=ls, linewidth=lw, 
+        ax.plot(rcens, pmed * unitconv, color=color, linestyle=ls, linewidth=lw, 
                 label=_label, path_effects=pu.getoutline(lw))
         if ismain:
-            ax.fill_between(rcens, plo, phi, color=color, 
+            ax.fill_between(rcens, plo * unitconv, phi * unitconv, color=color, 
                             alpha=alpha_range, linestyle=ls,
                             linewidth=0.5)
             
@@ -228,17 +231,18 @@ def plotsets_ne8_burchett19(hsel='all'):
                                         1709940889606.5674)}
     datacomprange_z = {'m13': (0.4488065752755633, 1.0500000000106098),
                        'm12': (0.44880657526818074, 1.0500000000006244)}
-    rbins_pkpc_m12 = np.linspace(0., 300., 50)
+    rbins_pkpc_m12 = np.linspace(0., 450., 50)
     rbins_pkpc_m13 = np.linspace(0., 600., 50)
-    rbins = {'m13': rbins_pkpc_m12,
-             'm12': rbins_pkpc_m13}
+    rbins = {'m12': rbins_pkpc_m12,
+             'm13': rbins_pkpc_m13}
     simnames_all = {'m12': sl.m12_sr_all2 + sl.m12_hr_all2,
                     'm13': sl.m13_sr_all2 + sl.m13_hr_all2}
     simnames = dict()
     for key in simnames_all:
         _sns = simnames_all[key].copy()
         for sn in sl.buglist1:
-            _sns.remove(sn)
+            if sn in _sns:
+                _sns.remove(sn)
         if hsel == 'all':
             simnames[key] = _sns
         elif hsel == 'clean':

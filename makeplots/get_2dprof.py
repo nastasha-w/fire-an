@@ -6,7 +6,7 @@ import fire_an.utils.constants_and_units as c
 
 
 def get_rval_massmap(filen, units='pkpc', weightmap=False,
-                     absvals=False):
+                     absvals=False, weightrange=None):
     '''
     get radius and map quantity matched arrays
 
@@ -32,6 +32,13 @@ def get_rval_massmap(filen, units='pkpc', weightmap=False,
             _map = f['weightmap'][:]
         else:
             _map = f['map'][:]
+        if weightrange is not None:
+            _smap = f['weightmap'][:]
+            mapsel = _smap >= weightrange[0]
+            mapsel &= _smap < weightrange[1]
+            del _smap
+        else:
+            mapsel = (slice(None, None, None),) * 2
         if absvals:
             _map = np.abs(_map)
         shape = _map.shape
@@ -41,6 +48,9 @@ def get_rval_massmap(filen, units='pkpc', weightmap=False,
         ycen = 0.5 * float(shape[1])
         dpix2 = (xinds + 0.5 - xcen)**2 + (yinds + 0.5 - ycen)**2
         dpix = np.sqrt(dpix2)
+        
+        dpix = dpix[mapsel]
+        _map = _map[mapsel]
         
         pixssize_pkpc = f['Header/inputpars'].attrs['pixsize_pkpc']
         if units == 'pkpc':
@@ -55,7 +65,7 @@ def get_rval_massmap(filen, units='pkpc', weightmap=False,
 
 def get_profile_massmap(filen, rbins, rbin_units='pkpc',
                         profiles=[], weightmap=False,
-                        absvals=False):
+                        absvals=False, weightrange=None):
     '''
     get values with impact parameter from maps. If multiple files
     are given, averages, percentiles, etc. are taken over the full
@@ -98,7 +108,8 @@ def get_profile_massmap(filen, rbins, rbin_units='pkpc',
                 _islog = bool(f['map'].attrs['log'])
         rvals, mvs = get_rval_massmap(_filen, units=rbin_units,
                                       weightmap=weightmap,
-                                      absvals=absvals)
+                                      absvals=absvals,
+                                      weightrange=weightrange)
         
         # searchsorted index 0 means value < rbins[0], 
         # index len(rbins) means values > rbins[-1] 

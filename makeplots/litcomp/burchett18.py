@@ -49,7 +49,7 @@ def addveldata(ax, data_bur, label=None, absvals=True):
 def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                           showscatter='clean',
                           datafieldsels=None, outname=None,
-                          plottype='coldens'):
+                          plottype='coldens', ne8_colsel=None):
     '''
     plottype: 'coldens' or 'abslosvel'
     '''
@@ -141,7 +141,8 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                                                            'perc-0.5', 
                                                            'perc-0.9'],
                                                  weightmap=weightmap,
-                                                 absvals=absvals)
+                                                 absvals=absvals,
+                                                 weightrange=ne8_colsel)
         if simlabel in icusedlist:
             _label = None
             ici = np.where([simlabel == _ic for _ic in icusedlist])[0][0]
@@ -164,6 +165,10 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
             ax.fill_between(rcens, plo * unitconv, phi * unitconv, color=color, 
                             alpha=alpha_range, linestyle=ls,
                             linewidth=0.5)
+        else:
+            ax.plot(rcens, phi * unitconv, color=color, 
+                    alpha=1., linestyle='dotted',
+                    linewidth=1.)
             
     data_bur = pd.read_csv(ofilen, comment='#', sep='\t')
     cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
@@ -219,6 +224,11 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
     lax.axis('off')
     lax.legend(handles=handles1 + hlist, fontsize=fontsize, ncol=numcols,
                loc='upper center')
+    if ne8_colsel is not None:
+        seltitle = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne \\, VIII})'
+                    '\\; [\\mathrm{cm}^{-2}] \\geq'
+                    f'{ne8_colsel[1]:.1f}$')
+        axes[1].set_title(seltitle, fontsize=fontsize)
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
@@ -252,6 +262,7 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
                              if sn.split('_')[0] in ics_incl]
     
     outdir = '/projects/b1026/nastasha/imgs/datacomp/'
+    ne8_colsels = [None, (12.5, np.inf), (13.5, np.inf)]
     for mset in ['m12', 'm13']:
         if masscomp == 'halo':
             datafieldsels = [('Mvir_Msun',) + dcrange_m[mset],
@@ -261,12 +272,28 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
                              ('zgal',) + dcrange_z[mset]]
         print(datafieldsels)
         for plottype in ['coldens', 'abslosvel']:
-            outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
-                                f'_{masscomp}mass_sel.pdf')
-    
-            cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
-                                  rbins[mset],
-                                  showscatter='clean',
-                                  datafieldsels=datafieldsels,
-                                  outname=outname,
-                                  plottype=plottype)
+            if plottype == 'abslosvel':
+                for ne8_colsel in ne8_colsels:
+                    cstr = ('' if ne8_colsel is None else 
+                            f'_Ne8_qe_{ne8_colsel[1]:.1f}')
+                    cstr = cstr.replace('.', 'p')
+                    outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
+                                        f'_{masscomp}mass_sel{cstr}.pdf')
+            
+                    cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
+                                        rbins[mset],
+                                        showscatter='clean',
+                                        datafieldsels=datafieldsels,
+                                        outname=outname,
+                                        plottype=plottype, 
+                                        ne8_colsel=ne8_colsel)
+            else:
+                outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
+                                        f'_{masscomp}mass_sel.pdf')
+            
+                cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
+                                     rbins[mset],
+                                     showscatter='clean',
+                                     datafieldsels=datafieldsels,
+                                     outname=outname,
+                                     plottype=plottype)

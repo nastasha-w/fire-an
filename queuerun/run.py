@@ -254,6 +254,7 @@ def fromcommandline(index):
         rhp.runcengal1(opt=index - 28288)
         # get all2 stellar center/vcom
     elif index >= 28522 and index < 28720:
+        # Ne8 vlos maps m13 clean2 -> all2
         rim.run_vlosmaps(opt=index - 28522 + 3744)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))

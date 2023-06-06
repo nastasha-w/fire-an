@@ -252,6 +252,7 @@ def fromcommandline(index):
         # indices 28000 - 28287
     elif index >= 28288 and index < 28522:
         rhp.runcengal1(opt=index - 28288)
+        # get all2 stellar center/vcom
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

@@ -1156,8 +1156,21 @@ def run_vlosmaps(opt=0):
             simnames.remove(_sn)
         # len 14
         snaps = sl.snaps_hr
-
-
+    # m13, Ne8 full sample
+    # m13-hr: all in the clean sample
+    elif opt >= 3744 and opt < 3942:
+        # 3 axes, 6 snaps, 11 haloes -> 198 indices
+        ind = opt - 3744
+        ions = ['Ne8']
+        rloss_rvir = [2.]
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 1320 indices
+        simnames = sl.m13_sr_all2
+        for _sn in sl.m13_sr_clean2:
+            simnames.remove(_sn)
+        # len 11
+        snaps = sl.snaps_sr # len 6
         
     simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
     snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \

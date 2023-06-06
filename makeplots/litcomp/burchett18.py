@@ -9,6 +9,7 @@ import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 
 import fire_an.makeplots.get_2dprof as gpr
+import fire_an.makeplots.litcomp.b18_datasel as bds 
 import fire_an.makeplots.tol_colors as tc
 import fire_an.makeplots.plot_utils as pu
 import fire_an.simlists as sl
@@ -221,16 +222,12 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
-def plotsets_ne8_burchett19(hsel='all'):
+def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
     mdir = '/projects/b1026/nastasha/maps/clean2_vlos/'
     filen_temp = ('vlos_by_coldens_Ne8_{simname}_snap{snapnum}'
                   '_shrink-sph-cen_BN98_depth_2.0rvir_{pax}-proj_v3.hdf5')
-    datacomprange_m200m_msun = {'m13': (2437844520477.7627, 
-                                        13425998015000.441),
-                                'm12': (403416630932.0638, 
-                                        1709940889606.5674)}
-    datacomprange_z = {'m13': (0.4488065752755633, 1.0500000000106098),
-                       'm12': (0.44880657526818074, 1.0500000000006244)}
+    dcrange_m, dcrange_z = bds.plotMz_burchett_etal_2019(hset=hsel, 
+                                                         masscomp=masscomp)
     rbins_pkpc_m12 = np.linspace(0., 450., 50)
     rbins_pkpc_m13 = np.linspace(0., 600., 50)
     rbins = {'m12': rbins_pkpc_m12,
@@ -256,10 +253,16 @@ def plotsets_ne8_burchett19(hsel='all'):
     
     outdir = '/projects/b1026/nastasha/imgs/datacomp/'
     for mset in ['m12', 'm13']:
-        datafieldsels = [('Mvir_Msun',) + datacomprange_m200m_msun[mset],
-                         ('zgal',) + datacomprange_z[mset]]
+        if masscomp == 'halo':
+            datafieldsels = [('Mvir_Msun',) + dcrange_m[mset],
+                             ('zgal',) + dcrange_z[mset]]
+        elif masscomp == 'stellar':
+            datafieldsels = [('log_Mstar_Msun',) + dcrange_m[mset],
+                             ('zgal',) + dcrange_z[mset]]
+        print(datafieldsels)
         for plottype in ['coldens', 'abslosvel']:
-            outname = outdir + f'{plottype}_Ne8comp_{mset}_{hsel}2.pdf'
+            outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
+                                f'_{masscomp}mass_sel.pdf')
     
             cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
                                   rbins[mset],

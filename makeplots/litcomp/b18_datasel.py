@@ -16,7 +16,7 @@ import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.opts_locs as ol
 
-def readin_halodata(simnames, meandef='200m'):
+def readin_halodata(simnames, meandef='200m', zmin=0.45, zmax=1.05):
     firedataf = ol.filen_halocenrvir
     firemasses = []
     fireredshifts = []
@@ -32,7 +32,10 @@ def readin_halodata(simnames, meandef='200m'):
             sngrpns = [key for key in smgrp.keys() if key.startswith('snap_')]
             for sngrpn in sngrpns:
                 sngrp = smgrp[sngrpn]
-                _lsz.append(sngrp['cosmopars'].attrs['z'])
+                _zv = sngrp['cosmopars'].attrs['z']
+                if _zv < zmin or _zv > zmax:
+                    continue
+                _lsz.append(_zv)
                 _lsm.append(sngrp[f'cen0/Rvir_{meandef}'].attrs['Mvir_g'])
                 _lsr.append(sngrp[f'cen0/Rvir_{meandef}'].attrs['Rvir_cm'])
                 _lfc.append(np.array([sngrp[f'cen0'].attrs[f'{_ax}c_cm']
@@ -52,7 +55,7 @@ def readin_halodata(simnames, meandef='200m'):
     return firemasses, fireredshifts, fireradii, firecens
 
 def readin_cengaldata(simnames):
-    datafn = ol.filen_halocenrvir + 'pvcengal.hdf5'
+    datafn = ol.dir_halodata + 'pvcengal.hdf5'
     masses = []
     zs = []
     with h5py.File(datafn, 'r') as f:
@@ -80,7 +83,8 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     hset: 'clean' or 'all'
     masscomp: 'halo' or 'stellar'
     '''
-    datadir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+    #datadir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+    datadir = '/projects/b1026/nastasha/extdata/'
     dfilen = datadir + 'data_burchett_etal_2019_table1.txt'
     #TODO CHECK: R200c or R200m!
     # assuming impact parameters are physical/proper kpc
@@ -99,22 +103,22 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
     
     ## FIRE data
-    m13_nobh = sl.m13_nobh_clean1 + sl.m13_nobh_rest1
-    m13_agnnocr = sl.m13_agnnocr_clean1 + sl.m13_agnnocr_rest1
-    m13_agncr = sl.m13_agncr_clean1 + sl.m13_agncr_rest1
-    m12_nobh = sl.m12_nobh_clean1 + sl.m12_nobh_rest1
-    m12_agnnocr = sl.m12_agnnocr_clean1 + sl.m12_agnnocr_rest1
-    m12_agncr = sl.m12_agncr_clean1 + sl.m12_agncr_rest1
+    m13_nobh = sl.m13_nobh_clean2 + sl.m13_nobh_rest2
+    m13_agnnocr = sl.m13_agnnocr_clean2 + sl.m13_agnnocr_rest2
+    m13_agncr = sl.m13_agncr_clean2 + sl.m13_agncr_rest2
+    m12_nobh = sl.m12_nobh_clean2 + sl.m12_nobh_rest2
+    m12_agnnocr = sl.m12_agnnocr_clean2 + sl.m12_agnnocr_rest2
+    m12_agncr = sl.m12_agncr_clean2 + sl.m12_agncr_rest2
     _snapfiles = m13_nobh + m13_agnnocr + m13_agncr + \
                  m12_nobh + m12_agnnocr + m12_agncr
     for sn in sl.buglist1:
         if sn in _snapfiles:
             _snapfiles.remove(sn)
-    _ics = [filen.split('_')[0] for filen in snapfiles]
-    if hset == 'clean':
+    _ics = [filen.split('_')[0] for filen in _snapfiles]
+    if hset == 'all':
         snapfiles = _snapfiles 
         ics = _ics
-    elif hset == 'all':
+    elif hset == 'clean':
         _ics = np.array(_ics)
         _snapfiles = np.array(_snapfiles)
         icsel = np.array([sum([_ic == ic for _ic in _ics]) == 3 for ic in _ics])
@@ -132,7 +136,8 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     meandef = '200m'
     if masscomp == 'halo':
         firemasses, fireredshifts, fireradii, firecens = \
-            readin_halodata(snapfiles, meandef=meandef)
+            readin_halodata(snapfiles, meandef=meandef,
+                            zmin=0.45, zmax=1.05)
     elif masscomp == 'stellar':
         firemasses, fireredshifts= \
             readin_cengaldata(snapfiles)
@@ -156,13 +161,20 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
                 facecolor='black', label='Bur.+19', s=40, 
                 zorder=5)
     elif masscomp == 'stellar':
+        isul = data_bur['log_N_Ne8_isUL']
+        noul = np.logical_not(isul)
         z_bur = data_bur['zgal']
         m_bur = data_bur['log_Mstar_Msun']
         m_bur_err = data_bur['log_Mstar_Msun_err']
-        ax.errorbar(z_bur, m_bur, xerr=m_bur_err, 
+        ax.errorbar(z_bur[noul], m_bur[noul], yerr=m_bur_err[noul], 
                     linestyle='None', elinewidth=1.5, marker='o', 
-                    markersize=10, color='black', capsize=3,
+                    markersize=4, color='black', capsize=3,
                     zorder=5, label='Bur.+19')
+        ax.errorbar(z_bur[isul], m_bur[isul], yerr=m_bur_err[isul], 
+                    color='black',
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=4, markeredgecolor='black', capsize=3,
+                    markerfacecolor='none', zorder=5, label='Bur.+19 (UL)')
 
     mass_minmax = {'m13': (np.inf, -np.inf),
                    'm12': (np.inf, -np.inf)}
@@ -224,8 +236,12 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
                  z_minmax[key][1], z_minmax[key][1], 
                  z_minmax[key][0]]
         ax.plot(line0, line1, linestyle='solid', color='gray',
-                linewidth=2)
-        ax.text(z_minmax[key][1] - 0.02, mass_minmax[key][1] * 0.95,
+                linewidth=2, alpha=0.5)
+        if masscomp == 'halo':
+            top = mass_minmax[key][1] * 0.95
+        elif masscomp == 'stellar':
+            top = mass_minmax[key][1] - 0.1
+        ax.text(z_minmax[key][1] - 0.02, top,
                 key, fontsize=fontsize, color='gray',
                 horizontalalignment='right', verticalalignment='top')
 
@@ -263,7 +279,9 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     lhandles = handles2 + handles3
     lax.axis('off')
     lax.legend(handles=lhandles, loc='upper center',
-               bbox_to_anchor=(0.5, 1.0), fontsize=fontsize, ncols=3)
-    outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
+               bbox_to_anchor=(0.5, 1.0), fontsize=fontsize, ncol=3)
+    #outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
+    outdir = '/projects/b1026/nastasha/imgs/datacomp/'
     outfilen = outdir + f'{masscomp}mass_z_selection_model3_{hset}.pdf'
     plt.savefig(outfilen, bbox_inches='tight')
+    return mass_minmax, z_minmax

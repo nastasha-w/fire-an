@@ -36,7 +36,6 @@ def addveldata(ax, data_bur, label=None, absvals=True):
     isul = data_bur['log_N_Ne8_isUL'].copy()
     notul = np.logical_not(isul)
     ydata = (data_bur['v_kmps'][notul]).astype(np.float)
-    print(ydata)
     if absvals: 
         ydata = np.abs(ydata)
     ax.errorbar(data_bur['impact_parameter_kpc'][notul], 
@@ -225,10 +224,14 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
     lax.legend(handles=handles1 + hlist, fontsize=fontsize, ncol=numcols,
                loc='upper center')
     if ne8_colsel is not None:
-        seltitle = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne \\, VIII})'
-                    '\\; [\\mathrm{cm}^{-2}] \\geq'
-                    f'{ne8_colsel[1]:.1f}$')
-        axes[1].set_title(seltitle, fontsize=fontsize)
+        #seltitle = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne \\, VIII})'
+        #            '\\; [\\mathrm{cm}^{-2}] \\geq'
+        #            f' {ne8_colsel[0]:.1f}$')
+        seltitle = ('$\\mathrm{Ne \\, VIII} \\geq '
+                    f'{ne8_colsel[0]:.1f}$')
+        axes[1].text(0.95, 0.95, seltitle, fontsize=fontsize,
+                     horizontalalignment='right', verticalalignment='top',
+                     transform=axes[1].transAxes)
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
@@ -262,7 +265,7 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
                              if sn.split('_')[0] in ics_incl]
     
     outdir = '/projects/b1026/nastasha/imgs/datacomp/'
-    ne8_colsels = [None, (12.5, np.inf), (13.5, np.inf)]
+    ne8_colsels = [None, (12.5, np.inf), (13.0, np.inf), (13.5, np.inf)]
     for mset in ['m12', 'm13']:
         if masscomp == 'halo':
             datafieldsels = [('Mvir_Msun',) + dcrange_m[mset],
@@ -275,7 +278,7 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
             if plottype == 'abslosvel':
                 for ne8_colsel in ne8_colsels:
                     cstr = ('' if ne8_colsel is None else 
-                            f'_Ne8_qe_{ne8_colsel[1]:.1f}')
+                            f'_Ne8_qe_{ne8_colsel[0]:.1f}')
                     cstr = cstr.replace('.', 'p')
                     outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
                                         f'_{masscomp}mass_sel{cstr}.pdf')

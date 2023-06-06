@@ -250,6 +250,8 @@ def fromcommandline(index):
         rim.run_vlosmaps(opt=index - 28000 + 3456)
         # Ne8 2 Rvir depth los maps for clean -> all m12 haloes
         # indices 28000 - 28287
+    elif index >= 28288 and index < 28522:
+        rhp.runcengal1(opt=index - 28288)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

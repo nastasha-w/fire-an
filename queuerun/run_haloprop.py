@@ -1,4 +1,5 @@
 
+import fire_an.mainfunc.cengalprop as cgp
 import fire_an.mainfunc.haloprop as hp
 import fire_an.simlists as sl
 
@@ -214,4 +215,36 @@ def run_vcen1(opt):
     hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
                 parttypes=(4,))
         
-        
+
+def runcengal1(opt=0):
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    if opt >= 0 and opt < 90:
+        ind = opt - 0
+        simnames = sl.m13_sr_all2 # 15
+        snaps = sl.snaps_sr # 6
+    elif opt >= 90 and opt < 102:
+        ind = opt - 90
+        simnames = sl.m13_hr_all2 # 2
+        snaps = sl.snaps_hr # 6
+    elif opt >= 102 and opt < 126:
+        ind = opt - 102
+        simnames = sl.m12_sr_all2 # 4
+        snaps = sl.snaps_sr # 6
+    elif opt >= 126 and opt < 234:
+        ind = opt - 126
+        simnames = sl.m12_hr_all2 # 18
+        snaps = sl.snaps_hr # 6
+    else:
+        raise ValueError(f'Nothing specified for index {ind}')
+    simi = ind // len(snaps)
+    snapi = ind % len(snaps)
+    simname = simnames[simi]
+    snapnum = snaps[snapi]
+
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname]) 
+
+    cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
+                     vcenrad_rvir=0.05, mstarrad_rvir=0.1)

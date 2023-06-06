@@ -245,8 +245,8 @@ def checkcentering_stars(simname, snapnum, outname=None, title=None,
                          vscale=0.005, alpha=0.1):
     simpath = getpath(simname)
     pcen_cm, vcom_cmps, todoc = hp.getcengalcen(simpath, snapnum, 
-                                               startrad_rvir=0.3,
-                                               vcenrad_rvir=0.05)
+                                                startrad_rvir=0.3,
+                                                vcenrad_rvir=0.05)
     halodat = hp.gethalodata_shrinkingsphere(simpath, snapnum, meandef='BN98')
     rvir_cm = halodat[0]['Rvir_cm']
 

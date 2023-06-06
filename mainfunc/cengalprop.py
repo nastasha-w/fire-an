@@ -31,7 +31,8 @@ def calccengalcen(simpath, snapnum, startrad_rvir=0.3,
     posstart_cm = np.array([halodat[0]['Xc_cm'], halodat[0]['Yc_cm'], 
                             halodat[0]['Zc_cm']])
     rvir_cm = halodat[0]['Rvir_cm']
-    todoc['halodata'] = halodat
+    todoc['halodata'] = halodat[0]
+    todoc['halodata_doc'] = halodat[1]
     snapobj = rf.get_Firesnap(simpath, snapnum)
     spos_simu = snapobj.readarray('PartType4/Coordinates')
     spos_toCGS = snapobj.toCGS
@@ -91,7 +92,7 @@ def savedata_cengalcen(simpath, snapnum, pcen_cm, vcom_cmps, todoc):
 
     with h5py.File(filen, 'w') as f:
         g1 = f.create_group(simname)
-        g2 = g1.create_group(snapnum)
+        g2 = g1.create_group(f'snap_{snapnum}')
         g3 = g2.create_group('pv0')
         gd = g3.create_group('doc')
         h5u.savedict_hdf5(gd, todoc)
@@ -106,10 +107,10 @@ def readdata_cengalcen(simpath, snapnum, startrad_rvir=0.3,
         if simname not in f:
             raise hp.NoStoredMatchError(f'simname {simname} data not stored')
         g1 = f[simname]
-        if f'{snapnum}' not in g1:
+        if f'snap_{snapnum}' not in g1:
             raise hp.NoStoredMatchError(f'snapshot {snapnum} data not'
                                      f' stored for {simname}')
-        g2 = g1[f'{snapnum}']
+        g2 = g1[f'snap_{snapnum}']
         g3nopts = g2.keys()
         tomatch = {'startrad_rvir': startrad_rvir,
                    'vcenrad_rvir': vcenrad_rvir,
@@ -117,13 +118,14 @@ def readdata_cengalcen(simpath, snapnum, startrad_rvir=0.3,
         mkeys = list(tomatch.keys())
         g3n = None
         for g3nopt in g3nopts:
-            if np.all([np.isclose(tomatch[key], g2[g3nopt].attrs[key]) 
+            if np.all([np.isclose(tomatch[key], g2[g3nopt]['doc'].attrs[key]) 
                        for key in mkeys]):
                 g3n = g3nopt
                 break
         if g3n is None:
-            raise hp.NoStoredMatchError(f'{simname}, snapshot {snapnum} data with'
-                                     f' parameters {tomatch} not found')
+            raise hp.NoStoredMatchError(f'{simname}, snapshot {snapnum}'
+                                        f' data with parameters {tomatch}'
+                                        ' not found')
         g3 = g2[g3n]
         todoc = h5u.readgrp_todict(g3['doc'], subgroups=True)
         pcen_cm = g3.attrs['pcen_cm']
@@ -185,7 +187,7 @@ def adddata_cengalcen(rmtemp=False):
                 cens_fo = [grp for grp in fo_sngrp.keys() \
                            if grp.startswith('pv')]
                 fi_cgrp = fi_sngrp['pv0']
-                tocheck = ['vcen_cmps', 'pcen_cm']
+                tocheck = ['vcom_cmps', 'pcen_cm']
                 anymatch = False
                 for cengrpn in cens_fo:
                     _fo_cgrp = fo_sngrp[cengrpn]
@@ -194,6 +196,8 @@ def adddata_cengalcen(rmtemp=False):
                     if ismatch:
                         fo_cgrp = _fo_cgrp
                         anymatch = True
+                        print(fo_cgrp)
+                        print(fi_cgrp)
                         if not np.all([np.allclose(fo_cgrp.attrs[key],
                                                    fi_cgrp.attrs[key])
                                        for key in tocheck]):

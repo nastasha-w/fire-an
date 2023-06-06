@@ -56,7 +56,7 @@ def checkvalsmatch(val1, val2, verbose=False):
 def checkattrsmatch(grp1, grp2, verbose=False, subgroups=True):
     dct1 = {key: val for key, val in grp1.attrs.items()}
     dct2 = {key: val for key, val in grp2.attrs.items()}
-    if set(dct1.keys() != set(dct2.keys())):
+    if set(dct1.keys()) != set(dct2.keys()):
         if verbose:
             msg = (f'for {grp1}, {grp2}, the sets of attributes were '
                    f'different:\n{set(dct1.keys())}\n{set(dct2.keys())}')
@@ -99,7 +99,7 @@ def readgrp_todict(grp, subgroups=True):
             else:
                 outdct[key] = val
         else:
-            outdct[key] = val
+            outdct[key] = grpdct[key]
     grpkeys = list(grp.keys())
     if subgroups:
         for key in grpkeys:

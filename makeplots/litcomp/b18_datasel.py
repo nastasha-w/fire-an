@@ -3,6 +3,8 @@ Burchett et al. (2018) data sample comparison selection
 '''
 
 import h5py
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.gridspec as gsp
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
@@ -285,3 +287,55 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     outfilen = outdir + f'{masscomp}mass_z_selection_model3_{hset}.pdf'
     plt.savefig(outfilen, bbox_inches='tight')
     return mass_minmax, z_minmax
+
+def plot_smhm_burchett19():
+    #datadir = '/projects/b1026/nastasha/extdata/'
+    datadir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+    dfilen = datadir + 'data_burchett_etal_2019_table1.txt'
+    #TODO CHECK: R200c or R200m!
+    # assuming impact parameters are physical/proper kpc
+    #TODO ask: table footnote f says 2 systems for one Ne VIII absorber
+    #          but only one line with that footnote and N(Ne VIII) value
+    data_bur = pd.read_csv(dfilen, comment='#', sep='\t')
+    ## calculate halo masses
+    # from Burchett et al. (2019):
+    cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
+    def hmfunc(x):
+        csm = cosmopars_bur.copy()
+        csm.update({'z': x.zgal, 'a': 1. / (1. + x.zgal)})
+        mv = cu.mvir_from_rvir(x.rvir_kpc * 1e-3 * c.cm_per_mpc, 
+                               csm, meandef='200c')
+        return mv / c.solar_mass
+    data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
+    z_bur = data_bur['zgal']
+    ms_bur = data_bur['log_Mstar_Msun']
+    ms_bur_err = data_bur['log_Mstar_Msun_err']
+    mh_bur = data_bur['Mvir_Msun']
+
+    fig = plt.figure(figsize=(5.5, 5.))
+    grid = gsp.GridSpec(ncols=2, nrows=1, wspace=0.1, width_ratios=[10., 1.])
+    ax = fig.add_subplot(grid[0, 0])
+    cax = fig.add_subplot(grid[0, 1])
+    
+    cmap = cm.get_cmap('jet')
+    zmin = np.min(z_bur)
+    zmax = np.max(z_bur)
+    def cmapcall(z):
+        return cmap((z - zmin)/ (zmax - zmin))
+    caxnorm = mcolors.Normalize(vmin=zmin, vmax=zmax)
+    for i in range(len(z_bur)):
+        ax.errorbar(ms_bur[i], np.log10(mh_bur[i]), xerr=ms_bur_err[i], 
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=6, markerfacecolor=cmapcall(z_bur[i]), 
+                    capsize=3, markeredgecolor='black',
+                    ecolor='black')
+    
+    caxmap = cm.ScalarMappable(cmap=cmap, norm=caxnorm)
+    plt.colorbar(caxmap, label='z', cax=cax)
+    ax.set_xlabel('$\\log_{10}\\, \\mathrm{M}_{*}\\; [\\mathrm{M}_{\\odot}]$')
+    ax.set_ylabel('$\\log_{10}\\, \\mathrm{M}_{\\mathrm{vir}} \\;'
+                  ' [\\mathrm{M}_{\\odot}]$')
+    outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
+    #outdir = '/projects/b1026/nastasha/imgs/datacomp/'
+    outfilen = outdir + f'stellar_mass_halo_mass_burchett_etal_2019.pdf'
+    plt.savefig(outfilen, bbox_inches='tight')

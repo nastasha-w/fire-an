@@ -218,6 +218,16 @@ class CoordinateWranger:
                     'azimuth': in spherical coordinates, velocity in 
                         the azimuthal angle/theta direction (after 
                         coordinate rotation)
+                    'alldop', 'dop0', 'dop1', 'dop2': doppler velocity,
+                        i.e., peculiar velocity + hubble flow. Note 
+                        that zero points for velocity and hubble flow 
+                        are at the indicated position and velocity 
+                        centers, and do not include the snapshot 
+                        redshift, i.e., 
+                        1 + z_obs = (1 + z_snap) * (1 + v_dop / c).
+                        dopall ris for all three coordinates, dop<num>
+                        is for the doppler velocity along the rotated 
+                        axis with index <num>.
                     note: you must specifiy vcen_cmps when initializing
                     this object to calculate this. 
                 indices etc. are all for the rotated coordinates, after
@@ -247,6 +257,8 @@ class CoordinateWranger:
                           ('posphi', [('pos', 'phi')]),
                           ('velcart', [('vel', 'allcart'), ('vel', 0),
                                       ('vel', 1), ('vel', 2)]),
+                          ('veldop', [('vel', 'alldop'), ('vel', 'dop0'),
+                                      ('vel', 'dop1'), ('vel', 'dop2')]),
                           ('veltot', [('vel', 'vtot')]), 
                           ('velcen', [('vel', 'vrad')]),
                           ('velazi', [('vel', 'azimuth')]),
@@ -262,6 +274,14 @@ class CoordinateWranger:
                              ('vel', 'vrad'): [('vel', 'allcart'),
                                                ('pos', 'allcart'),
                                                ('pos', 'rcen')],
+                             ('vel', 'alldop'): [('vel', 'allcart',
+                                                  'pos', 'allcart')],
+                             ('vel', 'dop0'): [('vel', 'allcart',
+                                                'pos', 'allcart')],
+                             ('vel', 'dop1'): [('vel', 'allcart',
+                                                'pos', 'allcart')],
+                             ('vel', 'dop2'): [('vel', 'allcart',
+                                                'pos', 'allcart')],
                              ('vel', 'azimuth'): [('vel', 'allcart'),
                                                   ('pos', 'azimuth'),
                                                   ('pos', 'phi')],
@@ -304,6 +324,8 @@ class CoordinateWranger:
                 self.__calc_posphi(self.gcur)
             elif self.gkeymatch == 'velcart':
                 self.__calc_velcart(self.gcur)
+            elif self.gkeymatch == 'veldop':
+                self.calc_veldop(self.gcur)
             elif self.gkeymatch == 'veltot':
                 self.__calc_veltot(self.gcur)
             elif self.gkeymatch == 'velcen':
@@ -445,6 +467,55 @@ class CoordinateWranger:
                                             self.toCGS_vel_rotxyz,
                                             self._todoc_cur)
             del self._todoc_cur
+    
+    def __calc_veldop(self, specs):
+        self._ptov_simu = self.toCGS_coords_rotxyz \
+                         * cu.Hubble(cosmopars=self.cosmopars) \
+                         / self.toCGS_vel_rotxyz
+        if ('vel', 'alldop') in specs or len(specs) > 1:
+            for self.scur in specs:
+                if self.scur == ('vel', 'alldop'):
+                    self._todoc_cur = {'vcen_cmps': self.vcen_cmps,
+                                       'cen_cm': self.cen_cm,
+                                       'rotmatrix': self.rotmatrix,
+                                       'rotcoord_index': [0, 1, 2],
+                                       'units': 'cm * s**-1'}
+                    self._out = np.copy(self.vel_rotxyz)
+                    self._out += self.coords_rotxyz * self._ptov_simu
+                    self.coords_stored[self.scur] = (self._out, 
+                                                     self.toCGS_vel_rotxyz,
+                                                     self._todoc_cur)
+                else:
+                    self._axind = int(self.scur[1][-1])
+                    self._todoc_cur = {'vcen_cmps': self.vcen_cmps,
+                                       'cen_cm': self.cen_cm,
+                                       'rotmatrix': self.rotmatrix,
+                                       'rotcoord_index': self._axind,
+                                       'units': 'cm * s**-1'}
+                    # storing a view of an array could cause unexpected
+                    # side-effects
+                    self._out = np.copy(self.vel_rotxyz[:, self._axind])
+                    self._out += self.coords_rotxyz[:, self._axind] \
+                                 * self._ptov_simu
+                    self.coords_stored[self.scur] = (self._out, 
+                                                     self.toCGS_vel_rotxyz,
+                                                     self._todoc_cur)
+            del self.scur, self._todoc_cur, self._out, self._axind
+        else:
+            self._axind = int(self.specs[0][1][-1])
+            self._todoc_cur = {'vcen_cmps': self.vcen_cmps,
+                               'cen_cm': self.cen_cm,
+                               'rotmatrix': self.rotmatrix,
+                               'rotcoord_index': self._axind,
+                               'units': 'cm * s**-1'}
+            self._out = np.copy(self.vel_rotxyz[:, self._axind])
+            self._out += self.coords_rotxyz[:, self._axind] \
+                         * self._ptov_simu
+            self.coords_stored[specs[0]] = (self._put, 
+                                            self.toCGS_vel_rotxyz,
+                                            self._todoc_cur)
+            del self._todoc_cur, self._axind, self._out
+        del self._ptov_simu,
 
     def __calc_veltot(self, specs):
         self.scur = specs[0]

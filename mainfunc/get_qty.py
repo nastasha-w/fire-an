@@ -635,8 +635,9 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
             get the line-of-sight position along whatever the 
             projection axis is. (requires the paxis argument to be set
             to 0, 1, or 2)
-        'vel': 'los'
-            get the line-of-sight velocity along whatever the 
+        'vel': 'los', 'doplos'
+            get the line-of-sight velocity (or doppler velocity) 
+            along whatever the 
             projection axis is. (requires the paxis argument to be set
             to 0, 1, or 2)
     paxis: {0, 1, 2, None}
@@ -694,6 +695,9 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
     if 'vel' in typeargs and typeargs['vel'] == 'los':
         outdoc.update({'coords_vel_in': 'los'})
         typeargs_out['vel'] = paxis
+    elif 'vel' in typeargs and typeargs['vel'] == 'doplos':
+        outdoc.update({'coords_veldop_in': 'los'})
+        typeargs_out['vel'] = f'dop{paxis}'
     elif 'pos' in typeargs and typeargs['pos'] == 'los':
         outdoc.update({'coords_pos_in': 'los'})
         typeargs_out['pos'] = paxis
@@ -703,6 +707,9 @@ def process_typeargs_coords(simpath, snapnum, typeargs,
             if 'vel' in dct and dct['vel'] == 'los':
                 outdoc.update({'coords_vel_in': 'los'})
                 cspec[di].update({'vel': paxis})
+            elif 'vel' in dct and dct['vel'] == 'doplos':
+                outdoc.update({'coords_veldop_in': 'los'})
+                cspec[di].update({'vel': f'dop{paxis}'})
             elif 'pos' in dct and dct['pos'] == 'los':
                 outdoc.update({'coords_pos_in': 'los'})
                 cspec[di].update({'pos': paxis})

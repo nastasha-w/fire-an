@@ -50,6 +50,7 @@ class CoordinateWranger:
         self.pt = parttype
         self.periodic = periodic
         self.coordaxis = 1 
+        self.cosmopars = self.snapobj.cosmopars.getdct()
         self.pcalcstarted = False
         self.vcalcstarted = False
         self.__check_rotmatrix()
@@ -176,7 +177,6 @@ class CoordinateWranger:
         self.vel_simxyz -= self.vcen_simu[self._sel]
         del self._sel
         if self.periodic:
-            self.cosmopars = self.snapobj.cosmopars.getdct()
             self.vboxsize_simu = self.snapobj.cosmopars.boxsize \
                                  * self.snapobj.cosmopars.a \
                                  / self.snapobj.cosmopars.h \
@@ -274,14 +274,14 @@ class CoordinateWranger:
                              ('vel', 'vrad'): [('vel', 'allcart'),
                                                ('pos', 'allcart'),
                                                ('pos', 'rcen')],
-                             ('vel', 'alldop'): [('vel', 'allcart',
-                                                  'pos', 'allcart')],
-                             ('vel', 'dop0'): [('vel', 'allcart',
-                                                'pos', 'allcart')],
-                             ('vel', 'dop1'): [('vel', 'allcart',
-                                                'pos', 'allcart')],
-                             ('vel', 'dop2'): [('vel', 'allcart',
-                                                'pos', 'allcart')],
+                             ('vel', 'alldop'): [('vel', 'allcart'),
+                                                  ('pos', 'allcart')],
+                             ('vel', 'dop0'): [('vel', 'allcart'),
+                                                ('pos', 'allcart')],
+                             ('vel', 'dop1'): [('vel', 'allcart'),
+                                                ('pos', 'allcart')],
+                             ('vel', 'dop2'): [('vel', 'allcart'),
+                                                ('pos', 'allcart')],
                              ('vel', 'azimuth'): [('vel', 'allcart'),
                                                   ('pos', 'azimuth'),
                                                   ('pos', 'phi')],
@@ -325,7 +325,7 @@ class CoordinateWranger:
             elif self.gkeymatch == 'velcart':
                 self.__calc_velcart(self.gcur)
             elif self.gkeymatch == 'veldop':
-                self.calc_veldop(self.gcur)
+                self.__calc_veldop(self.gcur)
             elif self.gkeymatch == 'veltot':
                 self.__calc_veltot(self.gcur)
             elif self.gkeymatch == 'velcen':
@@ -500,9 +500,10 @@ class CoordinateWranger:
                     self.coords_stored[self.scur] = (self._out, 
                                                      self.toCGS_vel_rotxyz,
                                                      self._todoc_cur)
-            del self.scur, self._todoc_cur, self._out, self._axind
+                    del self._axind
+            del self.scur, self._todoc_cur, self._out
         else:
-            self._axind = int(self.specs[0][1][-1])
+            self._axind = int(specs[0][1][-1])
             self._todoc_cur = {'vcen_cmps': self.vcen_cmps,
                                'cen_cm': self.cen_cm,
                                'rotmatrix': self.rotmatrix,
@@ -511,7 +512,7 @@ class CoordinateWranger:
             self._out = np.copy(self.vel_rotxyz[:, self._axind])
             self._out += self.coords_rotxyz[:, self._axind] \
                          * self._ptov_simu
-            self.coords_stored[specs[0]] = (self._put, 
+            self.coords_stored[specs[0]] = (self._out, 
                                             self.toCGS_vel_rotxyz,
                                             self._todoc_cur)
             del self._todoc_cur, self._axind, self._out

@@ -256,6 +256,13 @@ def fromcommandline(index):
     elif index >= 28522 and index < 28720:
         # Ne8 vlos maps m13 clean2 -> all2
         rim.run_vlosmaps(opt=index - 28522 + 3744)
+    elif index >= 28720 and index < 34336:
+        rim.run_vdoplosmaps(opt=index - 28720)
+        # Ne8, Ne, M, V vdop maps, 3 axis proj, thin + thick slices 
+        # 28720 - 38879: m13sr (2160 indices)
+        # 30880 - 31167: m13hr ( 288 indices)
+        # 31168 - 31743: m12sr ( 576 indices)
+        # 31744 - 34335: m12hr (2592 indices)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

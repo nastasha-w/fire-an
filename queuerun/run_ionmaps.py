@@ -1251,3 +1251,119 @@ def run_vlosmaps(opt=0):
                    maptype=wtdtype, maptype_args=wtdtype_args,
                    save_weightmap=True, logmap=False,
                    logweightmap=True, losradius_rvir=rlos_rvir)
+        
+
+def run_vdoplosmaps(opt=0):
+    # version number depends on code edits; some indices might have
+    # been run with previous versions
+    _outfilen = ('vdoplos_by_coldens_{qt}_{sc}_snap{sn}_shrink-sph-cen_BN98'
+                 '_depth_{llos:.1f}rvir{depl}_{los}-proj_v3.hdf5')
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    outdir = '/scratch1/08466/tg877653/output/maps/vdopmaps_clean2/'
+    checkfileflag = True
+    # 24 maps per halo/snap
+    ions = ['Mass', 'Volume', 'Neon', 'Ne8']
+    loss = ['x', 'y', 'z']
+    rloss_rvir = [0.1, 2.]
+    wtdtype = 'coords'
+    wtdtype_args = {'vel': 'doplos'}
+    if opt >= 0 and opt < 2160:
+        # m13sr: 2160 indices
+        ind = opt - 0
+        simnames = sl.m13_sr_all2 # len 15
+        snaps = sl.snaplists['m13_sr'] # len 6
+    elif opt >= 2160 and opt < 2448:
+        # m13hr: 288 indices
+        ind = opt - 2160
+        simnames = sl.m13_hr_all2 # len 2
+        snaps = sl.snaplists['m13_hr'] # len 6
+    elif opt >= 2448 and opt < 3024:
+        # m12sr: 576 indices
+        ind = opt - 2448
+        simnames = sl.m12_sr_all2 # len 4
+        snaps = sl.snaplists['m12_sr'] # len 6
+    elif opt >= 3024 and opt < 5616:
+        # m12hr: 2592 indices
+        ind = opt - 3024
+        simnames = sl.m12_hr_all2 # len 18
+        snaps = sl.snaplists['m12_hr'] # len 6
+        
+    simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
+    snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \
+           // (len(ions) * len(loss) * len(rloss_rvir))
+    ioni = (ind % (len(ions) * len(loss) * len(rloss_rvir))) \
+            // (len(loss) * len(rloss_rvir))
+    losi = (ind % len(loss) * len(rloss_rvir)) // len(rloss_rvir)
+    rlosi = ind % len(rloss_rvir)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    ion = ions[ioni]
+    los = loss[losi]
+    rlos_rvir = rloss_rvir[rlosi]
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+    #print(dirpath)
+
+    if ion == 'Mass':
+        maptype = 'Mass'
+        maptype_argss = [{}]
+    elif ion == 'Volume':
+        maptype = 'Volume'
+        maptype_argss = [{}]
+    elif ion in ['Hydrogen', 'Helium', 'Carbon', 'Nitrogen', 'Oxygen',
+                 'Neon', 'Magnesium', 'Silicon', 'Iron']:
+        maptype = 'Metal'
+        maptype_argss = [{'element': ion, 'density': False}]
+    else:
+        maptype = 'ion'
+        if ion == 'H1':
+            _maptype_args = {'ps20depletion': False, 
+                             'ionfrac-method': 'sim'}
+        else:
+            _maptype_args = {'ps20depletion': False}
+        _maptype_args.update({'ion': ion})
+        maptype_argss = [_maptype_args.copy()] 
+
+    for maptype_args in maptype_argss:
+        depl = ''
+        if maptype == 'ion':
+            qt = maptype_args['ion']
+            if 'ionfrac-method' in maptype_args:
+                if maptype_args['ionfrac-method'] == 'sim':
+                    depl = '_ionfrac-fromsim'
+                else:
+                    _depl = maptype_args['ps20depletion']
+                    if _depl:
+                        depl = '_ps20-depl'
+            else:
+                _depl = maptype_args['ps20depletion']
+                if _depl:
+                    depl = '_ps20-depl'
+        elif maptype == 'Metal':
+            qt = maptype_args['element']
+        elif maptype == 'Mass':
+            qt = 'gas-mass'
+        elif maptype == 'Volume':
+            qt = 'gas-vol'
+
+        outfilen = outdir + _outfilen.format(sc=simname, sn=snapnum, 
+                                             depl=depl, qt=qt, los=los,
+                                             llos=rlos_rvir)
+        if checkfileflag:
+            if os.path.isfile(outfilen):
+                msg = 'For opt {}, output file already exists:\n{}'
+                print(msg.format(opt, outfilen))
+                print('Not running this map again')
+                return None
+
+        mm.massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
+                   pixsize_pkpc=3., axis=los, outfilen=outfilen,
+                   center='shrinksph', norm='pixsize_phys',
+                   weighttype=maptype, weighttype_args=maptype_args,
+                   maptype=wtdtype, maptype_args=wtdtype_args,
+                   save_weightmap=True, logmap=False,
+                   logweightmap=True, losradius_rvir=rlos_rvir)

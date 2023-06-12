@@ -259,7 +259,7 @@ def fromcommandline(index):
     elif index >= 28720 and index < 34336:
         rim.run_vdoplosmaps(opt=index - 28720)
         # Ne8, Ne, M, V vdop maps, 3 axis proj, thin + thick slices 
-        # 28720 - 38879: m13sr (2160 indices)
+        # 28720 - 30879: m13sr (2160 indices)
         # 30880 - 31167: m13hr ( 288 indices)
         # 31168 - 31743: m12sr ( 576 indices)
         # 31744 - 34335: m12hr (2592 indices)

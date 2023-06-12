@@ -700,8 +700,8 @@ def run_hist_vdoplos_vrad(opt):
     snapnum = snaps[snpi]
     wt = wts[wti]
     wtarg = wtargs[wti]
-    at = [ats[ati]]
-    atarg = [atargs[ati]]
+    at = ats[ati]
+    atarg = atargs[ati]
     
     runit = 'Rvir'
     rbins = np.arange(0.15, 2., 0.05)
@@ -785,8 +785,8 @@ def run_hist_ppv(opt):
     snapnum = snaps[snpi]
     wt = wts[wti]
     wtarg = wtargs[wti]
-    at = [ats[ati]]
-    atarg = [atargs[ati]]
+    at = ats[ati]
+    atarg = atargs[ati]
     
     runit = 'pkpc'
     rbins = (0., 1e4) # don't actually want to do a spatial selection

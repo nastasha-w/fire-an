@@ -772,8 +772,8 @@ def run_hist_ppv(opt):
               [{'pos': 1}, {'pos': 2}, {'vel': 'dop0'}],
               [{'pos': 2}, {'pos': 0}, {'vel': 'dop1'}],
              ]
-    axb_pos = np.arange(-450., 451, 3.)
-    axbins = [axb_pos, axb_pos, 5e5]
+    axb_pos = np.arange(-450., 451., 9.)
+    axbins = [axb_pos, axb_pos, 10e5]
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
     outdir = '/scratch1/08466/tg877653/output/hists/ppv_all2/'

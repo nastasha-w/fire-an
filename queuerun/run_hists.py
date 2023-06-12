@@ -691,7 +691,7 @@ def run_hist_vdoplos_vrad(opt):
     axbins = [5e5, 5e5]
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
-    outdir = '/scratch1/08466/tg877653/output/hists/ppv_all2/'
+    outdir = '/scratch1/08466/tg877653/output/hists/vdop_vrad_all2/'
     simi = ind // (len(snaps) * len(wts) * len(ats))
     snpi = (ind % (len(snaps) * len(wts) * len(ats))) // (len(wts) * len(ats))
     wti = (ind % (len(wts) * len(ats))) // len(ats)

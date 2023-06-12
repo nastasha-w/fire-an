@@ -263,6 +263,13 @@ def fromcommandline(index):
         # 30880 - 31167: m13hr ( 288 indices)
         # 31168 - 31743: m12sr ( 576 indices)
         # 31744 - 34335: m12hr (2592 indices)
+    elif index >= 34336 and index < 37144:
+        rhs.run_hist_vdoplos_vrad(index - 34336)
+        # Ne8 ppv 3 axes
+        # 34336 - 35415: m13sr (1080 indices)
+        # 35416 - 35559: m13hr ( 144 indices)
+        # 35560 - 35847: m12sr ( 288 indices)
+        # 35848 - 37143: m12hr (2808 indices)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

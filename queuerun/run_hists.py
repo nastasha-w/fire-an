@@ -646,6 +646,89 @@ def run_hist_rad_vrad_weighted(opt):
                          outfilen=outfilen, overwrite=False)
 
 
+def run_hist_vdoplos_vrad(opt):
+    # sample all2
+    # 3 axes * 4 weights = 12 runs per sim/snap
+    if opt >= 0 and opt < 1080:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-sr
+        # 1080 indices
+        ind = opt - 0
+        simnames = sl.m13_sr_all2 # len 15
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 1080 and opt < 1224:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m13-hr
+        # 144 indices
+        ind = opt - 1080
+        simnames = sl.m13_hr_all2 # len 2
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 1224 and opt < 1512:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-sr
+        # 288 indices
+        ind = opt - 1224
+        simnames = sl.m12_sr_all2 # len 4
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 1512 and opt < 2808:
+        # z = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        # m12-hr
+        # 1296 indices
+        ind = opt - 1512
+        simnames = sl.m12_hr_all2 # len 18
+        snaps = sl.snaps_hr # len 6
+    
+    wts = ['Mass', 'Volume', 'Metal', 'ion']
+    wtargs = [{}, {}, 
+              {'element': 'Neon'},
+              {'ion': 'Ne8', 'ps20depletion': False},
+              ]
+    ats = [['coords', 'coords', 'coords']] * 3
+    atargs = [[{'pos': 0}, {'pos': 1}, {'vel': 'dop2'}],
+              [{'pos': 1}, {'pos': 2}, {'vel': 'dop0'}],
+              [{'pos': 2}, {'pos': 0}, {'vel': 'dop1'}],
+             ]
+    axb_pos = np.arange(-450., 451, 3.)
+    axbins = [axb_pos, axb_pos, 5e5]
+
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    outdir = '/scratch1/08466/tg877653/output/hists/ppv_all2/'
+    simi = ind // (len(snaps) * len(wts) * len(ats))
+    snpi = (ind % (len(snaps) * len(wts) * len(ats))) // (len(wts) * len(ats))
+    wti = (ind % (len(wts) * len(ats))) // len(ats)
+    ati = ind % len(ats)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    wt = wts[wti]
+    wtarg = wtargs[wti]
+    at = [ats[ati]]
+    atarg = [atargs[ati]]
+    
+    runit = 'pkpc'
+    rbins = (0., 1e4) # don't actually want to do a spatial selection
+
+    # directory is halo name + resolution 
+    dp2 = '_'.join(simname.split('_')[:2])
+    if dp2.startswith('m13h02_'):
+        dp2 = dp2.replace('m13h02', 'm13h002')
+    dirpath = '/'.join([_dirpath, dp2, simname])
+    
+    pax = 'xyz'[int(atarg[2]['vel'][-1])]
+    atstr = f'ppv_{pax}ax'
+    wtstr = 'gasmass' if wt == 'Mass' else\
+            'gasvol' if wt == 'Volume' else\
+            wtarg['ion'] if wt == 'ion' else \
+            wtarg['element'] 
+    outfilen = outdir +\
+               (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
+                '_bins1_v1_hvcen.hdf5')
+
+    mh.histogram_radprof(dirpath, snapnum,
+                         wt, wtarg, at, atarg,
+                         particle_type=0, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=False, axbins=axbins,
+                         outfilen=outfilen, overwrite=False)
 
 
 def run_hist(opt):

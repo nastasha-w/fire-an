@@ -2,12 +2,15 @@
 process ppv data cubes into maps
 '''
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 
+import fire_an.utils.constants_and_units as c
+
 def smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1, 
                   smoothsigmas=(10.e5, 20.e5, 30.e5, 40.e5, 
-                                50.e5, 60.e5, 70.e5)):
+                                50.e5, 60.e5, 70.e5, 80.e5, 90.e5, 100.e5)):
     outfilen = filen[:-5] + '_smoothed_vmaxcols.hdf5'
     with h5py.File(filen, 'r') as fi:
         hist = fi['histogram/histogram'][:]
@@ -66,6 +69,35 @@ def smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1,
                 _ds = fo.create_dataset(f'v_maxcol_smooth_{smoothsigma:.0f}',
                                         data=_vcomp)
                 _ds.attrs.create('sigma_v_smooth_cmps', smoothsigma)
+
+                # initial testing
+                dp2 = np.average(np.diff(pbins1)) * np.average(np.diff(pbins2))
+                dp2 *= (c.cm_per_mpc * 1e-3)**2
+                coldens = ctot / dp2
+                selpoints = np.where(coldens >= 10**12.5)
+                inds = np.random.choice(len(selpoints[0]), size=10, 
+                                        replace=False)
+                for ind in inds:
+                    # assuming axes are p p v here
+                    xp = vcens_smoothedv / 1e5
+                    yp = smoothedv[selpoints[0][ind], selpoints[1][ind], :]
+                    mi = _maxi[selpoints[0][ind], selpoints[1][ind]]
+                    _xp = vcens / 1e5
+                    _yp = hist[selpoints[0][ind], selpoints[1][ind], :]
+                    _mi = maxi_nosmooth[selpoints[0][ind], selpoints[1][ind]]
+                    plt.plot(xp, yp, color='black', linestyle='solid',
+                             label=f'smoothed {smoothsigma/1e5:.0f} km/s')
+                    plt.plot(_xp, _yp, color='gray', linestyle='dashed',
+                             label=f'unsmoothed, {dv/1e5:.0f} km/s')
+                    plt.scatter([xp[mi]], [yp[mi]], marker='o', color='black',
+                                markersize=5)
+                    plt.scatter([_xp[_mi]], [_yp[_mi]], marker='o', 
+                                color='gray', markersize=5)
+                    plt.set_yscale('log')
+                    plt.set_xlabel('doppler v [km/s]')
+                    plt.legend()
+                plt.show()
+                    
 
 
 

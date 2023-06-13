@@ -66,7 +66,7 @@ def maketable_main():
                 '{mhalo1}', '{mstar1}', '{rhalo1}',
                 '{refs}']
     ncols = len(colsmain)
-    logmassunit_halo_msun = 12
+    logmassunit_halo_msun = 11
     logmassunit_gal_msun = 10
     logmassunit_res_msun = 3
     aligndict = {'ic': 'l', 'phys': 'l', 'gasres': 'r',
@@ -74,12 +74,12 @@ def maketable_main():
                  'mhalo1': 'r', 'mstar1': 'r', 'rhalo1': 'r',
                  'refs': 'c'}
     head1dct = {'ic': 'ICs', 'phys': 'model', 'gasres': 'resolution',
-                'mhalo0': '$\\mathrm{M}_{\\mathrm{vir}}(z=1.0)$', 
-                'mstar0': '$\\mathrm{M}_{\\star}(z=1.0)$', 
-                'rhalo0': '$\\mathrm{R}_{\\mathrm{vir}}(z=1.0)$',
-                'mhalo1': '$\\mathrm{M}_{\\mathrm{vir}}(z=0.5)$', 
-                'mstar1': '$\\mathrm{M}_{\\star}(z=0.5)$', 
-                'rhalo1': '$\\mathrm{R}_{\\mathrm{vir}}(z=0.5)$',
+                'mhalo0': '$\\mathrm{M}_{\\mathrm{vir}}(1.0)$', 
+                'mstar0': '$\\mathrm{M}_{\\star}(1.0)$', 
+                'rhalo0': '$\\mathrm{R}_{\\mathrm{vir}}(1.0)$',
+                'mhalo1': '$\\mathrm{M}_{\\mathrm{vir}}(0.5)$', 
+                'mstar1': '$\\mathrm{M}_{\\star}(0.5)$', 
+                'rhalo1': '$\\mathrm{R}_{\\mathrm{vir}}(0.5)$',
                 'refs': 'references',
                 }
     head2dct = {'ic': '', 'phys': '', 
@@ -98,12 +98,12 @@ def maketable_main():
                 'refs': '',
                 }
     fmtdct = {'ic': '{ic}', 'phys': '{phys}', 
-              'gasres': '{gasres:.1f}',
-              'mhalo0': '{mhalo0:.1f}',
-              'mstar0': '{mstar0:.1f}',
+              'gasres': '{gasres:.2f}',
+              'mhalo0': '{mhalo0:.2f}',
+              'mstar0': '{mstar0:.2f}',
               'rhalo0': '{rhalo0:.0f}',
-              'mhalo1': '{mhalo1:.1f}',
-              'mstar1': '{mstar1:.1f}',
+              'mhalo1': '{mhalo1:.2f}',
+              'mstar1': '{mstar1:.2f}',
               'rhalo1': '{rhalo1:.0f}',
               'refs': '{refs}',
                 }

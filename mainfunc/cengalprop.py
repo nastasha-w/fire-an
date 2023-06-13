@@ -191,7 +191,8 @@ def adddata_cengalcen(rmtemp=False):
                 anymatch = False
                 for cengrpn in cens_fo:
                     _fo_cgrp = fo_sngrp[cengrpn]
-                    ismatch = h5u.checkattrsmatch(_fo_cgrp['doc'], fi_cgrp['doc'],
+                    ismatch = h5u.checkattrsmatch(_fo_cgrp['doc'],
+                                                  fi_cgrp['doc'],
                                                   verbose=True)
                     if ismatch:
                         fo_cgrp = _fo_cgrp

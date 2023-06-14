@@ -706,7 +706,7 @@ def run_hist_vdoplos_vrad(opt):
     
     runit = 'Rvir'
     rbins = np.arange(0.15, 2., 0.05)
-    rbins = np.append(np.arange(0., 0.1, 0.02), rbins)
+    rbins = np.append(np.arange(0., 0.11, 0.02), rbins)
 
     # directory is halo name + resolution 
     dp2 = '_'.join(simname.split('_')[:2])

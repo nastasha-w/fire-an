@@ -188,7 +188,7 @@ def plotset_vlos_vrad():
                             for i, _sm in enumerate(_sms)]
             rstr = f'{rrange_rvir[0]:.2f}_to_{rrange_rvir[1]:.2f}_Rvir'
             rstr = rstr.replace('.', 'p')
-            outname = odir + f'hist_vdop_vrad_{ic}_z0p5_1p0_{rstr}.pdf'
+            outname = odir + f'hist_vdop_vrad_Ne8_{ic}_z0p5_1p0_{rstr}.pdf'
             plot_vlos_vrad(ddir + filen_temp, fills_panel, fills_comb,
                            labels_panel=labels_panel, title=title, 
                            outname=outname, rrange_rvir=rrange_rvir,

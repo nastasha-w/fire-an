@@ -14,6 +14,31 @@ dtype = np.dtype(dtype=[('id', 'i8'),('descid','i8'),('upid','i8'),
                         ('obs_sfr', 'f4'), ('obs_uv', 'f4'), ('empty', 'f4')],
                  align=True)
 
+#Field explanations:
+#**Note that halo masses are in Msun/h and stellar masses/SFRs are in Msun.
+#ID: Unique halo ID
+#DescID: ID of descendant halo (or -1 at z=0).
+#UPID: -1 for central halos, otherwise, ID of largest parent halo
+#Flags: Ignore
+#Uparent_Dist: Ignore
+#pos[6]: (X,Y,Z,VX,VY,VZ)
+#X Y Z: halo position (comoving Mpc/h)
+#VX VY VZ: halo velocity (physical peculiar km/s)
+#M: Halo mass (Bryan & Norman 1998 virial mass, Msun/h)
+#V: Halo vmax (physical km/s)
+#MP: Halo peak historical mass (BN98 vir, Msun/h)
+#VMP: Halo vmax at the time when peak mass was reached.
+#R: Halo radius (BN98 vir, comoving kpc/h)
+#Rank1: halo rank in Delta_vmax (see UniverseMachine paper)
+#Rank2, RA, RARank: Ignore
+#A_UV: UV attenuation (mag)
+#SM: True stellar mass (Msun)
+#ICL: True intracluster stellar mass (Msun)
+#SFR: True star formation rate (Msun/yr)
+#Obs_SM: observed stellar mass, including random & systematic errors (Msun)
+#Obs_SFR: observed SFR, including random & systematic errors (Msun/yr)
+#Obs_UV: Observed UV Magnitude (M_1500 AB)
+
 ddir = '/Users/nastasha/ciera/data_smdpl_sfr/'
 def loaddata(aexp):
     catopts = glob.glob(ddir + 'sfr_catalog_*.bin')

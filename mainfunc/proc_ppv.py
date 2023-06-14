@@ -7,8 +7,9 @@ import numpy as np
 import scipy as sp
 
 import fire_an.utils.constants_and_units as c
+import fire_an.simlists as sl
 
-def smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1, 
+def smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2, 
                   smoothsigmas=(10.e5, 20.e5, 30.e5, 40.e5, 
                                 50.e5, 60.e5, 70.e5, 80.e5, 90.e5, 100.e5)):
     outfilen = filen[:-5] + '_smoothed_vmaxcols.hdf5'
@@ -98,8 +99,8 @@ def smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1,
                     plt.legend()
                 plt.show()
                     
-
-
+def tryout_ppv_smoothmax(nrun=1):
+    simnames = sl.m12
 
 
 

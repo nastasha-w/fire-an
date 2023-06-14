@@ -193,5 +193,3 @@ def plotset_vlos_vrad():
                            labels_panel=labels_panel, title=title, 
                            outname=outname, rrange_rvir=rrange_rvir,
                            maxv=maxv)
-            break
-        break

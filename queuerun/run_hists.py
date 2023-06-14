@@ -5,6 +5,7 @@ import os
 from fire_an.ionrad.ion_utils import Linetable_PS20
 import fire_an.mainfunc.makehist as mh
 import fire_an.simlists as sl
+import fire_an.utils.constants_and_units as c
 
 def run_hist_carbonions_z051(opt):
     if opt >= 0 and opt < 189:
@@ -772,7 +773,7 @@ def run_hist_ppv(opt):
               [{'pos': 1}, {'pos': 2}, {'vel': 'dop0'}],
               [{'pos': 2}, {'pos': 0}, {'vel': 'dop1'}],
              ]
-    axb_pos = np.arange(-450., 451., 9.)
+    axb_pos = np.arange(-450., 451., 9.) * c.cm_per_mpc * 1e-3
     axbins = [axb_pos, axb_pos, 10e5]
 
     _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'

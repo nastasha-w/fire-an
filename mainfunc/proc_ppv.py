@@ -4,7 +4,8 @@ process ppv data cubes into maps
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
+import scipy.special as spspec
+import scipy.signal as spsig
 
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
@@ -16,25 +17,44 @@ def smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2,
     outfilen = filen[:-5] + '_smoothed_vmaxcols.hdf5'
     with h5py.File(filen, 'r') as fi:
         hist = fi['histogram/histogram'][:]
-        islog = bool(fi['histogram/histogram'].attrs['log'])
+        print(np.max(hist))
+        islog = bool(fi['histogram'].attrs['log'])
         if islog:
-            hist = 10**hist
+            hist = 10**(hist)
+        print(np.max(hist))
         keepaxes = {p1ax, p2ax, vax}
         allaxes = set(np.arange(len(hist.shape)))
         sumaxes = tuple(allaxes - keepaxes)
-        hist = np.sum(hist, sumaxes)
+        hist = np.sum(hist, axis=sumaxes)
+        print(np.max(hist))
+        print(np.max(hist[1:-1, 1:-1, :]))
         # same order as the originals, but any other axes were removed
+        pbins1 = fi[f'axis_{p1ax}/bins'][:]
+        pbins2 = fi[f'axis_{p2ax}/bins'][:]
+        vbins = fi[f'axis_{vax}/bins'][:]
         _p1ax, _p2ax, _vax  = np.argsort([p1ax, p2ax, vax])
-        pbins1 = fi[f'Header/axis_{_p1ax}/bins'][:]
-        pbins2 = fi[f'Header/axis_{_p2ax}/bins'][:]
-        vbins = fi[f'Header/axis_{_vax}/bins'][:]
+        #print(pbins1, pbins2)
+        #print(vbins)
+        # pax +- inf edges tacked on -> remove from hist and bins
+        hsel = [slice(None, None, None) for _ in range(3)]
+        hsel[_p1ax] = slice(1 if pbins1[0] == -np.inf else None,
+                            -1 if pbins1[-1] == np.inf else None,
+                            None)
+        hsel[_p2ax] = slice(1 if pbins2[0] == -np.inf else None,
+                            -1 if pbins2[-1] == np.inf else None,
+                            None)
+        print(hsel)
+        hist = hist[tuple(hsel)]
+        pbins1 = pbins1[hsel[_p1ax]]
+        pbins2 = pbins2[hsel[_p2ax]]
+        print(np.max(hist))
     
-        ctot = np.sum(hist, ax=vax)
+        ctot = np.sum(hist, axis=_vax)
         vcens = 0.5 * (vbins[:-1] + vbins[1:])
         dv = np.average(np.diff(vbins))
         if not np.allclose(np.diff(vbins), dv):
             raise RuntimeError(f'v bins are not evenly spaced: {vbins}')
-        maxi_nosmooth = np.argmax(hist, ax=vax)
+        maxi_nosmooth = np.argmax(hist, axis=_vax)
         vcomp_nosmooth = vcens[maxi_nosmooth]
 
         with h5py.File(outfilen, 'a') as fo:
@@ -52,13 +72,16 @@ def smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2,
                 vmin = np.floor(- nsig_calc * smoothsigma / dv) * dv
                 vmax = np.ceil(nsig_calc * smoothsigma / dv) * dv
                 vbins_conv = np.arange(vmin - 0.5 * dv, vmax + dv, dv)
-                gaussv = sp.special.erf(vbins_conv[1:] / smoothsigma) \
-                         - sp.special.erf(vbins_conv[:-1] / smoothsigma) 
+                gaussv = spspec.erf(vbins_conv[1:] / smoothsigma) \
+                         - spspec.erf(vbins_conv[:-1] / smoothsigma) 
                 gaussv *= 1. / np.sum(gaussv)
                 sel = [None for _ in range(3)]
                 sel[_vax] = slice(None, None, None)
                 sel = tuple(sel)
-                smoothedv = sp.signal.convolve(hist, gaussv[sel], mode='full')
+                _gaussv = gaussv[sel]
+                print(hist.shape)
+                print(_gaussv.shape)
+                smoothedv = spsig.convolve(hist, _gaussv, mode='full')
                 nextra = len(gaussv) // 2 
                 vextlo = np.arange(vcens[0] - nextra * dv, 
                                    vcens[0] - 0.5 * dv, dv)
@@ -66,16 +89,24 @@ def smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2,
                                    vcens[-1] + (nextra + 0.5) * dv, dv)
                 vcens_smoothedv = np.append(vextlo, vcens)
                 vcens_smoothedv = np.append(vcens_smoothedv, vexthi)
-                _maxi = np.argmax(smoothedv)
+                _maxi = np.argmax(smoothedv, axis=_vax)
                 _vcomp = vcens_smoothedv[_maxi]
                 _ds = fo.create_dataset(f'v_maxcol_smooth_{smoothsigma:.0f}',
                                         data=_vcomp)
                 _ds.attrs.create('sigma_v_smooth_cmps', smoothsigma)
 
                 # initial testing
+                #print(pbins1)
+                #print(pbins2)
                 dp2 = np.average(np.diff(pbins1)) * np.average(np.diff(pbins2))
-                dp2 *= (c.cm_per_mpc * 1e-3)**2
+                print(dp2)
+                #dp2 = dp2 * (c.cm_per_mpc * 1e-3)**2
                 coldens = ctot / dp2
+                print(ctot)
+                print(np.max(ctot))
+                print(dp2)
+                print(coldens)
+                print(np.max(coldens))
                 selpoints = np.where(coldens >= 10**12.5)
                 inds = np.random.choice(len(selpoints[0]), size=10, 
                                         replace=False)
@@ -128,11 +159,13 @@ def run_ppv_proc(opt):
     snapnum = snaps[sni]
     pax = paxes[pai]
     
-    ddir = ''
+    ddir = '/projects/b1026/nastasha/hists/ppv_all2/'
     filen = ddir + (f'hist_ppv_{pax}ax_by_{wtstr}_{simname}_snap{snapnum}'
                     '_bins1_v1_hvcen.hdf5')
     smooths = 1e5 * np.arange(10., 105., 10.)
-    smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1, 
+    print(simname)
+    print(snapnum, ', ',  pax)
+    smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2, 
                   smoothsigmas=smooths)
     
     

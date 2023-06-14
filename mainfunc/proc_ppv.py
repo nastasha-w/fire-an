@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 
+import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 import fire_an.simlists as sl
 
@@ -98,9 +99,45 @@ def smoothmax_ppv(filen, vax=3, p1ax=1, p2ax=2,
                     plt.set_xlabel('doppler v [km/s]')
                     plt.legend()
                 plt.show()
-                    
-def tryout_ppv_smoothmax(nrun=1):
-    simnames = sl.m12
+
+def run_ppv_proc(opt):
+    simnames = sl.m12_sr_all2 + sl.m12_hr_all2 +\
+               sl.m13_sr_all2 + sl.m13_hr_all2
+    sims_sr = sl.m12_sr_all2 +  sl.m13_sr_all2
+    sims_hr = sl.m12_hr_all2 +  sl.m13_hr_all2
+    snaps_sr = sl.snaps_sr
+    snaps_hr = sl.snaps_hr
+    numsnaps = 6
+    for sn in sl.buglist1:
+        if sn in simnames:
+            simnames.remove(sn)
+    if opt == -1:
+        return simnames
+    paxes = ['x', 'y', 'z']
+    
+    wtstr = 'Ne8'
+    
+    smi = opt // (numsnaps * len(paxes))
+    sni = (opt % (numsnaps * len(paxes))) // len(paxes) 
+    pai = opt % len(paxes) 
+
+    simname = simnames[smi]
+    snaps = snaps_sr if simname in sims_sr \
+            else snaps_hr if simname in sims_hr \
+            else None
+    snapnum = snaps[sni]
+    pax = paxes[pai]
+    
+    ddir = ''
+    filen = ddir + (f'hist_ppv_{pax}ax_by_{wtstr}_{simname}_snap{snapnum}'
+                    '_bins1_v1_hvcen.hdf5')
+    smooths = 1e5 * np.arange(10., 105., 10.)
+    smoothmax_ppv(filen, vax=2, p1ax=0, p2ax=1, 
+                  smoothsigmas=smooths)
+    
+    
+
+
 
 
 

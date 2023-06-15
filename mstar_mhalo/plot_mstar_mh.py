@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib as mpl
 import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 
@@ -16,17 +17,17 @@ def plot_mstar_mh(z_target):
     color_mhtoms = 'blue'
     color_mstomh = 'green'
     linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
-    _cmap = 'gist_yarg'
+    _cmap = mpl.cm.get_cmap('gist_yarg')
     cmap = pu.truncate_colormap(_cmap, minval=0., maxval=0.7)
 
-    halos, a_used = ldsmdpl(1. / (1. + z_target))
+    halos, a_used = ldsmdpl.loaddata(1. / (1. + z_target))
     z_used = 1. / a_used - 1.
     cosmopars =  cosmopars_smdpl.copy()
     cosmopars.update({'z': z_used, 'a': a_used})
-    hsel = halos['UPID'] == -1 # centrals
-    mhalo_msun = halos['M'][hsel]  / cosmopars['h'] #BN98
+    hsel = halos['upid'] == -1 # centrals
+    mhalo_msun = halos['m'][hsel]  / cosmopars['h'] #BN98
     # for observed masses, would need to check the measurement method
-    mstar_true_msun = halos['SM'][hsel] 
+    mstar_true_msun = halos['sm'][hsel] 
 
     ylabel = ('$\\log_10 \\, \\mathrm{M}_{\\star} \\;'
               ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')

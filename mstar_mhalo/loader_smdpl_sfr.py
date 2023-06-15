@@ -42,11 +42,13 @@ dtype = np.dtype(dtype=[('id', 'i8'),('descid','i8'),('upid','i8'),
 ddir = '/Users/nastasha/ciera/data_smdpl_sfr/'
 def loaddata(aexp):
     catopts = glob.glob(ddir + 'sfr_catalog_*.bin')
-    aexps = [float(((catopt.split('/')[-1]).split['.'][0]).split('_')[-1])
-             for catopt in catopts]
-    seli = np.argmin(np.abs(np.array(aexps - aexp)))
-    aexp = aexps[seli]
-    print(f'selected file at aexp={aexp}')
+    filetrunks = [(catopt.split('/')[-1])[:-4]
+                  for catopt in catopts]
+    aexps = [float((trunk).split('_')[-1])
+             for trunk in filetrunks]
+    seli = np.argmin(np.abs(np.array(np.array(aexps) - aexp)))
+    aexp_used = aexps[seli]
+    print(f'selected file at aexp={aexp_used}, for target {aexp}')
     filen = catopts[seli]
     halos = np.fromfile(filen, dtype=dtype)
-    return halos, aexp
+    return halos, aexp_used

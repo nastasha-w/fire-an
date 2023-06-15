@@ -39,7 +39,8 @@ dtype = np.dtype(dtype=[('id', 'i8'),('descid','i8'),('upid','i8'),
 #Obs_SFR: observed SFR, including random & systematic errors (Msun/yr)
 #Obs_UV: Observed UV Magnitude (M_1500 AB)
 
-ddir = '/Users/nastasha/ciera/data_smdpl_sfr/'
+#ddir = '/Users/nastasha/ciera/data_smdpl_sfr/'
+ddir = '/projects/b1026/nastasha/extdata/data_smdpl_sfr/'
 def loaddata(aexp):
     catopts = glob.glob(ddir + 'sfr_catalog_*.bin')
     filetrunks = [(catopt.split('/')[-1])[:-4]

@@ -11,53 +11,13 @@ import fire_an.utils.math_utils as mu
 import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 
+## directory where the images go
 imgdir = '/projects/b1026/nastasha/imgs/datacomp/shmh/'
 
-cosmopars_smdpl = {'omegalambda': 0.693,
-                   'omegam': 0.307, 
-                   'omegab': 0.048,
-                   'h': 0.678}
+def gethist_mhalo_mstarcen(x, binsize=3):
+    return None
 
-def gethist_mhalo_mstarcen(z_target, binsize=0.1):
-    halos, a_used = ldsmdpl.loaddata(1. / (1. + z_target))
-    z_used = 1. / a_used - 1.
-    cosmopars =  cosmopars_smdpl.copy()
-    cosmopars.update({'z': z_used, 'a': a_used})
-    hsel = halos['upid'] == -1 # centrals
-    mhalo_msun = halos['m'][hsel]  / cosmopars['h'] #BN98
-    # for observed masses, would need to check the measurement method
-    mstar_true_msun = halos['sm'][hsel] 
-    logmh = np.log10(mhalo_msun)
-    logms = np.log10(mstar_true_msun)
-    minmh = np.min(logmh)
-    maxmh = np.max(logmh)
-    b0 = np.floor(minmh / binsize) * binsize
-    b1 = np.ceil(maxmh / binsize) * binsize
-    mhbins = np.arange(b0, b1 + 0.5 * binsize, binsize)
-    minms = np.min(logms[np.isfinite(logms)])
-    maxms = np.max(logms)
-    b0 = np.floor(minms / binsize) * binsize
-    b1 = np.ceil(maxms / binsize) * binsize
-    msbins = np.arange(b0, b1 + 0.5 * binsize, binsize)
-    msbins = np.append([-np.inf], msbins)
-    _msbins = np.copy(msbins)
-    _msbins[0] = _msbins[1] - binsize
-    
-    chunksize = 1_000_000
-    arlen = len(logmh)
-    nchunks = (arlen - 1) // chunksize + 1
-    # bus error without feeding smaller bits of array into histogramdd
-    for i in range(nchunks):
-        sel = slice(chunksize * i, chunksize * (i + 1), None)
-        _hist, _bins = np.histogramdd([logmh[sel], logms[sel]], 
-                                      bins=[mhbins, msbins])
-        if i == 0:
-            hist = _hist
-        else:
-            hist += _hist
-    return hist, msbins, _msbins, mhbins, cosmopars
-
-def plot_mstar_mh(z_target):
+def plot_mstar_mh_old(z_target):
     binsize = 0.1
     percvals = np.array([0.04, 0.2, 0.5, 0.8, 0.96])
     _colors = tc.tol_cset('vibrant')
@@ -214,7 +174,6 @@ def plot_mhdist_for_mstar(z_target):
     ax.set_ylabel(ylabel, fontsize=fontsize)
     ax.tick_params(which='both', labelsize=fontsize - 1,
                    direction='in', top=True, right=True)
-    y_bestest = 0.8
     # last few halo mass bins get noisy, non-monotonic
     cutoff_mh = np.where(np.diff(medms_frommh) <= 0.)[0][0] + 1
     # for ms to mh, issues are at low and high masses
@@ -347,9 +306,274 @@ def plot_mhdist_for_mstar(z_target):
     plt.savefig(outname, bbox_inches='tight')
         
 
+def plot_mstar_mh(zs_target):
+    binsize = 0.1
+    # 1, 2 sigma
+    sig1 = an.cumulgauss(1.) - an.cumulgauss(1.)
+    sig2 = an.cumulgauss(2.) - an.cumulgauss(2.)
+    percvals = np.array([0.5 - 0.5 * sig2, 0.5 - 0.5 * sig1, 0.5,
+                         0.5 + 0.5 * sig1, 0.5 + 0.5 * sig2])
+    _colors = tc.tol_cset('vibrant')
+    color_mhtoms = _colors[2]
+    color_mstomh = _colors[1]
+    #color_moster13 = _colors[2]
+    color_burchett19 = _colors[3]
+    linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
+    _cmap = mpl.cm.get_cmap('gist_yarg')
+    cmap = pu.truncate_colormap(_cmap, minval=0., maxval=0.7)
+    linewidth = 1.5
+    path_effects = pu.getoutline(linewidth)
+
+    xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\star} \\;'
+              ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
+    ylabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{vir}} \\;'
+              ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
+    clabel = ('$\\log_{10} \\, \\partial^2 \\mathrm{halo\\,frac.}'
+              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\star}'
+              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\mathrm{vir}}$')
     
+    npanels = len(zs_target)
+    ncols = min(npanels, 3)
+    nrows = (npanels - 1) // ncols + 1
+    panelsize = 3.
+    width_ratios = [panelsize] * ncols +  [0.1 * panelsize]
+    height_ratios = [panelsize] * nrows
+    fig = plt.figure(figsize=(sum(width_ratios), sum(height_ratios)))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows, 
+                        wspace=0.0, hspace=0.0,
+                        width_ratios=width_ratios,
+                        height_ratios=height_ratios)
+    axes = [fig.add_subplot(grid[i // ncols, i % ncols])
+            for i in range(npanels)]
+    cax = fig.add_subplot(grid[:, ncols])
+    fontsize = 12
+    vmax = 0.
+    vmin = vmax - 6.
+    
+    zs_used = []
+    for axi, (ax, z_target) in enumerate(zip(axes, zs_target)):
+        dobottom = axi >= npanels - ncols
+        doleft = axi % ncols == 0
+        if dobottom:
+            ax.set_xlabel(xlabel, fontsize=fontsize)
+        if doleft:
+            ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.tick_params(which='both', labelsize=fontsize - 1,
+                       direction='in', top=True, right=True,
+                       labelleft=doleft, labelbottom=dobottom)
+
+        msbins_hist = histobj.getbins(z_target, mode='ms')
+        mhbins_hist = histobj.getbins(z_target, mode='mh')
+        hist_raw = histobj.gethist(z_target)
+        histobj = ldsmdpl.SMHMhists(np.array([z_target]), binsize=binsize)
+        z_used = list(histobj.hists.keys())[0]
+        zs_used.append(zs_used)
+        
+        phist = np.log10(hist_raw / np.sum(hist_raw) / binsize**2)
+        img = ax.pcolormesh(msbins_hist, mhbins_hist, phist, cmap=cmap, 
+                            vmin=vmin, vmax=vmax)
+        
+        msx, mhys = histobj.getperc_msmh(z_target, mode='mstomh', 
+                                         percvals=percvals)
+        for mhy, ls in zip(mhys, linestyles):
+            ax.plot(msx, mhy, linestyle=ls, color=color_mhtoms,
+                    linewidth=linewidth, path_effects=path_effects)
+        
+        msxs, mhy = histobj.getperc_msmh(z_target, mode='mhtoms', 
+                                        percvals=np.array([0.5]))
+        ax.plot(msxs[0], mhy, linestyle='solid', color=color_mstomh,
+                linewidth=linewidth, path_effects=path_effects)
+        
+        xlims = ax.get_xlim()
+        ax.set_xlim(10.5, xlims[1])
+        ylims = ax.get_ylim()
+        ax.set_ylim(7., ylims[1])
+        
+        #xv_moster13 = np.log10(an.mstar_moster_etal_2013(10**mhbins_hist, z_used))
+        #ax.plot(xv_moster13, mhbins_hist, color=color_moster13, linewidth=linewidth,
+        #        linestyle='dashdot', path_effects=path_effects)
+        ms_burchett19 = np.log10(an.mstar_burchett_etal_2019(10**mhbins_hist, 
+                                                            z_used))
+        ax.plot(ms_burchett19, mhbins_hist, color=color_burchett19, linewidth=linewidth,
+                linestyle='dashdot', path_effects=path_effects)
+    xlims = [ax.get_xlim() for ax in axes]
+    xmin = min([xlim[0] for xlim in xlims])
+    xmax = max([xlim[1] for xlim in xlims])
+    [ax.set_xlim((xmin, xmax)) for ax in axes]
+    ylims = [ax.get_ylim() for ax in axes]
+    ymin = min([ylim[0] for ylim in ylims])
+    ymax = max([ylim[1] for ylim in ylims])
+    [ax.set_ylim((ymin, ymax)) for ax in axes]
+
+    plt.colorbar(img, cax=cax, extend='min')
+    cax.set_ylabel(clabel, fontsize=fontsize)
+    
+    label_mhtoms = '$\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{vir}})$'
+    label_mstomh = '$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star})$'
+    #label_moster13 = ('M+13'
+    #                  ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
+    label_burchett19 = ('B+19 '
+                        ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
+    handles = [mlines.Line2D((), (), color='black',
+                             linestyle=ls, label=f'{pv * 100.:.0f}%')
+               for ls, pv in zip(linestyles, percvals)]
+    handles = handles + \
+              [mlines.Line2D((), (), color=color_mhtoms,
+                             linestyle='solid', 
+                             label=label_mhtoms,
+                             linewidth=linewidth, 
+                             path_effects=path_effects),
+               mlines.Line2D((), (), color=color_mstomh,
+                             linestyle='solid', 
+                             label=label_mstomh,
+                             linewidth=linewidth, 
+                             path_effects=path_effects),
+               mlines.Line2D((), (), color=color_burchett19, linewidth=linewidth,
+                            linestyle='dashdot', path_effects=path_effects,
+                            label=label_burchett19)]
+    ax.legend(handles=handles, fontsize=fontsize -1, loc='lower right',
+              ncol=2, bbox_to_anchor=(1.00, 0.00),
+              handlelength=2., columnspacing=1.,
+              handletextpad=0.4, framealpha=0.3)
+    zstr = '_'.join([f'{z_used:.2f}' for z_used in zs_used])
+    outname = f'mhalo_mstar_relation_universemachine_smdpl_z_{zstr}'
+    outname = imgdir + outname.replace('.', 'p') + '.pdf'
+    plt.savefig(outname, bbox_inches='tight')    
    
 
+_logmstar_examples = [(10.9, 0.1), (10.5, 0.1), (9.8, 0.2), (9.0, 0.2)]
+def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
+    binsize = 0.1
+    logmstar_examples = _logmstar_examples
+    ls_examples = ['solid', 'dashed', 'dotted', 'dashdot']
+    markers_examples = ['o', 's', 'P', 'h']
+    _colors = tc.tol_cset('vibrant')
+    color_mhtoms = _colors[0]
+    color_mstomh_obs_scat = _colors[1]
+    #color_moster13 = _colors[2]
+    #color_burchett19 = _colors[3]
+    color_mstomh_obs_smhm_scat = _colors[5]
+    color_mstomh_smhm_scat = _colors[2]
 
+    colors = [color_mhtoms, 
+              color_mstomh_obs_scat, 
+              color_mstomh_obs_smhm_scat,
+              color_mstomh_smhm_scat]
+    colorlabels = [('med. $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{vir}}),'
+                    ' \\sigma(\\mathm{obs.})$'),
+                   ('med. $\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}),'
+                    ' \\sigma(\\mathm{obs.})$'),
+                   #('M+13 $\\mathrm{M}_{\\star}'
+                   # '(\\mathrm{M}_{\\mathrm{200c}})$'),
+                   #('B+19 $\\mathrm{M}_{\\star}'
+                   # '(\\mathrm{M}_{\\mathrm{200c}})$'),
+                   ('$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}), '
+                    '\\sigma(\\mathrm{SMHM})$'),
+                   ('$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}), '
+                    '\\sigma(\\mathrm{SMHM}, \\mathm{obs.})$'),
+                   ]
+    histobj = ldsmdpl.SMHMhists(np.array([z_target]), binsize=binsize)
+    msbins_hist = histobj.getbins(z_target, mode='ms')
+    mhbins_hist = histobj.getbins(z_target, mode='mh')
+    z_used = list(histobj.hists.keys())[0]
+
+    fig = plt.figure(figsize=(5.5, 5.))
+    ax = fig.add_subplot(1, 1, 1)
+    fontsize = 12
+    xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{h}} \\;'
+              ' [\\mathrm{M}_{\\odot}]$')
+    ylabel = ('$\\partial \\mathrm{P} \\,/\\, '
+              '\\partial \\log_{10} \\, \\mathrm{M}_{\\mathrm{h}}$')
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.tick_params(which='both', labelsize=fontsize - 1,
+                   direction='in', top=True, right=True)
+    
+    for lms_example, ls, mk in zip(logmstar_examples, ls_examples, 
+                                   markers_examples):
+        lms = lms_example[0]
+        lms_err = lms_example[1]
+        msbins_p = msbins_hist
+        msgaussdist = an.cumulgauss((msbins_p[1:] - lms) / lms_err) \
+                      - an.cumulgauss((msbins_p[:-1] - lms) / lms_err)
+        msbins_delta = np.array(lms - 1e-5, lms + 1e-5)
+        msdeltadist = np.array([1.])
+
+        # Mh to Ms, propagate M* uncertainties through median Ms(Mh)
+        ms_mhtoms, mh_mhtoms = histobj.getperc_msmh(z_target, mode='mhtoms', 
+                                                percvals=np.array([0.5]))
+        ms_mhtoms = ms_mhtoms[0]
+        mhbins, mhpd = an.calcdist(ms_mhtoms, mh_mhtoms, msbins_p, 
+                                   msgaussdist,
+                                   filter_monorels=True, midpoint_x=10.,
+                                   midpoint_y=10., cutoff_xbins=True)
+        mhdelta, _ = an.calcdist(ms_mhtoms, mh_mhtoms, msbins_delta, 
+                                 msdeltadist,
+                                 filter_monorels=True, midpoint_x=10.,
+                                 midpoint_y=10., cutoff_xbins=True)
+        mhdelta = np.avereage(mhdelta)
+        _mhcens = 0.5 * (mhbins[:-1] + mhbins[1:])
+
+        yv_cenest = mu.linterpsolve(_mhcens, mhpd, mhdelta)
+        ax.plot(_mhcens, mhpd, color=color_mhtoms, linestyle=ls)
+        ax.scatter([mhdelta], [yv_cenest],
+                   color=color_mhtoms, marker=mk, s=20)
+        
+        # Ms to Mh, propagate M* uncertainties through median Mh(Ms)
+        ms_mstomh, mh_mstomh = histobj.getperc_msmh(z_target, mode='mstomh', 
+                                                    percvals=np.array([0.5]))
+        mh_mstomh = mh_mstomh[0]
+        mhbins, mhpd = an.calcdist(ms_mstomh, mh_mstomh, msbins_p, 
+                                   msgaussdist,
+                                   filter_monorels=True, midpoint_x=10.,
+                                   midpoint_y=10., cutoff_xbins=True)
+        mhdelta, _ = an.calcdist(ms_mstomh, ms_mstomh, msbins_delta, 
+                                 msdeltadist,
+                                 filter_monorels=True, midpoint_x=10.,
+                                 midpoint_y=10., cutoff_xbins=True)
+        mhdelta = np.avereage(mhdelta)
+        _mhcens = 0.5 * (mhbins[:-1] + mhbins[1:])
+
+        yv_cenest = mu.linterpsolve(_mhcens, mhpd, mhdelta)
+        ax.plot(_mhcens, mhpd, color=color_mstomh_obs_scat, linestyle=ls)
+        ax.scatter([mhdelta], [yv_cenest],
+                   color=color_mstomh_obs_scat, marker=mk, s=20)
+        
+        # Ms to Mh, propagate M* uncertainties through Mh(Ms) distribution
+        mhpd, _mhbins = histobj.matrixconv(msgaussdist, z_target, 
+                                           mode='mstomh')
+        ax.plot(_mhbins, mhpd, color=color_mstomh_obs_smhm_scat,
+                linestyle=ls)
+        # Ms to Mh, uncertainties only from Mh(Ms) distribution
+        _msdist = np.zeros(len(msbins_hist) - 1, dtype=np.float)
+        spikei = np.searchsorted(msbins_hist, lms) - 1
+        _msdist[spikei] = 1.
+        mhpd, _mhbins = histobj.matrixconv(_msdist, z_target, 
+                                           mode='mstomh')
+        ax.plot(_mhbins, mhpd, color=color_mstomh_smhm_scat, linestyle=ls)
+        
+    ax.set_xlim(10.7, 13.7)
+    ylim = ax.get_ylim()
+    yr = ylim[1] - ylim[0]
+    ax.set_ylim(ylim[0], ylim[1] + 0.2 * yr)
+
+    handles1 = [mlines.Line2D((), (), color=color, label=clabel)
+                for color, clabel in zip(colors, colorlabels)]
+    handles2 = [mlines.Line2D((), (), color='black', linestyle=ls,
+                              label=(f'${lms[0]:.1f} \\pm {lms[1]:.1f}$'))
+                for ls, lms in zip(ls_examples, logmstar_examples)]
+    leg1 = ax.legend(handles=handles1, fontsize=fontsize - 2, ncol=3,
+              loc='upper center', bbox_to_anchor=(0.5, 1.0),
+              handlelength=1., columnspacing=0.7, handletextpad=0.4)
+    leg2 = ax.legend(handles=handles2, fontsize=fontsize - 1, ncol=1,
+              loc='upper right', bbox_to_anchor=(1.0, 0.8),
+              handlelength=2., columnspacing=1., handletextpad=0.4,
+              title=('$\\log_{10} \\, \\mathrm{M}_{\\star} \\;'
+                    ' [\\mathrm{M}_{\\odot}]$'), 
+              title_fontsize=fontsize - 1)
+    ax.add_artist(leg1)
+    outname = f'mhalo_from_example_mstar_z{z_used:.2f}'
+    outname = imgdir + outname.replace('.', 'p') + '.pdf'
+    plt.savefig(outname, bbox_inches='tight')
 
 

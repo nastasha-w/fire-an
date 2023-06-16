@@ -2,6 +2,10 @@
 various analytical Mstar-Mhalo relations
 '''
 
+import numpy as np
+import scipy.special as sps
+
+import fire_an.utils.math_utils as mu
 
 def mstar_moster_etal_2013(mvir_msun, redshift):
     # uses M200c for the Mvir definition
@@ -39,3 +43,115 @@ def mstar_burchett_etal_2019(mvir_msun, redshift):
     out = mvir_msun * 2. * fitpar_n \
           / ((mvir_msun / fitpar_m1_msun)**-fitpar_beta + 1.)
     return out
+
+def cumulgauss(xsig):
+    return 0.5 * (1. + sps.erf(xsig / np.sqrt(2.)))
+
+def calcdist(monorel_x, monorel_y, xbins, xprob,
+             filter_monorels=False, midpoint_x=10.,
+             midpoint_y=10., cutoff_xbins=False):
+    '''
+    for a scatter-free relation sampled by monorel_x, monorel_y,
+    calculate the y probability density functions
+    corresponding to x probabilties of xprob in xbins.
+
+    Parameters:
+    -----------
+    monorel_x: array of floats
+        x values defining the relation. Must be monotonically
+        increasing or decreasing.
+    monorel_y: array of floats
+        y values corresponding to the x values. Must be monotonically
+        increasing or decreasing.
+    xbins: array of floats. must be monotonically increasing.xs
+        bins in which the x probabilities are calculated. All bin edges
+        must fall in the range of monorel_x points.
+    xprob: array of floats
+        probability value (NOT probability density) in each x bin.
+    filter_monorels: bool
+        If x_monorel and y_monorel might not be monotonic at the edges
+        of the range (e.g., distribution medians), cut off the end of
+        those distributions. Note that the xbins then need to fall 
+        within the *filtered* x_monorel range.
+        The filtering is done only if this parameter is True. The 
+        default is False. Note the midpoint_x and midpoint_y parameters
+        if filter_monorels is True. Typically, only one of the arrays
+        will actually need filtering.
+    midpoint_x: float
+        if filter_monorels is True, midpoint_x sets the x point below
+        which the maximum non-monotonic bin is cut off, and above which
+        the minimum non-monotonic bin is cut off.
+    midpoint_y: float
+        if filter_monorels is True, midpoint_y sets the y point below
+        which the maximum non-monotonic bin is cut off, and above which
+        the minimum non-monotonic bin is cut off.
+    cutoff_xbins: bool
+        if True, cut off the xbins outside the xbins range. A warning
+        is printed if the cut-off bins have non-zero probability.
+
+    
+    Returns:
+    --------
+    ybins: array of floats
+        bins in y. Will generally be of different sizes, even if the x
+        bins were evenly speced.
+    yprob: array of floats
+        probability DENSITY in the y bins.
+    '''
+    if filter_monorels:
+        # x filtering
+        _x_sgn = np.sign(np.median(np.diff(monorel_x)))
+        _xi_min = np.where(np.logical_and(_x_sgn * np.diff(monorel_x) <= 0., 
+                                          monorel_x[1:] < midpoint_x))[0]
+        if len(_xi_min) >= 1:
+            _xi_min = _xi_min[-1]
+        else:
+            _xi_min = 0
+        _xi_max = np.where(np.logical_and(_x_sgn * np.diff(monorel_x) <= 0., 
+                                          monorel_x[:-1] > midpoint_x))[0]
+        if len(_xi_max) >= 1:
+            _xi_max = _xi_max[0]
+        else:
+            _xi_max = len(monorel_x)
+        # y filtering; should be increasing of decreasing
+        _y_sgn = np.sign(np.median(np.diff(monorel_y)))
+        _yi_min = np.where(np.logical_and(_y_sgn * np.diff(monorel_y) <= 0., 
+                                          monorel_y[1:] < midpoint_y))[0]
+        if len(_yi_min) >= 1:
+            _yi_min = _yi_min[-1]
+        else:
+            _yi_min = 0
+        _yi_max = np.where(np.logical_and(_y_sgn * np.diff(monorel_y) <= 0., 
+                                          monorel_y[:-1] > midpoint_y))[0]
+        if len(_yi_max) >= 1:
+            _yi_max = _yi_max[0] + 1
+        else:
+            _yi_max = len(monorel_y)
+        
+        selmin = max(_xi_min, _yi_min)
+        selmax = min(_xi_max, _yi_max)
+        monorel_x = monorel_x[selmin : selmax]
+        monorel_y = monorel_y[selmin : selmax]
+    if cutoff_xbins:
+        xb_min = np.where(xbins < np.min(monorel_x))[0]
+        if len(xb_min) >= 1:
+            xb_min = xb_min[-1] + 1
+        else:
+            xb_min = 0
+        xb_max = np.where(xbins > np.max(monorel_x))[0]
+        if len(xb_max) >= 1:
+            xb_max = xb_min[0]
+        else:
+            xb_max = len(xbins)
+        xbins = xbins[xb_min : xb_max]
+        xprob_excl = np.sum(xbins[:xb_min]) + np.sum(xbins[xb_max:])
+        if xprob_excl > 0.:
+            msg = (f'x bins cutoffs at {xbins[0]:.2f}, {xbins[-1]:.2f}'
+                   f'exclude a region with probability {xprob_excl:.2e}')
+            print(msg)
+        xprob[xb_min : xb_max - 1]
+        
+    ybins = np.array([mu.linterpsolve(monorel_x, monorel_y, xp)
+                      for xp in xbins])
+    yprob = xprob / np.diff(ybins)
+    return ybins, yprob

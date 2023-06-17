@@ -12,116 +12,10 @@ import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 
 ## directory where the images go
-imgdir = '/projects/b1026/nastasha/imgs/datacomp/shmh/'
+imgdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
 
 def gethist_mhalo_mstarcen(x, binsize=3):
     return None
-
-def plot_mstar_mh_old(z_target):
-    binsize = 0.1
-    percvals = np.array([0.04, 0.2, 0.5, 0.8, 0.96])
-    _colors = tc.tol_cset('vibrant')
-    color_mhtoms = _colors[0]
-    color_mstomh = _colors[1]
-    color_moster13 = _colors[2]
-    color_burchett19 = _colors[3]
-    linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
-    _cmap = mpl.cm.get_cmap('gist_yarg')
-    cmap = pu.truncate_colormap(_cmap, minval=0., maxval=0.7)
-    linewidth = 1.5
-    path_effects = pu.getoutline(linewidth)
-
-    hist, msbins, _msbins, mhbins, cosmopars = \
-        gethist_mhalo_mstarcen(z_target, binsize=binsize)
-    z_used = cosmopars['z']
-
-    ylabel = ('$\\log_{10} \\, \\mathrm{M}_{\\star} \\;'
-              ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
-    xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{vir}} \\;'
-              ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
-    clabel = ('$\\log_{10} \\, \\partial^2 \\mathrm{halo\\,frac.}'
-              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\star}'
-              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\mathrm{vir}}$')
-    
-    pvs = mu.percentiles_from_histogram(hist, msbins, axis=1,
-                                        percentiles=percvals)
-    mhcen = 0.5 * (mhbins[:-1] + mhbins[1:])
-    
-    fig = plt.figure(figsize=(5.5, 5.))
-    grid = gsp.GridSpec(ncols=2, nrows=1, wspace=0.1, 
-                        width_ratios=[1., 0.1])
-    ax = fig.add_subplot(grid[0])
-    cax = fig.add_subplot(grid[1])
-    fontsize = 12
-    ax.set_xlabel(xlabel, fontsize=fontsize)
-    ax.set_ylabel(ylabel, fontsize=fontsize)
-    ax.tick_params(which='both', labelsize=fontsize - 1,
-                   direction='in', top=True, right=True)
-    
-    phist = np.log10(hist / np.sum(hist) / binsize**2)
-    pmax = np.max(phist)
-    vmin = pmax - 6.
-    img = ax.pcolormesh(mhbins, _msbins, phist.T, cmap=cmap, vmin=vmin)
-    plt.colorbar(img, cax=cax, extend='min')
-    cax.set_ylabel(clabel, fontsize=fontsize)
-    for pv, ls in zip(pvs, linestyles):
-        ax.plot(mhcen, pv, linestyle=ls, color=color_mhtoms,
-                linewidth=linewidth, path_effects=path_effects)
-    
-    pvs = mu.percentiles_from_histogram(hist, mhbins, axis=0,
-                                        percentiles=percvals)
-    mscen = 0.5 * (msbins[:-1] + msbins[1:])
-    mscen[0] = mscen[1] - binsize
-    for pv, ls in zip(pvs, linestyles):
-        ax.plot(pv, mscen, linestyle=ls, color=color_mstomh,
-                linewidth=linewidth, path_effects=path_effects)
-    
-    xlims = ax.get_xlim()
-    ax.set_xlim(10.5, xlims[1])
-    ylims = ax.get_ylim()
-    ax.set_ylim(7., ylims[1])
-
-    yv_moster13 = np.log10(an.mstar_moster_etal_2013(10**mhcen, z_used))
-    ax.plot(mhcen, yv_moster13, color=color_moster13, linewidth=linewidth,
-            linestyle='dashdot', path_effects=path_effects)
-    yv_burchett19 = np.log10(an.mstar_burchett_etal_2019(10**mhcen, z_used))
-    ax.plot(mhcen, yv_burchett19, color=color_burchett19, linewidth=linewidth,
-            linestyle='dashdot', path_effects=path_effects)
-    
-    label_mhtoms = '$\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{vir}})$'
-    label_mstomh = '$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star})$'
-    label_moster13 = ('M+13'
-                      ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
-    label_burchett19 = ('B+19 '
-                      ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
-    handles = [mlines.Line2D((), (), color='black',
-                             linestyle=ls, label=f'{pv * 100.:.0f}%')
-               for ls, pv in zip(linestyles, percvals)]
-    handles = handles + \
-              [mlines.Line2D((), (), color=color_mhtoms,
-                             linestyle='solid', 
-                             label=label_mhtoms,
-                             linewidth=linewidth, 
-                             path_effects=path_effects),
-               mlines.Line2D((), (), color=color_mstomh,
-                             linestyle='solid', 
-                             label=label_mstomh,
-                             linewidth=linewidth, 
-                             path_effects=path_effects),
-               mlines.Line2D((), (), color=color_moster13, 
-                             linewidth=linewidth,
-                             linestyle='dashdot', path_effects=path_effects,
-                             label=label_moster13),
-               mlines.Line2D((), (), color=color_burchett19, linewidth=linewidth,
-                            linestyle='dashdot', path_effects=path_effects,
-                            label=label_burchett19)]
-    ax.legend(handles=handles, fontsize=fontsize -1, loc='lower right',
-              ncol=2, bbox_to_anchor=(1.00, 0.00),
-              handlelength=2., columnspacing=1.,
-              handletextpad=0.4, framealpha=0.3)
-    outname = f'mstar_mhalo_relation_universemachine_smdpl_z{z_used:.2f}'
-    outname = imgdir + outname.replace('.', 'p') + '.pdf'
-    plt.savefig(outname, bbox_inches='tight')
 
 # kinda random from Burchett et al. (2019)
 # (from the top of table 1, just got three values across 
@@ -309,13 +203,13 @@ def plot_mhdist_for_mstar(z_target):
 def plot_mstar_mh(zs_target):
     binsize = 0.1
     # 1, 2 sigma
-    sig1 = an.cumulgauss(1.) - an.cumulgauss(1.)
-    sig2 = an.cumulgauss(2.) - an.cumulgauss(2.)
+    sig1 = an.cumulgauss(1.) - an.cumulgauss(-1.)
+    sig2 = an.cumulgauss(2.) - an.cumulgauss(-2.)
     percvals = np.array([0.5 - 0.5 * sig2, 0.5 - 0.5 * sig1, 0.5,
                          0.5 + 0.5 * sig1, 0.5 + 0.5 * sig2])
     _colors = tc.tol_cset('vibrant')
-    color_mhtoms = _colors[2]
-    color_mstomh = _colors[1]
+    color_mhtoms = _colors[1]
+    color_mstomh = _colors[2]
     #color_moster13 = _colors[2]
     color_burchett19 = _colors[3]
     linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
@@ -328,9 +222,11 @@ def plot_mstar_mh(zs_target):
               ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
     ylabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{vir}} \\;'
               ' [\\mathrm{M}_{\\mathrm{\\odot}}]$')
-    clabel = ('$\\log_{10} \\, \\partial^2 \\mathrm{halo\\,frac.}'
-              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\star}'
-              '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\mathrm{vir}}$')
+    #clabel = ('$\\log_{10} \\, \\partial^2 \\mathrm{halo\\,frac.}'
+    #          '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\star}'
+    #          '\\, /\\, \\partial \\log_{10} \\mathrm{M}_{\\mathrm{vir}}$')
+    clabel = ('$\\log_{10} \\, \\mathrm{halo\\,frac.}'
+              '\\,/\\, \\mathrm{bin\\,size}$')
     
     npanels = len(zs_target)
     ncols = min(npanels, 3)
@@ -339,7 +235,7 @@ def plot_mstar_mh(zs_target):
     width_ratios = [panelsize] * ncols +  [0.1 * panelsize]
     height_ratios = [panelsize] * nrows
     fig = plt.figure(figsize=(sum(width_ratios), sum(height_ratios)))
-    grid = gsp.GridSpec(ncols=ncols, nrows=nrows, 
+    grid = gsp.GridSpec(ncols=ncols + 1, nrows=nrows, 
                         wspace=0.0, hspace=0.0,
                         width_ratios=width_ratios,
                         height_ratios=height_ratios)
@@ -362,13 +258,16 @@ def plot_mstar_mh(zs_target):
                        direction='in', top=True, right=True,
                        labelleft=doleft, labelbottom=dobottom)
 
+        histobj = ldsmdpl.SMHMhists(np.array([z_target]), binsize=binsize)
         msbins_hist = histobj.getbins(z_target, mode='ms')
         mhbins_hist = histobj.getbins(z_target, mode='mh')
         hist_raw = histobj.gethist(z_target)
-        histobj = ldsmdpl.SMHMhists(np.array([z_target]), binsize=binsize)
         z_used = list(histobj.hists.keys())[0]
-        zs_used.append(zs_used)
-        
+        zs_used.append(z_used)
+        ax.text(0.5, 0.97, f'$z = {z_used:.2f}$',
+                fontsize=fontsize, transform=ax.transAxes,
+                horizontalalignment='center', verticalalignment='top')
+
         phist = np.log10(hist_raw / np.sum(hist_raw) / binsize**2)
         img = ax.pcolormesh(msbins_hist, mhbins_hist, phist, cmap=cmap, 
                             vmin=vmin, vmax=vmax)
@@ -376,18 +275,18 @@ def plot_mstar_mh(zs_target):
         msx, mhys = histobj.getperc_msmh(z_target, mode='mstomh', 
                                          percvals=percvals)
         for mhy, ls in zip(mhys, linestyles):
-            ax.plot(msx, mhy, linestyle=ls, color=color_mhtoms,
+            ax.plot(msx, mhy, linestyle=ls, color=color_mstomh,
                     linewidth=linewidth, path_effects=path_effects)
         
         msxs, mhy = histobj.getperc_msmh(z_target, mode='mhtoms', 
                                         percvals=np.array([0.5]))
-        ax.plot(msxs[0], mhy, linestyle='solid', color=color_mstomh,
+        ax.plot(msxs[0], mhy, linestyle='solid', color=color_mhtoms,
                 linewidth=linewidth, path_effects=path_effects)
         
         xlims = ax.get_xlim()
-        ax.set_xlim(10.5, xlims[1])
+        ax.set_xlim(8., xlims[1])
         ylims = ax.get_ylim()
-        ax.set_ylim(7., ylims[1])
+        ax.set_ylim(10.5, ylims[1])
         
         #xv_moster13 = np.log10(an.mstar_moster_etal_2013(10**mhbins_hist, z_used))
         #ax.plot(xv_moster13, mhbins_hist, color=color_moster13, linewidth=linewidth,
@@ -412,29 +311,46 @@ def plot_mstar_mh(zs_target):
     label_mstomh = '$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star})$'
     #label_moster13 = ('M+13'
     #                  ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
-    label_burchett19 = ('B+19 '
-                        ' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
-    handles = [mlines.Line2D((), (), color='black',
+    label_burchett19 = ('B+19')
+    #' $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{200c}})$')
+    handles1 = [mlines.Line2D((), (), color='black',
                              linestyle=ls, label=f'{pv * 100.:.0f}%')
-               for ls, pv in zip(linestyles, percvals)]
-    handles = handles + \
-              [mlines.Line2D((), (), color=color_mhtoms,
-                             linestyle='solid', 
-                             label=label_mhtoms,
-                             linewidth=linewidth, 
-                             path_effects=path_effects),
-               mlines.Line2D((), (), color=color_mstomh,
-                             linestyle='solid', 
-                             label=label_mstomh,
-                             linewidth=linewidth, 
-                             path_effects=path_effects),
-               mlines.Line2D((), (), color=color_burchett19, linewidth=linewidth,
-                            linestyle='dashdot', path_effects=path_effects,
-                            label=label_burchett19)]
-    ax.legend(handles=handles, fontsize=fontsize -1, loc='lower right',
-              ncol=2, bbox_to_anchor=(1.00, 0.00),
-              handlelength=2., columnspacing=1.,
-              handletextpad=0.4, framealpha=0.3)
+                for ls, pv in zip(linestyles, percvals)]
+    handles2 = [mlines.Line2D((), (), color=color_mhtoms,
+                              linestyle='solid', 
+                              label=label_mhtoms,
+                              linewidth=linewidth, 
+                              path_effects=path_effects),
+                mlines.Line2D((), (), color=color_mstomh,
+                              linestyle='solid', 
+                              label=label_mstomh,
+                              linewidth=linewidth, 
+                              path_effects=path_effects),
+                mlines.Line2D((), (), color=color_burchett19, 
+                              linewidth=linewidth,
+                              linestyle='dashdot', 
+                              path_effects=path_effects,
+                              label=label_burchett19)]
+    if len(axes) == 1:
+        axes[0].legend(handles=handles1 + handles2, 
+                       fontsize=fontsize -1, 
+                       loc='upper left',
+                       ncol=2, bbox_to_anchor=(0.00, 0.9),
+                       handlelength=2., columnspacing=1.,
+                       handletextpad=0.4, framealpha=0.3)
+    else:
+        axes[0].legend(handles=handles1, 
+                       fontsize=fontsize - 1, 
+                       loc='upper left',
+                       ncol=1, bbox_to_anchor=(0.00, 0.90),
+                       handlelength=2., columnspacing=1.,
+                       handletextpad=0.4, framealpha=0.3)
+        axes[1].legend(handles=handles2, 
+                       fontsize=fontsize - 1, 
+                       loc='upper left',
+                       ncol=1, bbox_to_anchor=(0.00, 0.90),
+                       handlelength=2., columnspacing=1.,
+                       handletextpad=0.4, framealpha=0.3)
     zstr = '_'.join([f'{z_used:.2f}' for z_used in zs_used])
     outname = f'mhalo_mstar_relation_universemachine_smdpl_z_{zstr}'
     outname = imgdir + outname.replace('.', 'p') + '.pdf'

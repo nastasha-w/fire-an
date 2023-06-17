@@ -48,8 +48,8 @@ def cumulgauss(xsig):
     return 0.5 * (1. + sps.erf(xsig / np.sqrt(2.)))
 
 def calcdist(monorel_x, monorel_y, xbins, xprob,
-             filter_monorels=False, midpoint_x=10.,
-             midpoint_y=10., cutoff_xbins=False):
+             filter_monorels=False, loind_cut=20,
+             hiind_cut=-20, cutoff_xbins=False):
     '''
     for a scatter-free relation sampled by monorel_x, monorel_y,
     calculate the y probability density functions
@@ -85,6 +85,11 @@ def calcdist(monorel_x, monorel_y, xbins, xprob,
         if filter_monorels is True, midpoint_y sets the y point below
         which the maximum non-monotonic bin is cut off, and above which
         the minimum non-monotonic bin is cut off.
+    loind_cut: int
+        index below which non-monotonic bins are cut
+    hiind cut: int
+        index above which non-monotonic bins are cut. 
+        (Values < 0 are allowed.)
     cutoff_xbins: bool
         if True, cut off the xbins outside the xbins range. A warning
         is printed if the cut-off bins have non-zero probability.
@@ -100,38 +105,50 @@ def calcdist(monorel_x, monorel_y, xbins, xprob,
     '''
     if filter_monorels:
         # x filtering
-        _x_sgn = np.sign(np.median(np.diff(monorel_x)))
-        _xi_min = np.where(np.logical_and(_x_sgn * np.diff(monorel_x) <= 0., 
-                                          monorel_x[1:] < midpoint_x))[0]
-        if len(_xi_min) >= 1:
-            _xi_min = _xi_min[-1]
-        else:
-            _xi_min = 0
-        _xi_max = np.where(np.logical_and(_x_sgn * np.diff(monorel_x) <= 0., 
-                                          monorel_x[:-1] > midpoint_x))[0]
-        if len(_xi_max) >= 1:
-            _xi_max = _xi_max[0]
-        else:
-            _xi_max = len(monorel_x)
+        _dx = np.diff(monorel_x)
+        _x_sgn = np.sign(np.median(_dx[np.isfinite(_dx)]))
+        badbins = np.where(np.logical_or(_x_sgn * _dx <= 0.,
+                                         np.logical_not(np.isfinite(_dx))))[0]
+        _xi_min = 0
+        _xi_max = len(monorel_x)
+        if hiind_cut < 0:
+            hiind_cut = len(monorel_x) + hiind_cut
+        if len(badbins) >= 1:
+            if np.any(badbins < loind_cut):
+                _xi_min = np.max(badbins[badbins < loind_cut])
+            if np.any(badbins > hiind_cut):
+                _xi_max = np.min(badbins[badbins > loind_cut])
+            if np.any(np.logical_and(badbins >= loind_cut,
+                                     badbins <= hiind_cut)):
+                msg = (f'loind_cut {loind_cut}, hiindcut {hiind_cut}'
+                       f' miss non-monotonic steps in {monorel_x}')
+                raise ValueError(msg)
+        print(_xi_min, _xi_max)
         # y filtering; should be increasing of decreasing
-        _y_sgn = np.sign(np.median(np.diff(monorel_y)))
-        _yi_min = np.where(np.logical_and(_y_sgn * np.diff(monorel_y) <= 0., 
-                                          monorel_y[1:] < midpoint_y))[0]
-        if len(_yi_min) >= 1:
-            _yi_min = _yi_min[-1]
-        else:
-            _yi_min = 0
-        _yi_max = np.where(np.logical_and(_y_sgn * np.diff(monorel_y) <= 0., 
-                                          monorel_y[:-1] > midpoint_y))[0]
-        if len(_yi_max) >= 1:
-            _yi_max = _yi_max[0] + 1
-        else:
-            _yi_max = len(monorel_y)
+        _dy = np.diff(monorel_y)
+        _y_sgn = np.sign(np.median(_dy[np.isfinite(_dy)]))
+        badbins = np.where(np.logical_or(_y_sgn * _dy <= 0.,
+                                         np.logical_not(np.isfinite(_dy))))[0]
+        _yi_min = 0
+        _yi_max = len(monorel_y)
+        if len(badbins) >= 1:
+            if np.any(badbins < loind_cut):
+                _yi_min = np.max(badbins[badbins < loind_cut])
+            if np.any(badbins > hiind_cut):
+                _yi_max = np.min(badbins[badbins > loind_cut])
+            if np.any(np.logical_and(badbins >= loind_cut,
+                                     badbins <= hiind_cut)):
+                msg = (f'loind_cut {loind_cut}, hiindcut {hiind_cut}'
+                       f' miss non-monotonic steps in {monorel_y}')
+                raise ValueError(msg)
+        print(_yi_min, _yi_max)
         
         selmin = max(_xi_min, _yi_min)
         selmax = min(_xi_max, _yi_max)
         monorel_x = monorel_x[selmin : selmax]
         monorel_y = monorel_y[selmin : selmax]
+        print(monorel_x)
+        print(monorel_y)
     if cutoff_xbins:
         xb_min = np.where(xbins < np.min(monorel_x))[0]
         if len(xb_min) >= 1:
@@ -140,17 +157,19 @@ def calcdist(monorel_x, monorel_y, xbins, xprob,
             xb_min = 0
         xb_max = np.where(xbins > np.max(monorel_x))[0]
         if len(xb_max) >= 1:
-            xb_max = xb_min[0]
+            xb_max = xb_max[0]
         else:
             xb_max = len(xbins)
         xbins = xbins[xb_min : xb_max]
-        xprob_excl = np.sum(xbins[:xb_min]) + np.sum(xbins[xb_max:])
+        xprob_excl = np.sum(xprob[:xb_min]) + np.sum(xprob[xb_max - 1:])
         if xprob_excl > 0.:
             msg = (f'x bins cutoffs at {xbins[0]:.2f}, {xbins[-1]:.2f}'
-                   f'exclude a region with probability {xprob_excl:.2e}')
+                   f' exclude a region with probability {xprob_excl:.2e}')
             print(msg)
-        xprob[xb_min : xb_max - 1]
-        
+        xprob = xprob[xb_min : xb_max - 1]
+    
+    print(monorel_x)
+    print(monorel_y)
     ybins = np.array([mu.linterpsolve(monorel_x, monorel_y, xp)
                       for xp in xbins])
     yprob = xprob / np.diff(ybins)

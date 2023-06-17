@@ -376,17 +376,17 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
               color_mstomh_obs_smhm_scat,
               color_mstomh_smhm_scat]
     colorlabels = [('med. $\\mathrm{M}_{\\star}(\\mathrm{M}_{\\mathrm{vir}}),'
-                    ' \\sigma(\\mathm{obs.})$'),
+                    ' \\sigma(\\mathrm{obs.})$'),
                    ('med. $\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}),'
-                    ' \\sigma(\\mathm{obs.})$'),
+                    ' \\sigma(\\mathrm{obs.})$'),
                    #('M+13 $\\mathrm{M}_{\\star}'
                    # '(\\mathrm{M}_{\\mathrm{200c}})$'),
                    #('B+19 $\\mathrm{M}_{\\star}'
                    # '(\\mathrm{M}_{\\mathrm{200c}})$'),
                    ('$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}), '
-                    '\\sigma(\\mathrm{SMHM})$'),
+                    '\\sigma(\\mathrm{SMHM}, \\mathrm{obs.})$'),
                    ('$\\mathrm{M}_{\\mathrm{vir}}(\\mathrm{M}_{\\star}), '
-                    '\\sigma(\\mathrm{SMHM}, \\mathm{obs.})$'),
+                    '\\sigma(\\mathrm{SMHM})$'),
                    ]
     histobj = ldsmdpl.SMHMhists(np.array([z_target]), binsize=binsize)
     msbins_hist = histobj.getbins(z_target, mode='ms')
@@ -404,7 +404,6 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
     ax.set_ylabel(ylabel, fontsize=fontsize)
     ax.tick_params(which='both', labelsize=fontsize - 1,
                    direction='in', top=True, right=True)
-    
     for lms_example, ls, mk in zip(logmstar_examples, ls_examples, 
                                    markers_examples):
         lms = lms_example[0]
@@ -412,22 +411,23 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
         msbins_p = msbins_hist
         msgaussdist = an.cumulgauss((msbins_p[1:] - lms) / lms_err) \
                       - an.cumulgauss((msbins_p[:-1] - lms) / lms_err)
-        msbins_delta = np.array(lms - 1e-5, lms + 1e-5)
+        msbins_delta = np.array([lms - 1e-4, lms + 1e-4])
         msdeltadist = np.array([1.])
 
         # Mh to Ms, propagate M* uncertainties through median Ms(Mh)
         ms_mhtoms, mh_mhtoms = histobj.getperc_msmh(z_target, mode='mhtoms', 
-                                                percvals=np.array([0.5]))
+                                                    percvals=np.array([0.5]))
         ms_mhtoms = ms_mhtoms[0]
+        #print(ms_mhtoms, mh_mhtoms, msbins_p, msgaussdist)
         mhbins, mhpd = an.calcdist(ms_mhtoms, mh_mhtoms, msbins_p, 
                                    msgaussdist,
-                                   filter_monorels=True, midpoint_x=10.,
-                                   midpoint_y=10., cutoff_xbins=True)
+                                   filter_monorels=True,
+                                   cutoff_xbins=True)
         mhdelta, _ = an.calcdist(ms_mhtoms, mh_mhtoms, msbins_delta, 
                                  msdeltadist,
-                                 filter_monorels=True, midpoint_x=10.,
-                                 midpoint_y=10., cutoff_xbins=True)
-        mhdelta = np.avereage(mhdelta)
+                                 filter_monorels=True,
+                                 cutoff_xbins=True)
+        mhdelta = np.average(mhdelta)
         _mhcens = 0.5 * (mhbins[:-1] + mhbins[1:])
 
         yv_cenest = mu.linterpsolve(_mhcens, mhpd, mhdelta)
@@ -441,13 +441,13 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
         mh_mstomh = mh_mstomh[0]
         mhbins, mhpd = an.calcdist(ms_mstomh, mh_mstomh, msbins_p, 
                                    msgaussdist,
-                                   filter_monorels=True, midpoint_x=10.,
-                                   midpoint_y=10., cutoff_xbins=True)
-        mhdelta, _ = an.calcdist(ms_mstomh, ms_mstomh, msbins_delta, 
+                                   filter_monorels=True,
+                                   cutoff_xbins=True)
+        mhdelta, _ = an.calcdist(ms_mstomh, mh_mstomh, msbins_delta, 
                                  msdeltadist,
-                                 filter_monorels=True, midpoint_x=10.,
-                                 midpoint_y=10., cutoff_xbins=True)
-        mhdelta = np.avereage(mhdelta)
+                                 filter_monorels=True,
+                                 cutoff_xbins=True)
+        mhdelta = np.average(mhdelta)
         _mhcens = 0.5 * (mhbins[:-1] + mhbins[1:])
 
         yv_cenest = mu.linterpsolve(_mhcens, mhpd, mhdelta)
@@ -456,18 +456,21 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
                    color=color_mstomh_obs_scat, marker=mk, s=20)
         
         # Ms to Mh, propagate M* uncertainties through Mh(Ms) distribution
-        mhpd, _mhbins = histobj.matrixconv(msgaussdist, z_target, 
-                                           mode='mstomh')
-        ax.plot(_mhbins, mhpd, color=color_mstomh_obs_smhm_scat,
+        mhp, _mhbins = histobj.matrixconv(msgaussdist, z_target, 
+                                          mode='mstomh')
+        _mhcens = 0.5 * (_mhbins[:-1] + _mhbins[1:])
+        ax.plot(_mhcens, mhp / np.diff(_mhbins), 
+                color=color_mstomh_obs_smhm_scat,
                 linestyle=ls)
         # Ms to Mh, uncertainties only from Mh(Ms) distribution
         _msdist = np.zeros(len(msbins_hist) - 1, dtype=np.float)
         spikei = np.searchsorted(msbins_hist, lms) - 1
         _msdist[spikei] = 1.
-        mhpd, _mhbins = histobj.matrixconv(_msdist, z_target, 
-                                           mode='mstomh')
-        ax.plot(_mhbins, mhpd, color=color_mstomh_smhm_scat, linestyle=ls)
-        
+        mhp, _mhbins = histobj.matrixconv(_msdist, z_target, 
+                                          mode='mstomh')
+        _mhcens = 0.5 * (_mhbins[:-1] + _mhbins[1:])
+        ax.plot(_mhcens,  mhp / np.diff(_mhbins), 
+                color=color_mstomh_smhm_scat, linestyle=ls)
     ax.set_xlim(10.7, 13.7)
     ylim = ax.get_ylim()
     yr = ylim[1] - ylim[0]
@@ -478,7 +481,7 @@ def plot_mhdist_for_mstar_example_scatterdecomp(z_target):
     handles2 = [mlines.Line2D((), (), color='black', linestyle=ls,
                               label=(f'${lms[0]:.1f} \\pm {lms[1]:.1f}$'))
                 for ls, lms in zip(ls_examples, logmstar_examples)]
-    leg1 = ax.legend(handles=handles1, fontsize=fontsize - 2, ncol=3,
+    leg1 = ax.legend(handles=handles1, fontsize=fontsize - 2, ncol=2,
               loc='upper center', bbox_to_anchor=(0.5, 1.0),
               handlelength=1., columnspacing=0.7, handletextpad=0.4)
     leg2 = ax.legend(handles=handles2, fontsize=fontsize - 1, ncol=1,

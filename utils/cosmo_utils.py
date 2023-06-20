@@ -269,6 +269,13 @@ def mvir_from_rvir(rh, cosmopars, meandef='BN98'):
     meandens = getmeandensity(meandef, cosmopars)
     return (4. * np.pi / 3.) * meandens * rh**3
 
+def rvir_from_mvir(mvir, cosmopars, meandef='BN98'):
+    '''
+    mvir in g, rvir in cm
+    '''
+    meandens = getmeandensity(meandef, cosmopars)
+    return (mvir / ((4. * np.pi / 3.) * meandens))**(1./3.)
+
 def solidangle(alpha, beta): 
     # alpha = 0.5 * pix_length_1/D_A, 
     # beta = 0.5 * pix_length_2/D_A

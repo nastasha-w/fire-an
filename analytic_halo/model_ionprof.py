@@ -67,7 +67,7 @@ def solutionset(logmvirs_msun, redshift, mdot=1. * cf.un.Msun / cf.un.yr,
                                         v0=1. * cf.un.km/cf.un.s,
                                         max_step=0.1, 
                                         T_low=1e4 * cf.un.K, 
-                                        T_high=1e6 * cf.un.K,
+                                        T_high=3e7 * cf.un.K,
                                         tol=1e-6, epsilon=0.1,
                                         terminalUnbound=True,
                                         pr=True, 
@@ -109,8 +109,8 @@ def calcionprof(solution, ion, redshift, zsol,
                 impactpars_cm, lossample_cm, 
                 truncate_inner_cm):
     r_cm = solution.Rs().to('cm').value 
-    logT_K = np.log10(solution.Ts.to('K').value)
-    lognH_cm3 = np.log10(solution.nHs.to('cm**-3').value)
+    logT_K = np.log10(solution.Ts().to('K').value)
+    lognH_cm3 = np.log10(solution.nHs().to('cm**-3').value)
     tab = iu.Linetable_PS20(ion, redshift, emission=False,
                             lintable=True)
     logZ = np.log10(zsol * tab.solarZ) * np.ones(len(r_cm))
@@ -136,8 +136,50 @@ def calcionprof(solution, ion, redshift, zsol,
     dl = np.append(dl, dl[-1])
     coldens = np.sum(iondens_prof(logr3d_cm) * dl[np.newaxis, :], axis=1)
     return coldens
-    
-def runsolsgrid(outfile='test.hdf5'):
+
+def savesol(solution, ion, redshift, zsol, plind, mdot, logmvir_msun,
+            outfilen):
+    grpn = (f'z{redshift:.2f}_Zsolar{zsol:.2e}_vcplind{plind:.2f}'
+            f'mdotMsunperYr{mdot:.2e}_logmvirMsun{logmvir_msun:.2f}')
+    if solution is None:
+        with h5py.File(outfilen, 'a') as f:
+            if grpn in f:
+                raise RuntimeError(f'group already stored in {outfilen}:'
+                                   f' {grpn}')            
+            grp = f.create_group(grpn)
+            grp.attrs.create('failed', True)
+        return None
+
+    fcgm = calc_cgmfrac(solution, 10**logmvir_msun)
+    rvir_cm = solution.potential.Rvir.to('cm').value
+    truncate_inner_cm = 0.1 * rvir_cm
+    impactpars_cm = np.arange(0., 1.52, 0.05) * rvir_cm
+    lossample_cm = np.arange(0., 1.502, 0.005) * rvir_cm
+    coldens_cm2 = calcionprof(solution, ion, redshift, zsol,
+                              impactpars_cm, lossample_cm, 
+                              truncate_inner_cm)
+    with h5py.File(outfilen, 'a') as f:
+        if grpn in f:
+            raise RuntimeError(f'group already stored in {outfilen}: {grpn}')
+        grp = f.create_group(grpn)
+        grp.attrs.create('redshift', redshift)
+        grp.attrs.create('Z_solar', zsol)
+        grp.attrs.create('vcplind', plind)
+        grp.attrs.create('mdot_MsunperYr', mdot)
+        grp.attrs.create('failed', False)
+        grp.attrs.create('logMvir_Msun_BN98', logmvir_msun)
+        grp.create_dataset('R_kpc', data=solution.Rs().to('kpc').value)
+        grp.create_dataset('T_K', data=solution.Ts().to('K').value)
+        grp.create_dataset('nH_cm3', data=solution.nHs().to('cm**-3').value)
+        
+        grp.attrs.create('fCGM', fcgm)
+        grp.attrs.create('Rvir_cm', rvir_cm)
+        sgrp = grp.create_group(f'coldens_{ion}')
+        sgrp.create_dataset('impactpar_cm', data=impactpars_cm)
+        sgrp.create_dataset('coldens_cm2', data=coldens_cm2)
+    return None
+
+def runsolsgrid(outfilen='test1.hdf5'):
     logmvirs_msun = np.arange(11.5, 13.65, 0.1)
     #redshifts = np.arange(0.5, 1.05, 0.1)
     redshifts = np.array([0.75])
@@ -148,13 +190,16 @@ def runsolsgrid(outfile='test.hdf5'):
     #mdots = np.array([0.01, 0.03, 0.1, 0.3, 1., 3., 10., 30., 100.])
     mdots = np.array([0.01, 0.1, 1., 10., 100.])
     
-    with h5py.File(outdir_profiles + outfile, 'a'):
-        for redshift in redshifts:
-            for zsol in zs_sol:
-                for plind in plinds:
-                    for mdot in mdots:
-                        sols = solutionset(logmvirs_msun, redshift, 
-                                           mdot=mdot * cf.un.Msun / cf.un.yr,
-                                           zsol=zsol, plind=plind)
+    for redshift in redshifts:
+        for zsol in zs_sol:
+            for plind in plinds:
+                for mdot in mdots:
+                    sols = solutionset(logmvirs_msun, redshift, 
+                                        mdot=mdot * cf.un.Msun / cf.un.yr,
+                                        zsol=zsol, plind=plind)
+                    for sol in sols:
+                        savesol(sols[sol], 'Ne8', redshift, zsol, 
+                                plind, mdot, sol,
+                                outdir_profiles + outfilen)
 
 

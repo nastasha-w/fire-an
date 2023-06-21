@@ -15,7 +15,8 @@ import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.math_utils as mu
 import fire_an.utils.opts_locs as ol
 
-datadir_b18 = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+#datadir_b18 = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+datadir_b18 = '/projects/b1026/nastasha/extdata/'
 dfilen_b18 = datadir_b18 + 'data_burchett_etal_2019_table1.txt'
 
 def getdata_b19():
@@ -368,6 +369,10 @@ def plot_sm_hm_b19_vs_fire():
     axdist.set_xlim((xmin, xmax))
     axindiv.set_xlim((xmin, xmax))
     axfire.set_title('halo mass (B+19, 200c)', fontsize=fontsize)
+
+    outdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
+    outname = 'mstar_mh_distcomp_B19_methods_fire.pdf'
+    plt.savefig(outdir + outname, bbox_inches='tight')
     
     
 

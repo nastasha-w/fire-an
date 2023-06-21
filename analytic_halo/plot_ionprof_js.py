@@ -5,7 +5,7 @@ import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import fire_an.analytic_halo.model_ionprof as mip
+import analytic_halo.model_ionprof_js as mip
 import fire_an.makeplots.plot_utils as pu
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.opts_locs as ol

@@ -120,7 +120,7 @@ def plot_sm_hm_b19_vs_fire():
     _b19colors = tc.tol_cset('vibrant')
     color_allb19 = _b19colors[0]
     color_detb19 = _b19colors[1]
-    alpha = 0.5
+    alpha = 0.3
 
     fig = plt.figure(figsize=(11., 6.))
     grid = gsp.GridSpec(nrows=3, ncols=3, hspace=0., wspace=0.4)
@@ -149,8 +149,6 @@ def plot_sm_hm_b19_vs_fire():
     binsize = 0.2
     _xmin = min(np.min(ms_bur - 2. * ms_bur_err), np.min(sms) - binsize)
     _xmax = max(np.max(ms_bur + 2. * ms_bur_err), np.max(sms) + binsize)
-    print(np.max(ms_bur + 2. * ms_bur_err))
-    print(np.max(sms))
     xmin = np.floor(_xmin / binsize) * binsize
     xmax = np.ceil(_xmax / binsize) * binsize
     xbins = np.arange(xmin, xmax + 0.5 * binsize, binsize)
@@ -223,11 +221,10 @@ def plot_sm_hm_b19_vs_fire():
                        labelsize=fontsize - 1., top=True, 
                        right=True, labelbottom=False, labelleft=True)  
     binsize = 0.2
-    _xmin = min(np.min(mh_bur) - 0.4, np.min(hms_200c) - binsize)
-    _xmax = max(np.max(mh_bur) + 0.4, np.max(hms_200c) + binsize)
+    _xmin = min(np.min(mh_bur) - 0.4, np.min(hms_200c) - binsize, 10.4)
+    _xmax = max(np.max(mh_bur) + 0.4, np.max(hms_200c) + binsize, 14.6)
     xmin = np.floor(_xmin / binsize) * binsize
     xmax = np.ceil(_xmax / binsize) * binsize
-    print(_xmin, _xmax)
     xbins = np.arange(xmin, xmax + 0.5 * binsize, binsize)
     xcens = 0.5 * (xbins[:-1] + xbins[1:])
     binsize_fine_fac = 4
@@ -237,6 +234,7 @@ def plot_sm_hm_b19_vs_fire():
 
     b19_uldist = np.zeros(len(xcens))
     b19_detdist = np.zeros(len(xcens))
+    print('mh (B19), mh (conversion B19 method)')
     for mh, ms, mserr, _isul, _zgal in zip(mh_bur, ms_bur, ms_bur_err, 
                                            isul, z_bur):
         mhvals = xbins_fine
@@ -258,7 +256,8 @@ def plot_sm_hm_b19_vs_fire():
         axindiv.plot(xcens_fine, mh_pdist, color=color, alpha=alpha)
         y_cenest = mu.linterpsolve(xcens_fine, mh_pdist, mh_mhtoms)
         axindiv.scatter([mh_mhtoms], [y_cenest],
-                        color=color, marker='o', s=20)
+                        color=color, marker='o', s=5,
+                        alpha=alpha)
     axdist.bar(xcens, b19_detdist, width=binsize, align='center',
                color=color_detb19)
     axdist.bar(xcens, b19_uldist, bottom=b19_detdist, width=binsize, 
@@ -313,10 +312,14 @@ def plot_sm_hm_b19_vs_fire():
                        labelsize=fontsize - 1., top=True, 
                        right=True, labelbottom=False, labelleft=True)  
     binsize = 0.1
-    _xmin = min(np.min(mh_bur) - 0.4, np.min(hms_200c) - binsize)
-    _xmax = max(np.max(mh_bur) + 1.0, np.max(hms_200c) + binsize)
+    _xmin = min(np.min(mh_bur) - 0.8, np.min(hms_200c) - 3. * binsize,
+                10.4)
+    _xmax = max(np.max(mh_bur) + 2.0, np.max(hms_200c) + 4. * binsize,
+                14.6)
     xmin = np.floor(_xmin / binsize) * binsize
     xmax = np.ceil(_xmax / binsize) * binsize
+    xbins = np.arange(xmin, xmax + 0.5 * binsize, binsize)
+    xcens = 0.5 * (xbins[:-1] + xbins[1:])
 
     b19_uldist = None
     b19_detdist = None
@@ -330,35 +333,37 @@ def plot_sm_hm_b19_vs_fire():
                                           mode='mstomh')
         mhpd = mhp / np.diff(_mhbins)
         mhcens = 0.5 * (_mhbins[:-1] + _mhbins[1:])
-        print(_Pbin_ms)
-        print(mhp)
-        print(mhpd)
-        print(_mhbins)
-        print(_isul)
-        print(b19_uldist)
         if _isul:
             color = color_allb19
             if b19_uldist is None:
                 b19_uldist = mhpd
-                b19_uldist_bins = _mhbins
+                b19_uldist_bins = [np.array(_mhbins)]
             else:
-                #print(b19_uldist, mhpd, b19_uldist_bins, _mhbins)
                 b19_uldist, b19_uldist_bins = mu.combine_hists(
-                    b19_uldist, mhpd, b19_uldist_bins, _mhbins, 
+                    b19_uldist, mhpd, b19_uldist_bins, [_mhbins], 
                     rtol=1e-5, atol=1e-8, add=True)
-                #print(b19_uldist, b19_uldist_bins)
         else:
             color = color_detb19
             if b19_detdist is None:
                 b19_detdist = mhpd
-                b19_detdist_bins = _mhbins
+                b19_detdist_bins = [np.array(_mhbins)]
             else:
                 b19_detdist, b19_detdist_bins = mu.combine_hists(
-                    b19_detdist, mhpd, b19_detdist_bins, _mhbins, 
+                    b19_detdist, mhpd, b19_detdist_bins, [_mhbins], 
                     rtol=1e-5, atol=1e-8, add=True)
         axindiv.plot(mhcens, mhpd, color=color, alpha=alpha)
-    b19_uldist_cens = 0.5 * (b19_uldist_bins[:-1] +  b19_uldist_bins[1:])
-    b19_detdist_cens = 0.5 * (b19_detdist_bins[:-1] +  b19_detdist_bins[1:])
+    b19_uldist, b19_uldist_bins = mu.combine_hists(
+                    b19_uldist, np.zeros((len(b19_detdist),)), 
+                    b19_uldist_bins, b19_detdist_bins, 
+                    rtol=1e-5, atol=1e-8, add=True)
+    b19_detdist, b19_detdist_bins = mu.combine_hists(
+                    b19_detdist, np.zeros((len(b19_uldist),)), 
+                    b19_detdist_bins, b19_uldist_bins, 
+                    rtol=1e-5, atol=1e-8, add=True)
+    b19_uldist_cens = 0.5 * (b19_uldist_bins[0][:-1] 
+                             +  b19_uldist_bins[0][1:])
+    b19_detdist_cens = 0.5 * (b19_detdist_bins[0][:-1] 
+                              +  b19_detdist_bins[0][1:])
     axdist.bar(b19_detdist_cens, b19_detdist, width=binsize, align='center',
                color=color_detb19)
     axdist.bar(b19_uldist_cens, b19_uldist, bottom=b19_detdist, width=binsize, 
@@ -390,7 +395,7 @@ def plot_sm_hm_b19_vs_fire():
     axfire.set_xlim((xmin, xmax))
     axdist.set_xlim((xmin, xmax))
     axindiv.set_xlim((xmin, xmax))
-    axfire.set_title('halo mass (B+19, 200c)', fontsize=fontsize)
+    axfire.set_title('halo mass (UM, BN98)', fontsize=fontsize)
 
     outdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
     outname = 'mstar_mh_distcomp_B19_methods_fire.pdf'

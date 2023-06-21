@@ -29,6 +29,8 @@ simdir_fire = ''
 dir_halodata = '/Users/nastasha/ciera/halodata_fire/'
 filen_halocenrvir = dir_halodata + 'cen_rvir.hdf5'
 
+path_jscoolingflow = '/Users/nastasha/code/'
+
 kernel_list = ['C2','gadget']
 # desngb = 58 read out from sample hdf5 file (RunTimePars)
 desngb = 58

@@ -242,22 +242,23 @@ class SMHMhists:
         del self._usez, self._tempmat
         return pvals_out, bins_out
 
-    def _finddata_smpdl(self, aexps):
+    def _finddata_smdpl(self, aexps):
         self._catopts = glob.glob(ddir_smdpl + 'sfr_catalog_*.bin')
         self._filetrunks = [(catopt.split('/')[-1])[:-4]
                             for catopt in self._catopts]
         self._aexp_opts = np.array([float((trunk).split('_')[-1])
                                     for trunk in self._filetrunks])
         self._selis = np.argmin(np.abs(self._aexp_opts[:, np.newaxis]
-                                       - aexps[np.newaxis, :]), axis=1)
+                                       - aexps[np.newaxis, :]), axis=0)
         self._selis = np.unique(self._selis)
-        self.aexps_used = self._aexps[self._selis]
-        print((f'selected files at aexp={self._aexps_used},'
-               f' for target {self._aexps}'))
+        self.aexps_used = self._aexp_opts[self._selis]
+        print((f'selected files at aexp={self.aexps_used},'
+               f' for target {aexps}'))
         self.filens_used = np.array(self._catopts)[self._selis]
-        for (self._filen, self._axep) in zip(self._filens, self.aexps_used):
-            self._get_smhmdist_smdpl(self._filen, self._a_used)
-        del self._filen, self._a_used
+        for (self._filen, self._aexp) in zip(self.filens_used, 
+                                             self.aexps_used):
+            self._get_smhmdist_smdpl(self._filen, self._aexp)
+        del self._filen, self._aexp
     
     def _get_h5name(self, catfilen):
         return catfilen[:-4] \
@@ -290,16 +291,16 @@ class SMHMhists:
         self._logmh = np.log10(self._mhalo_msun)
         self._logms = np.log10(self._mstar_true_msun)
         del self._mstar_true_msun, self._mhalo_msun, self._hsel
-        del self._halos, self._hsel
+        del self._halos
 
         self._minmh = np.min(self._logmh)
         self._maxmh = np.max(self._logmh)
         self._b0 = np.floor(self._minmh / self.binsize) * self.binsize
         self._b1 = np.ceil(self._maxmh / self.binsize) * self.binsize
-        self._mhbins = np.arange(self._b0, self._b1 + 0.5 * self._binsize,
+        self._mhbins = np.arange(self._b0, self._b1 + 0.5 * self.binsize,
                                  self.binsize)
-        self._minms = np.min(self.logms[np.isfinite(self.logms)])
-        self._maxms = np.max(self.logms)
+        self._minms = np.min(self._logms[np.isfinite(self._logms)])
+        self._maxms = np.max(self._logms)
         self._b0 = np.floor(self._minms / self.binsize) * self.binsize
         self._b1 = np.ceil(self._maxms / self.binsize) * self.binsize
         self._msbins = np.arange(self._b0, self._b1 + 0.5 * self.binsize, 
@@ -323,7 +324,7 @@ class SMHMhists:
             if i == 0:
                 self._hist = self._shist
             else:
-                self.hist += self._shist
+                self._hist += self._shist
         del self._chunksize, self._arlen, self._nchunks, self._shist
         self.mhbins[self._z_used] = self._mhbins
         self.msbins[self._z_used] = self._msbins
@@ -357,7 +358,7 @@ class SMHMhists:
             self._msbins = f['msbins'][:]
             self._msbins_nozero = f['msbins_nozero'][:]
             self._hist = f['hist_mh_ms'][:] 
-            self._z_used = f['Header/cosmopars'].attrs['z']
+            self._z_used = f['Header/cosmopars_dict'].attrs['z']
         self.mhbins[self._z_used] = self._mhbins
         self.msbins[self._z_used] = self._msbins
         self.msbins_nozero[self._z_used] = self._msbins_nozero

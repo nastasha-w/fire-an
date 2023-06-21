@@ -318,8 +318,8 @@ def plot_sm_hm_b19_vs_fire():
     xmin = np.floor(_xmin / binsize) * binsize
     xmax = np.ceil(_xmax / binsize) * binsize
 
-    b19_uldist = np.zeros(len(xcens))
-    b19_detdist = np.zeros(len(xcens))
+    b19_uldist = None
+    b19_detdist = None
     histobj = smhmld.SMHMhists(np.array(z_bur), binsize=binsize)
     for mh, ms, mserr, _isul, _zgal in zip(mh_bur, ms_bur, ms_bur_err, 
                                            isul, z_bur):
@@ -330,16 +330,38 @@ def plot_sm_hm_b19_vs_fire():
                                           mode='mstomh')
         mhpd = mhp / np.diff(_mhbins)
         mhcens = 0.5 * (_mhbins[:-1] + _mhbins[1:])
+        print(_Pbin_ms)
+        print(mhp)
+        print(mhpd)
+        print(_mhbins)
+        print(_isul)
+        print(b19_uldist)
         if _isul:
             color = color_allb19
-            b19_uldist += mhpd
+            if b19_uldist is None:
+                b19_uldist = mhpd
+                b19_uldist_bins = _mhbins
+            else:
+                #print(b19_uldist, mhpd, b19_uldist_bins, _mhbins)
+                b19_uldist, b19_uldist_bins = mu.combine_hists(
+                    b19_uldist, mhpd, b19_uldist_bins, _mhbins, 
+                    rtol=1e-5, atol=1e-8, add=True)
+                #print(b19_uldist, b19_uldist_bins)
         else:
             color = color_detb19
-            b19_detdist += mhpd
+            if b19_detdist is None:
+                b19_detdist = mhpd
+                b19_detdist_bins = _mhbins
+            else:
+                b19_detdist, b19_detdist_bins = mu.combine_hists(
+                    b19_detdist, mhpd, b19_detdist_bins, _mhbins, 
+                    rtol=1e-5, atol=1e-8, add=True)
         axindiv.plot(mhcens, mhpd, color=color, alpha=alpha)
-    axdist.bar(xcens, b19_detdist, width=binsize, align='center',
+    b19_uldist_cens = 0.5 * (b19_uldist_bins[:-1] +  b19_uldist_bins[1:])
+    b19_detdist_cens = 0.5 * (b19_detdist_bins[:-1] +  b19_detdist_bins[1:])
+    axdist.bar(b19_detdist_cens, b19_detdist, width=binsize, align='center',
                color=color_detb19)
-    axdist.bar(xcens, b19_uldist, bottom=b19_detdist, width=binsize, 
+    axdist.bar(b19_uldist_cens, b19_uldist, bottom=b19_detdist, width=binsize, 
                align='center', color=color_allb19)
     
     firehists = {'m12': {'noBH': np.zeros(len(xcens)),

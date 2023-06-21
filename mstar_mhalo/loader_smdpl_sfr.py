@@ -226,8 +226,9 @@ class SMHMhists:
                 msg = ('P distribution should be in the stellar mass bins for'
                       'mode "mstomh".')
                 raise ValueError(msg)
-            self._tempmat = self._tempmat \
-                            / np.sum(self._tempmat, axis=0)[np.newaxis, :]
+            self._normfac = np.sum(self._tempmat, axis=0)
+            self._tempmat = self._tempmat / self._normfac[np.newaxis, :]
+            self._tempmat[:, self._normfac == 0.] = 0.
             pvals_out = np.sum(self._tempmat * pdist[np.newaxis, :], axis=1)
             bins_out = self.mhbins[self._usez]
         elif mode == 'mhtoms':
@@ -235,11 +236,12 @@ class SMHMhists:
                 msg = ('P distribution should be in the halo mass bins for'
                       'mode "mhtoms".')
                 raise ValueError(msg)
-            self._tempmat = self._tempmat \
-                            / np.sum(self._tempmat, axis=1)[:, np.newaxis]
+            self._normfac = np.sum(self._tempmat, axis=1)
+            self._tempmat = self._tempmat / self._normfac[:, np.newaxis]
+            self._tempmat[self._normfac == 0., :] = 0.
             pvals_out = np.sum(self._tempmat * pdist[:, np.newaxis], axis=0)
             bins_out = self.msbins_nozero[self._usez]
-        del self._usez, self._tempmat
+        del self._usez, self._tempmat, self._normfac
         return pvals_out, bins_out
 
     def _finddata_smdpl(self, aexps):

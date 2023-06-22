@@ -9,13 +9,15 @@ import fire_an.analytic_halo.model_ionprof_pl as mip
 import fire_an.makeplots.plot_utils as pu
 import fire_an.utils.constants_and_units as c
 
-outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/analytical/'
-def plot_coldensprof(ion, pli):
+#outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/analytical/'
+outdir = '/projects/b1026/nastasha/imgs/analytical/'
+
+def plot_coldensprof(ion, pli, sigma_logT=0.3):
     impactpars_kpc = np.linspace(5., 450., 50)
-    logmvirs_msun = np.arange(11., 14.1, 0.2)
+    logmvirs_msun = np.arange(11., 14.1, 0.5)
     fcgm = 0.9
     z_sol = 0.3
-    redshifts = [0.5, 0.75, 1.0]
+    redshifts = [0.5]#, 0.75, 1.0]
 
     vmin = logmvirs_msun[0]
     vmax = logmvirs_msun[-1]
@@ -43,10 +45,14 @@ def plot_coldensprof(ion, pli):
                           fontsize=fontsize)
         ax.tick_params(which='both', direction='in', labelsize=fontsize - 1.,
                        top=True, right=True, labelleft=doleft)
+        ax.text(0.95, 0.95, f'$z={redshift:.2f}$',
+                transform=ax.transAxes, fontsize=fontsize,
+                verticalalignment='top', horizontalalignment='right')
 
         for lmv in logmvirs_msun:
             hmod = mip.PLmodel(10**lmv, redshift, fcgm, z_sol, pli)
-            cvs = hmod.coldensprof(ion, impactpars_kpc)
+            cvs = hmod.coldensprof(ion, impactpars_kpc,
+                                   sigma_logT=sigma_logT)
             ax.plot(impactpars_kpc, np.log10(cvs), 
                     color=cmap((lmv - vmin) / (vmax - vmin)),
                     linewidth=linewidth, path_effects=path_effects)
@@ -54,14 +60,16 @@ def plot_coldensprof(ion, pli):
     ymin = min([ylim[0] for ylim in ylims])
     ymax = max([ylim[1] for ylim in ylims])
     [ax.set_ylim((ymin, ymax)) for ax in axes]
-
-    plt.colorbar(mcm.ScalarMappable(norm=norm, cmap=cmap), cax=cax,
+    scm = mcm.ScalarMappable(norm=norm, cmap=cmap)
+    scm.set_array(logmvirs_msun)
+    plt.colorbar(scm, cax=cax,
                  orientation='vertical')
     cax.set_ylabel('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{vir}}'
                    '\\; [\\mathrm{M}_{\\odot}]$',
                    fontsize=fontsize)
     cax.tick_params(labelsize=fontsize - 1.)
     
-    outname = f'cdprof_analytical_s19_{ion}_plmod_plivc_{pli:.2f}'
+    outname = (f'cdprof_analytical_s19_{ion}_plmod_plivc_{pli:.2f}'
+               f'_siglogT{sigma_logT:.2f}')
     outname = outname.replace('.', 'p')
     plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')

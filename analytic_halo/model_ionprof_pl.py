@@ -100,11 +100,11 @@ class PLmodel:
         #               + self._dTsample[np.newaxis, np.newaxis, :]
         self._logZ = np.log10(self.z_sol * self._tab.solarZ) \
                      * np.ones(np.prod(self._logT_K.shape))
-        self._lognH_cm3 = np.log(self.nH_cm3(self._r3d_cm))
+        self._lognH_cm3 = np.log10(self.nH_cm3(self._r3d_cm))
         #self.__lognH_cm3 = np.tile(self._lognH_cm3, 
         #                           (1, 1, len(self._dTsample)))
         self._interpdct = {'logT': self._logT_K.flatten(), 
-                           'lognH': self.__lognH_cm3.flatten(),
+                           'lognH': self._lognH_cm3.flatten(),
                            'logZ': self._logZ}
         self._ionfrac = self._tab.find_ionbal(self._interpdct, log=False)
         self._ionfrac = self._ionfrac.reshape(self._logT_K.shape)

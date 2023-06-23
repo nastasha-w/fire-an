@@ -18,7 +18,7 @@ def plot_coldensprof(ion):
     fcgm = 0.9
     z_sol = 0.3
     redshift = 0.75
-    plis = [-0.05, -0.2, -0.4]
+    plis = [0.20, 0.0, -0.20]
 
     vmin = logmvirs_msun[0]
     vmax = logmvirs_msun[-1]

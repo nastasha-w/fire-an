@@ -59,7 +59,8 @@ class PLmodel:
         self.tvir_cgs = self.mu * c.u * self.vc_rvir_cgs**2 \
                         / (2. * c.boltzmann)
         # eq 20
-        self.nH_rvir_cgs = (1.5 + self.pli) * self.hmassfrac * self.mvir_cgs \
+        self.nH_rvir_cgs = (1.5 + self.pli) * self.hmassfrac \
+                           * self.cgmmass_cgs \
                            / (4. * np.pi * c.atomw_H * c.u * self.rvir_cgs**3)
         
     def vc_cmps(self, r3d_cm):

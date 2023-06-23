@@ -3,7 +3,6 @@ Use power law models from Stern et al.
 '''
 
 import numpy as np
-import scipy.stats as spstat
 
 import fire_an.mstar_mhalo.analytical as an
 import fire_an.ionrad.ion_utils as iu

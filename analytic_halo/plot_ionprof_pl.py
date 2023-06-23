@@ -12,17 +12,21 @@ import fire_an.utils.constants_and_units as c
 #outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/analytical/'
 outdir = '/projects/b1026/nastasha/imgs/analytical/'
 
-def plot_coldensprof(ion, pli, sigma_logT=0.3):
+def plot_coldensprof(ion):
     impactpars_kpc = np.linspace(5., 450., 50)
-    logmvirs_msun = np.arange(11., 14.1, 0.5)
+    logmvirs_msun = np.arange(11.2, 13.1, 0.2)
     fcgm = 0.9
     z_sol = 0.3
-    redshifts = [0.5]#, 0.75, 1.0]
+    redshift = 0.75
+    plis = [-0.05, -0.2, -0.4]
 
     vmin = logmvirs_msun[0]
     vmax = logmvirs_msun[-1]
     cmap = mcm.get_cmap('viridis')
-    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+    #norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+    dc = np.average(np.diff(logmvirs_msun))
+    bounds = np.arange(vmin - 0.5 * dc, vmax + dc, dc)
+    norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
     fig = plt.figure(figsize=(11.5, 3.))
     grid = gsp.GridSpec(ncols=4, nrows=1, wspace=0.0, 
@@ -34,9 +38,9 @@ def plot_coldensprof(ion, pli, sigma_logT=0.3):
     path_effects = pu.getoutline(linewidth)
 
     
-    for zi, redshift in enumerate(redshifts):
-        ax = axes[zi]
-        doleft = zi == 0
+    for plii, pli in enumerate(plis):
+        ax = axes[plii]
+        doleft = plii == 0
         ax.set_xlabel('$\\mathrm{r}_{\\perp} \\; [\\mathrm{pkpc}]$',
                   fontsize=fontsize)
         if doleft:
@@ -45,14 +49,13 @@ def plot_coldensprof(ion, pli, sigma_logT=0.3):
                           fontsize=fontsize)
         ax.tick_params(which='both', direction='in', labelsize=fontsize - 1.,
                        top=True, right=True, labelleft=doleft)
-        ax.text(0.95, 0.95, f'$z={redshift:.2f}$',
+        ax.text(0.95, 0.95, f'$v_{{\\mathrm{{c}}}} \\propto r^{{{pli:.2f}}}$',
                 transform=ax.transAxes, fontsize=fontsize,
                 verticalalignment='top', horizontalalignment='right')
 
         for lmv in logmvirs_msun:
             hmod = mip.PLmodel(10**lmv, redshift, fcgm, z_sol, pli)
-            cvs = hmod.coldensprof(ion, impactpars_kpc,
-                                   sigma_logT=sigma_logT)
+            cvs = hmod.coldensprof(ion, impactpars_kpc)
             ax.plot(impactpars_kpc, np.log10(cvs), 
                     color=cmap((lmv - vmin) / (vmax - vmin)),
                     linewidth=linewidth, path_effects=path_effects)
@@ -69,7 +72,6 @@ def plot_coldensprof(ion, pli, sigma_logT=0.3):
                    fontsize=fontsize)
     cax.tick_params(labelsize=fontsize - 1.)
     
-    outname = (f'cdprof_analytical_s19_{ion}_plmod_plivc_{pli:.2f}'
-               f'_siglogT{sigma_logT:.2f}')
+    outname = (f'cdprof_analytical_s19_{ion}_z{redshift:.2f}')
     outname = outname.replace('.', 'p')
     plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')

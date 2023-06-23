@@ -3,6 +3,7 @@ Use power law models from Stern et al.
 '''
 
 import numpy as np
+import scipy.stats as spstat
 
 import fire_an.mstar_mhalo.analytical as an
 import fire_an.ionrad.ion_utils as iu
@@ -125,5 +126,30 @@ class PLmodel:
         #del self._ionfrac, self._eltabund, self._iondens, self._dl
         return self.coldens
          
+# to get reasonable slope values
+def vc_nfw(r, rs, rho0):
+    pref = np.sqrt(4. * np.pi * c.gravity * rho0 * rs**3)
+    rdep = np.sqrt(np.log((rs + r) / rs) - r / (r + rs)) / np.sqrt(r)
+    return pref + rdep
 
+# compared to numerical (below), values seem to be right
+def an_dlogvc_dlogr(r, rs):
+    return - 0.5 + 0.5 * (r / (r + rs))**2 \
+        / (np.log((r + rs) / rs) - r / (r + rs)) 
+
+def num_dlogvc_dlogr(r, rs):
+    epsilon = 0.01
+    rvs = np.array([r * (1. - epsilon), r, r * (1 + epsilon)])
+    vcs = vc_nfw(rvs, rs, 1.)
+    return rvs[1] / vcs[1] * (vcs[2] - vcs[0]) / (rvs[2] - rvs[0])
+
+def approx_conc_mass(mvir_Msun):
+    '''
+    Dutton and Macci\`o (2014), kinda eyeballing table 3
+    for m12/m13, z=0.5-1.0 
+    '''
+    # roughly between z=0.5, 1.0 values for both halo mass defs
+    afit = 0.9
+    bfit = -0.08 
+    return 10**(afit + bfit * np.log10(0.671 * mvir_Msun / (10**12)))
 

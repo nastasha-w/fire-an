@@ -91,26 +91,26 @@ class PLmodel:
                                (self._impactpars_cm**2)[:, np.newaxis])
         self._tab = iu.Linetable_PS20(self._ion, self.cosmopars['z'], 
                                       emission=False, lintable=True)
-        self._dTsample = np.linspace(-3. * sigma_logT, 3. * sigma_logT, 21)
-        self._normob = spstat.norm()
-        self._dTweights = self._normob.pdf(self._dTsample / sigma_logT)
-        self._dTweights *= 1. / np.sum(self._dTweights)
+        #self._dTsample = np.linspace(-3. * sigma_logT, 3. * sigma_logT, 21)
+        #self._normob = spstat.norm()
+        #self._dTweights = self._normob.pdf(self._dTsample / sigma_logT)
+        #self._dTweights *= 1. / np.sum(self._dTweights)
         self._logT_K = np.log10(self.t_K(self._r3d_cm))
-        self._logT_K = self._logT_K[..., np.newaxis] \
-                       + self._dTsample[np.newaxis, np.newaxis, :]
+        #self._logT_K = self._logT_K[..., np.newaxis] \
+        #               + self._dTsample[np.newaxis, np.newaxis, :]
         self._logZ = np.log10(self.z_sol * self._tab.solarZ) \
                      * np.ones(np.prod(self._logT_K.shape))
         self._lognH_cm3 = np.log(self.nH_cm3(self._r3d_cm))
-        self.__lognH_cm3 = np.tile(self._lognH_cm3, 
-                                   (1, 1, len(self._dTsample)))
+        #self.__lognH_cm3 = np.tile(self._lognH_cm3, 
+        #                           (1, 1, len(self._dTsample)))
         self._interpdct = {'logT': self._logT_K.flatten(), 
                            'lognH': self.__lognH_cm3.flatten(),
                            'logZ': self._logZ}
         self._ionfrac = self._tab.find_ionbal(self._interpdct, log=False)
         self._ionfrac = self._ionfrac.reshape(self._logT_K.shape)
-        self._ionfrac = np.sum(self._ionfrac 
-                               * self._dTweights[np.newaxis, np.newaxis, :],
-                               axis=2)
+        #self._ionfrac = np.sum(self._ionfrac 
+        #                       * self._dTweights[np.newaxis, np.newaxis, :],
+        #                       axis=2)
         self._interpdct = {'logZ': np.array([self._logZ[0]])}
         self._eltabund = self._tab.find_assumedabundance(self._interpdct, 
                                                          log=False)
@@ -119,10 +119,10 @@ class PLmodel:
         self._dl = np.average(np.diff(self._losbins_cm)) # uniform bins     
         self.coldens = np.sum(self._iondens * self._dl, axis=1)
         
-        del self._ion, self._impactpars_cm, self._los0_cm, self._los1_cm
-        del self._losbins_cm, self._r3d_cm, self._tab, self._logZ
-        del self._logT_K, self._lognH_cm3, self._interpdct
-        del self._ionfrac, self._eltabund, self._iondens, self._dl
+        #del self._ion, self._impactpars_cm, self._los0_cm, self._los1_cm
+        #del self._losbins_cm, self._r3d_cm, self._tab, self._logZ
+        #del self._logT_K, self._lognH_cm3, self._interpdct
+        #del self._ionfrac, self._eltabund, self._iondens, self._dl
         return self.coldens
          
 

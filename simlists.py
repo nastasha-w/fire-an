@@ -311,6 +311,7 @@ snapmatch = {
 
 snaps_sr = [45, 46, 47, 48, 49, 50]
 snaps_hr = [186, 197, 210, 224, 240, 258]
+snaps_f2md = [277, 294, 312, 332, 356, 382]
 
 # m12q AGN-noCR: no snapshot 500 (z=0)
 # m12q noBH: does have snapshot 500 (z=0) 

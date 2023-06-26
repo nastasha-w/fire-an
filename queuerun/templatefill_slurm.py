@@ -184,13 +184,13 @@ if __name__ == '__main__':
     if '--firemaps_frontera_seq' in args:
         sdir = sdir_frontera
         fillset_firemaps_frontera_seqinds(**kwargs)
-    if '--frontera_seq_multigen' in args:
+    elif '--frontera_seq_multigen' in args:
         sdir = sdir_frontera
         fillin_frontera_seq_multigen(**kwargs)
-    if '--stampede2_seq_multigen' in args:
+    elif '--stampede2_seq_multigen' in args:
         sdir = sdir_stampede2
         fillin_frontera_seq_multigen(**kwargs)
-    if '--firemaps_stampede2_seq' in args:
+    elif '--firemaps_stampede2_seq' in args:
         sdir = sdir_stampede2
         fillset_firemaps_frontera_seqinds(**kwargs)
     else: 

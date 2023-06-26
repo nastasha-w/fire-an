@@ -271,7 +271,7 @@ def run_haloprop_f2md(opt):
     dirpath = '/'.join([_dirpath, simname]) 
 
     print(f'Whole halo, {simname}, snap {snapnum}')
-    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir='BN98',
+    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=('BN98', '200c', '200m'),
                 parttypes='all')
     print('\n\n')
     print(f'Galaxy, {simname}, snap {snapnum}')

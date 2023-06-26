@@ -277,6 +277,9 @@ def fromcommandline(index):
         # 38224 - 38367: m13hr ( 144 indices)
         # 38368 - 38655: m12sr ( 288 indices)
         # 38656 - 39951: m12hr (1296 indices)
+    elif index >= 39952 and index < 40000:
+        rhp.run_haloprop_f2md(index - 39952)
+        # 48 indices
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

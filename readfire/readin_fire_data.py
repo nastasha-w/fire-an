@@ -495,7 +495,10 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     opts_pardir = ['', 'output/']
     opts_parfile = ['params.txt-usedvalues',
                     'parameters-usedvalues',  
-                    'params.txt']
+                    #'gizmo_parameters.txt-usedvalues',
+                    'params.txt',
+                    #'gizmo_parameters.txt',
+                    ]
     parameterfile = None
     for subdir in opts_pardir:
         for opt in opts_parfile:
@@ -558,16 +561,35 @@ def findclosestz_snap(path, redshift):
         path = path[:-6]
     if not path.endswith('/'):
         path = path + '/'
-    targetfile = path + 'snapshot_scale-factors.txt'
-    if not os.path.isfile(targetfile):
-        raise RuntimeError('No file {} found'.format(targetfile))
-    with open(targetfile, 'r') as f:
-        aopts = f.read()
-    aopts = (aopts.strip()).split('\n')
-    aopts = np.array([float(aopt) for aopt in aopts])
-    zopts = 1. / aopts - 1.
-    snapnum = np.argmin(np.abs(zopts - redshift))
-    zval = zopts[snapnum]
+    tf1 = path + 'snapshot_scale-factors.txt'
+    tf2 = path + 'snapshot_times.txt'
+    if os.path.isfile(tf1):
+        targetfile = tf1
+        #if not os.path.isfile(targetfile):
+        #    raise RuntimeError('No file {} found'.format(targetfile))
+        with open(targetfile, 'r') as f:
+            aopts = f.read()
+        aopts = (aopts.strip()).split('\n')
+        aopts = np.array([float(aopt) for aopt in aopts])
+        zopts = 1. / aopts - 1.
+        snapnum = np.argmin(np.abs(zopts - redshift))
+        zval = zopts[snapnum]
+    elif os.path.isfile(tf2):
+        targetfile = tf2
+        #if not os.path.isfile(targetfile):
+        #    raise RuntimeError('No file {} found'.format(targetfile))
+        with open(targetfile, 'r') as f:
+            aopts = f.read()
+        aopts = (aopts.strip()).split('\n')
+        aopts = [aopt.strip() for aopt in aopts]
+        aopts = np.array([float(aopt.split(None)[1]) for aopt in aopts
+                          if not aopt.startswith('#')])
+        #print(aopts)
+        zopts = 1. / aopts - 1.
+        snapnum = np.argmin(np.abs(zopts - redshift))
+        zval = zopts[snapnum]
+    else:
+        raise ValueError(f'No files {tf1} or {tf2} found.')
     return snapnum, zval
 
 def findclosestzs_snaps(basedir, simnames, zvals):
@@ -594,7 +616,17 @@ def findclosestzs_snaps(basedir, simnames, zvals):
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
             dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([basedir, dp2, simname])
+        _dirpaths = ['/'.join([basedir, dp2, simname]),
+                     '/'.join([basedir, simname])]
+        dirpath = None
+        for _dirpath in _dirpaths:
+            if os.path.isdir(_dirpath):
+                dirpath = _dirpath
+                break
+        if dirpath is None:
+            print(f'Could not find {simname} in {_dirpaths}; skipping.')
+            print()
+            continue
         print(simname)
         snapnums = []
         for ztar in zvals:

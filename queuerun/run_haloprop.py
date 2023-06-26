@@ -248,3 +248,37 @@ def runcengal1(opt=0):
 
     cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
                      vcenrad_rvir=0.05, mstarrad_rvir=0.1)
+    
+def run_haloprop_f2md(opt):
+    '''
+    1 index runs the Halo (all particles but type 2, 1 Rvir) and
+    the galaxy (parttype 4, 0.1 Rvir) velocity calculation,
+    and the central galaxy re-centering (parttype 4 in 0.3 Rvir)
+    '''
+    _dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
+    meandef = 'BN98'
+
+    # 48 indices
+    ind = opt - 0
+    simnames = sl.m12_f2md # 8
+    snaps = sl.snaps_sr # 6
+
+    simi = ind // len(snaps)
+    snapi = ind % len(snaps)
+    simname = simnames[simi]
+    snapnum = snaps[snapi]
+
+    dirpath = '/'.join([_dirpath, simname]) 
+
+    print(f'Whole halo, {simname}, snap {snapnum}')
+    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=('BN98', '200c', '200m'),
+                parttypes='all')
+    print('\n\n')
+    print(f'Galaxy, {simname}, snap {snapnum}')
+    hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
+                parttypes=(4,))
+    
+    print('\n\n')
+    print(f'Galaxy re-centering, {simname}, snap {snapnum}')
+    cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
+                     vcenrad_rvir=0.05, mstarrad_rvir=0.1)

@@ -594,7 +594,17 @@ def findclosestzs_snaps(basedir, simnames, zvals):
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
             dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([basedir, dp2, simname])
+        _dirpaths = ['/'.join([basedir, dp2, simname]),
+                     '/'.join([basedir, simname])]
+        dirpath = None
+        for _dirpath in _dirpaths:
+            if os.path.isdir(_dirpath):
+                dirpath = _dirpath
+                break
+        if dirpath is None:
+            print(f'Could not find {simname} in {_dirpaths}; skipping.')
+            print()
+            continue
         print(simname)
         snapnums = []
         for ztar in zvals:

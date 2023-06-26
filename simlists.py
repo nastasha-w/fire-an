@@ -107,6 +107,16 @@ m12_nobh_rest2 = m12_nobh_rest1.copy() # len 5
 m12_agnnocr_rest2 = m12_agnnocr_rest1.copy() # len 5
 m12_agncr_rest2 = [] # len 0
 
+m12_f2md = ['m12z_r4200',
+           'm12w_r7100',
+           'm12r_r7100',
+           'm12i_r7100',
+           'm12c_r7100',
+           'm12b_r7100',
+           'm12m_r7100',
+           'm12f_r7100',
+           ]
+
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
 # mass res is ~ m12-sr res for all; hr/sr is for snapshot cadence

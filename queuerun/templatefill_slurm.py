@@ -22,7 +22,8 @@ for --firemaps_frontera_seq: fire_maps.py calls with sequential indices
     from start to last are called, with max. step on each node. No jobs 
     with more than one node are created.
 
-for --frontera_seq_multigen: fire_maps.py calls with sequential indices
+for --frontera_seq_multigen, --stampede2_seq_multigen: 
+    fire_maps.py calls with sequential indices
     unlike --firemaps_frontera_seq, the step size determines the number
     of concurrent processes, but the launcher file contains all jobs 
     from start to last. 
@@ -39,7 +40,8 @@ import stat
 import sys
 
 # where the templates are and the sbatch files go
-sdir = '/work2/08466/tg877653/frontera/slurm/'
+sdir_frontera = '/work2/08466/tg877653/frontera/slurm/'
+sdir_stampede2 = '/work2/08466/tg877653/stampede2/slurm/'
 
 def fillin(templatefilen, outfilen, **kwargs):
     '''
@@ -161,7 +163,9 @@ def fillin_frontera_seq_multigen(**kwargs):
 if __name__ == '__main__':
     args = sys.argv[1:]
     methodargs = ['--firemaps_frontera_seq',
-                  '--frontera_seq_multigen']
+                  '--frontera_seq_multigen',
+                  '--firemaps_stampede2_seq',
+                  '--stampede2_seq_multigen']
     methodset = False
     kwargs = {}
     for arg in args:
@@ -178,9 +182,17 @@ if __name__ == '__main__':
         kwargs.update({key: val})
 
     if '--firemaps_frontera_seq' in args:
+        sdir = sdir_frontera
         fillset_firemaps_frontera_seqinds(**kwargs)
     if '--frontera_seq_multigen' in args:
+        sdir = sdir_frontera
         fillin_frontera_seq_multigen(**kwargs)
+    if '--stampede2_seq_multigen' in args:
+        sdir = sdir_stampede2
+        fillin_frontera_seq_multigen(**kwargs)
+    if '--firemaps_stampede2_seq' in args:
+        sdir = sdir_stampede2
+        fillset_firemaps_frontera_seqinds(**kwargs)
     else: 
         msg = 'No known template specified; options are: {}'
         raise ValueError(msg.format(methodargs))

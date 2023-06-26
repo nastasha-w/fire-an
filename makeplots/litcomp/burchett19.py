@@ -9,7 +9,7 @@ import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 
 import fire_an.makeplots.get_2dprof as gpr
-import fire_an.makeplots.litcomp.b18_datasel as bds 
+import makeplots.litcomp.b19_datasel as bds 
 import fire_an.makeplots.tol_colors as tc
 import fire_an.makeplots.plot_utils as pu
 import fire_an.simlists as sl

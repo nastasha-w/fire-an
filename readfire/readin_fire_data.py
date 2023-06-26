@@ -581,7 +581,8 @@ def findclosestz_snap(path, redshift):
         with open(targetfile, 'r') as f:
             aopts = f.read()
         aopts = (aopts.strip()).split('\n')
-        aopts = np.array([float(aopt.split()[2]) for aopt in aopts])
+        aopts = [aopt.strip() for aopt in aopts]
+        aopts = np.array([float(aopt.split(None)[2]) for aopt in aopts])
         print(aopts)
         zopts = 1. / aopts - 1.
         snapnum = np.argmin(np.abs(zopts - redshift))

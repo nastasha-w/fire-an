@@ -269,12 +269,16 @@ def run_haloprop_f2md(opt):
     snapnum = snaps[snapi]
 
     dirpath = '/'.join([_dirpath, simname]) 
+    
+    print(f'Whole halo center, {simname}, snap {snapnum}')
+    hp.gethalodata_shrinkingsphere(dirpath, snapnum, 
+                                   meandef=('BN98', '200c', '200m'))
 
-    print(f'Whole halo, {simname}, snap {snapnum}')
-    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=('BN98', '200c', '200m'),
+    print(f'Whole halo Vcom, {simname}, snap {snapnum}')
+    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=meandef,
                 parttypes='all')
     print('\n\n')
-    print(f'Galaxy, {simname}, snap {snapnum}')
+    print(f'Galaxy Vcom, {simname}, snap {snapnum}')
     hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
                 parttypes=(4,))
     

@@ -816,6 +816,70 @@ def run_hist_ppv(opt):
                          outfilen=outfilen, overwrite=False)
 
 
+def run_hist_rad_vrad_weighted(opt):
+    # different ions, Z, weights in rad-vrad space
+    # sample clean2 (excl. bug runs), later maybe all2
+    # 3 axes * 4 weights = 12 runs per sim/snap
+    atsplus = [['sim-direct'], ['Metal'], ['sim-direct']]
+    atplusargs = [[{'field': 'Temperature'}],
+                  [{'element': 'Hydrogen', 'density': True}],
+                  [{'field': 'ElementAbundance/Neon'}]]
+    atplusbins = [[0.1], [0.1], [0.1]]
+    logaxes = [False, True]
+    atlabels = ['temperature', 'density', 'NeonAbundance']
+    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_wtd/'
+    
+    # 48 haloes, 576 indices
+    ind = opt - 0
+    simnames = sl.m12_f2md # len 8
+    snaps = sl.snaps_f2md # len 6
+
+    wts = ['Mass', 'Volume', 'Metal'] + ['ion'] 
+    wtargs = [{}, {}, 
+              {'element': 'Neon'},
+              {'ion': 'Ne8', 'ps20depletion': False},
+              ]
+    ats = ['coords']
+    atargs = [{'vel': 'vrad'}]
+    axbins = [5e5]
+
+    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    simi = ind // (len(snaps) * len(wts) * len(atsplus))
+    snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
+           // (len(wts) * len(atsplus))
+    wti = (ind % (len(wts) * len(atsplus))) // len(atsplus)
+    ati = ind % len(atsplus)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    wt = wts[wti]
+    wtarg = wtargs[wti]
+    at = ats + atsplus[ati]
+    atarg = atargs + atplusargs[ati]
+    axbin = axbins + atplusbins[ati]
+
+    runit = 'Rvir'
+    rbins = np.linspace(0.0, 1.3, 27)
+
+    dirpath = '/'.join([_dirpath, simname])
+
+    atstr = 'rcen_vcen_' + atlabels[ati]
+    wtstr = 'gasmass' if wt == 'Mass' else\
+            'gasvol' if wt == 'Volume' else\
+            wtarg['ion'] if wt == 'ion' else \
+            wtarg['element']
+    outfilen = outdir +\
+               (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
+                '_bins1_v1_hvcen.hdf5')
+    if os.path.isfile(outfilen):
+        print(outfilen, ' already exists; skipping')
+        return None
+    mh.histogram_radprof(dirpath, snapnum,
+                         wt, wtarg, at, atarg,
+                         particle_type=0, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=logaxes, axbins=axbin,
+                         outfilen=outfilen, overwrite=False)
+
 def run_hist(opt):
     if opt >= 0 and opt < 60:
         ind = opt

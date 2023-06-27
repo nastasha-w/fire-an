@@ -283,6 +283,9 @@ def fromcommandline(index):
     elif index >= 40000 and index < 41152:
         rim.run_vdoplosmaps_f2md(opt=index - 40000)
         # 1152 indices
+    elif index >= 41152 and index < 41728:
+        # 576 indices
+        rhs.run_hist_rad_vrad_weighted(index - 41152)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

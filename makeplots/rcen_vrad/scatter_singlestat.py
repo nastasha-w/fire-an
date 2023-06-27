@@ -15,6 +15,7 @@ import fire_an.utils.math_utils as mu
 def getphys(simname):
     phys = ('noBH' if '_sdp1e10_' in simname 
             else 'AGN-CR' if '_MHDCRspec1_' in simname 
+            else 'FIRE-2 MD' if len(simname.split('_')) == 2
             else 'AGN-noCR')
     return phys
 
@@ -156,9 +157,9 @@ def plotdata_censcatter(datax, datay, xweightmap,
     width_ratios = [panelsize] * ncols
     height_ratios = [panelsize] * nrows + [laxspace]
     width = sum(width_ratios) \
-            * (1. + wspace * sum(width_ratios) / (len(width_ratios) - 1)) 
+            * (1. + wspace * (len(width_ratios) - 1) / len(width_ratios)) 
     height = sum(height_ratios) \
-            * (1. + hspace * sum(height_ratios) / (len(height_ratios) - 1))
+            * (1. + hspace * (len(height_ratios) - 1) / len(height_ratios))
 
     fig = plt.figure(figsize=(width, height))
     grid = gsp.GridSpec(ncols=ncols, nrows=nrows + 1, hspace=hspace,
@@ -195,8 +196,10 @@ def plotdata_censcatter(datax, datay, xweightmap,
         ltop = 1.
     if ncols == 4:
         ncol_leg = (1, 3, 2)
+        lcen = 0.4
     elif ncols == 3:
         ncol_leg = (1, 2, 1)
+        lcen = 0.5
     handles1 = [mlines.Line2D((), (), label=ic, markersize=size,
                               markerfacecolor='gray', marker='o',
                               markeredgecolor=iccolors[ic],
@@ -216,7 +219,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
                  for z in zs]
     leg2 = lax.legend(handles=handles2, fontsize=fontsize, 
                       ncol=ncol_leg[1],
-                      bbox_to_anchor=(0.4, ltop), loc='upper center',
+                      bbox_to_anchor=(lcen, ltop), loc='upper center',
                       handletextpad=0.4, columnspacing=1.0)
     handles3 = [mlines.Line2D((), (), label=phys, 
                               markersize=size,

@@ -136,7 +136,7 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     agncr = m12_agncr + m13_agncr
     snaplabels = [ic + ' noBH' if filen in nobh else
                   ic + ' AGN-noCR' if filen in agnnocr else
-                  ic + ' FIRE-2 md' if len(filen.split('_')) == 2 else
+                  ic + ' FIRE-2 MD' if len(filen.split('_')) == 2 else
                   ic + ' AGN-CR' if filen in agncr else
                   None
                   for filen, ic in zip(snapfiles, ics)]

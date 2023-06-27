@@ -355,9 +355,9 @@ _physcolors = tc.tol_cset('bright')
 physcolors = {'AGN-CR': _physcolors.green,
               'AGN-noCR': _physcolors.red,
               'noBH': _physcolors.blue,
-              }
+              'FIRE-2 MD': _physcolors.yellow}
 
 physlinestyles = {'AGN-CR': 'dotted',
                   'AGN-noCR': 'dashed',
                   'noBH': 'solid',
-                  }
+                  'FIRE-2 MD': 'dashdot'}

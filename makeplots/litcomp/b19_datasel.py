@@ -17,6 +17,7 @@ import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.opts_locs as ol
+import fire_an.makeplots.litcomp.b19_vs_analytical as bva
 
 def readin_halodata(simnames, meandef='200m', zmin=0.45, zmax=1.05):
     firedataf = ol.filen_halocenrvir
@@ -80,29 +81,32 @@ def readin_cengaldata(simnames):
             zs.append(_lsz)
     return masses, zs
 
-def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
+def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     '''
     hset: 'clean' or 'all'
-    masscomp: 'halo' or 'stellar'
+    masscomp: 'halo', 'halo_recalc', or 'stellar'
     '''
     #datadir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
     datadir = '/projects/b1026/nastasha/extdata/'
     dfilen = datadir + 'data_burchett_etal_2019_table1.txt'
-    #TODO CHECK: R200c or R200m!
-    # assuming impact parameters are physical/proper kpc
-    #TODO ask: table footnote f says 2 systems for one Ne VIII absorber
-    #          but only one line with that footnote and N(Ne VIII) value
-    data_bur = pd.read_csv(dfilen, comment='#', sep='\t')
-    ## calculate halo masses
-    # from Burchett et al. (2019):
-    cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
-    def hmfunc(x):
-        csm = cosmopars_bur.copy()
-        csm.update({'z': x.zgal, 'a': 1. / (1. + x.zgal)})
-        mv = cu.mvir_from_rvir(x.rvir_kpc * 1e-3 * c.cm_per_mpc, 
-                               csm, meandef='200m')
-        return mv / c.solar_mass
-    data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
+    if masscomp in ['halo', 'stellar']:
+        #TODO CHECK: R200c or R200m!
+        # assuming impact parameters are physical/proper kpc
+        #TODO ask: table footnote f says 2 systems for one Ne VIII absorber
+        #          but only one line with that footnote and N(Ne VIII) value
+        data_bur = pd.read_csv(dfilen, comment='#', sep='\t')
+        ## calculate halo masses
+        # from Burchett et al. (2019):
+        cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
+        def hmfunc(x):
+            csm = cosmopars_bur.copy()
+            csm.update({'z': x.zgal, 'a': 1. / (1. + x.zgal)})
+            mv = cu.mvir_from_rvir(x.rvir_kpc * 1e-3 * c.cm_per_mpc, 
+                                csm, meandef='200m')
+            return mv / c.solar_mass
+        data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
+    elif masscomp in ['halo_recalc']:
+        data_bur = bva.readdata_b19(nsigma=1)
     
     ## FIRE data
     m13_nobh = sl.m13_nobh_clean2 + sl.m13_nobh_rest2
@@ -132,17 +136,25 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
     agncr = m12_agncr + m13_agncr
     snaplabels = [ic + ' noBH' if filen in nobh else
                   ic + ' AGN-noCR' if filen in agnnocr else
+                  ic + ' FIRE-2 md' if len(filen.split('_')) == 2 else
                   ic + ' AGN-CR' if filen in agncr else
                   None
                   for filen, ic in zip(snapfiles, ics)]
-    meandef = '200m'
+
     if masscomp == 'halo':
+        meandef = '200m'
         firemasses, fireredshifts, fireradii, firecens = \
             readin_halodata(snapfiles, meandef=meandef,
                             zmin=0.45, zmax=1.05)
     elif masscomp == 'stellar':
         firemasses, fireredshifts= \
             readin_cengaldata(snapfiles)
+    elif masscomp == 'halo_recalc':
+        meandef = 'BN98'
+        firemasses, fireredshifts, fireradii, firecens = \
+            readin_halodata(snapfiles, meandef=meandef,
+                            zmin=0.45, zmax=1.05)
+        firemasses = np.log10(firemasses)
 
     fig = plt.figure(figsize=(5.5, 7.))
     grid = gsp.GridSpec(nrows=2, ncols=1,
@@ -162,6 +174,24 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
                 marker='o', linestyle='None', edgecolor='black', 
                 facecolor='black', label='Bur.+19', s=40, 
                 zorder=5)
+    elif masscomp == 'halo_recalc':
+        z_bur = data_bur['zgal']
+        m_bur = data_bur['logmvir_msun_bestest']
+        m_bur_err = np.array([data_bur['logmvir_msun_bestest'] 
+                                 - data_bur['logmvir_msun_lo'],
+                              data_bur['logmvir_msun_hi']
+                                 - data_bur['logmvir_msun_bestest']])
+        isul = data_bur['log_N_Ne8_isUL']
+        noul = np.logical_not(isul)
+        ax.errorbar(z_bur[noul], m_bur[noul], yerr=m_bur_err[:, noul], 
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=4, color='black', capsize=3,
+                    zorder=5, label='Bur.+19')
+        ax.errorbar(z_bur[isul], m_bur[isul], yerr=m_bur_err[:, isul], 
+                    color='black',
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=4, markeredgecolor='black', capsize=3,
+                    markerfacecolor='none', zorder=5, label='Bur.+19 (UL)')
     elif masscomp == 'stellar':
         isul = data_bur['log_N_Ne8_isUL']
         noul = np.logical_not(isul)
@@ -218,9 +248,13 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
                 zmin = min(_prev[0], np.min(fireredshift))
                 zmax = max(_prev[1], np.max(fireredshift))
                 z_minmax[key] = (zmin, zmax)
-    if masscomp == 'halo':
+    if masscomp in ['halo']:
         mass_minmax = {key: (10**(np.log10(mass_minmax[key][0]) - mmar),
                              10**(np.log10(mass_minmax[key][1]) + mmar))
+                       for key in mass_minmax}
+    elif masscomp in ['halo_recalc']:
+        mass_minmax = {key: (mass_minmax[key][0] - mmar,
+                             mass_minmax[key][1] + mmar)
                        for key in mass_minmax}
     elif masscomp == 'stellar':
         mass_minmax = {key: (mass_minmax[key][0] - mmar,
@@ -239,17 +273,20 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo'):
                  z_minmax[key][0]]
         ax.plot(line0, line1, linestyle='solid', color='gray',
                 linewidth=2, alpha=0.5)
-        if masscomp == 'halo':
+        if masscomp in ['halo']:
             top = mass_minmax[key][1] * 0.95
-        elif masscomp == 'stellar':
+        elif masscomp in ['stellar', 'halo_recalc']:
             top = mass_minmax[key][1] - 0.1
         ax.text(z_minmax[key][1] - 0.02, top,
                 key, fontsize=fontsize, color='gray',
                 horizontalalignment='right', verticalalignment='top')
 
-    if masscomp == 'halo':
+    if masscomp in ['halo']:
         ax.set_yscale('log')
         ax.set_ylabel(f'$\\mathrm{{M}}_{{\\mathrm{{{meandef}}}}} \\;'
+                    ' [\\mathrm{M}_{\\odot}]$', fontsize=fontsize)
+    elif masscomp in ['halo_recalc']:
+        ax.set_ylabel(f'$\\mathrm{{M}}_{{\\mathrm{{vir}}}} \\;'
                     ' [\\mathrm{M}_{\\odot}]$', fontsize=fontsize)
     elif masscomp == 'stellar':
         ax.set_ylabel('$\\log_{10}\\, \\mathrm{M}_{*} \\;'
@@ -335,7 +372,7 @@ def plot_smhm_burchett19():
     ax.set_xlabel('$\\log_{10}\\, \\mathrm{M}_{*}\\; [\\mathrm{M}_{\\odot}]$')
     ax.set_ylabel('$\\log_{10}\\, \\mathrm{M}_{\\mathrm{vir}} \\;'
                   ' [\\mathrm{M}_{\\odot}]$')
-    outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
-    #outdir = '/projects/b1026/nastasha/imgs/datacomp/'
+    #outdir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/datacomp/'
+    outdir = '/projects/b1026/nastasha/imgs/datacomp/'
     outfilen = outdir + f'stellar_mass_halo_mass_burchett_etal_2019.pdf'
     plt.savefig(outfilen, bbox_inches='tight')

@@ -9,7 +9,8 @@ import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 
 import fire_an.makeplots.get_2dprof as gpr
-import makeplots.litcomp.b19_datasel as bds 
+import fire_an.makeplots.litcomp.b19_datasel as bds 
+import fire_an.makeplots.litcomp.b19_vs_analytical as bva
 import fire_an.makeplots.tol_colors as tc
 import fire_an.makeplots.plot_utils as pu
 import fire_an.simlists as sl
@@ -169,7 +170,7 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                     alpha=1., linestyle='dotted',
                     linewidth=1.)
             
-    data_bur = pd.read_csv(ofilen, comment='#', sep='\t')
+    data_bur = bva.readdata_b19(nsigma=1.)
     cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
     def hmfunc(x):
         csm = cosmopars_bur.copy()
@@ -235,7 +236,7 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
-def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
+def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
     mdir = '/projects/b1026/nastasha/maps/clean2_vlos/'
     filen_temp = ('vlos_by_coldens_Ne8_{simname}_snap{snapnum}'
                   '_shrink-sph-cen_BN98_depth_2.0rvir_{pax}-proj_v3.hdf5')
@@ -269,6 +270,9 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo'):
     for mset in ['m12', 'm13']:
         if masscomp == 'halo':
             datafieldsels = [('Mvir_Msun',) + dcrange_m[mset],
+                             ('zgal',) + dcrange_z[mset]]
+        elif masscomp == 'halo_recalc':
+            datafieldsels = [('logmvir_msun_bestest',) + dcrange_m[mset],
                              ('zgal',) + dcrange_z[mset]]
         elif masscomp == 'stellar':
             datafieldsels = [('log_Mstar_Msun',) + dcrange_m[mset],

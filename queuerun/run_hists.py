@@ -827,7 +827,7 @@ def run_hist_rad_vrad_weighted(opt):
     atplusbins = [[0.1], [0.1], [0.1]]
     logaxes = [False, True]
     atlabels = ['temperature', 'density', 'NeonAbundance']
-    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_wtd/'
+    outdir = '/scratch/08466/tg877653/output/hists/r_vr_wtd/'
     
     # 48 haloes, 576 indices
     ind = opt - 0

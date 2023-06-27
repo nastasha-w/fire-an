@@ -139,7 +139,8 @@ def plotdata_censcatter(datax, datay, xweightmap,
     '''
     physmarkers = {'noBH': '*',
                    'AGN-noCR': 'o',
-                   'AGN-CR': 'P'}
+                   'AGN-CR': 'P',
+                   'FIRE-2 MD': 'd'}
     markeredgewidth = 2
     size = 5
     fontsize = 12

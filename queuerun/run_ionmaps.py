@@ -1367,3 +1367,98 @@ def run_vdoplosmaps(opt=0):
                    maptype=wtdtype, maptype_args=wtdtype_args,
                    save_weightmap=True, logmap=False,
                    logweightmap=True, losradius_rvir=rlos_rvir)
+
+def run_vdoplosmaps_f2md(opt=0):
+    # version number depends on code edits; some indices might have
+    # been run with previous versions
+    _outfilen = ('vdoplos_by_coldens_{qt}_{sc}_snap{sn}_shrink-sph-cen_BN98'
+                 '_depth_{llos:.1f}rvir{depl}_{los}-proj_v3.hdf5')
+    _dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
+    outdir = '/scratch/08466/tg877653/output/maps/vdopmaps/'
+    checkfileflag = True
+    # 24 maps per halo/snap
+    ions = ['Mass', 'Volume', 'Neon', 'Ne8']
+    loss = ['x', 'y', 'z']
+    rloss_rvir = [0.1, 2.]
+    wtdtype = 'coords'
+    wtdtype_args = {'vel': 'doplos'}
+    
+    # 48 haloes
+    ind = opt - 0
+    simnames = sl.m12_f2md # len 8
+    snaps = sl.snaps_f2md # len 6
+        
+    simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
+    snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \
+           // (len(ions) * len(loss) * len(rloss_rvir))
+    ioni = (ind % (len(ions) * len(loss) * len(rloss_rvir))) \
+            // (len(loss) * len(rloss_rvir))
+    losi = (ind % len(loss) * len(rloss_rvir)) // len(rloss_rvir)
+    rlosi = ind % len(rloss_rvir)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    ion = ions[ioni]
+    los = loss[losi]
+    rlos_rvir = rloss_rvir[rlosi]
+
+    dirpath = '/'.join([_dirpath, simname])
+
+    if ion == 'Mass':
+        maptype = 'Mass'
+        maptype_argss = [{}]
+    elif ion == 'Volume':
+        maptype = 'Volume'
+        maptype_argss = [{}]
+    elif ion in ['Hydrogen', 'Helium', 'Carbon', 'Nitrogen', 'Oxygen',
+                 'Neon', 'Magnesium', 'Silicon', 'Iron']:
+        maptype = 'Metal'
+        maptype_argss = [{'element': ion, 'density': False}]
+    else:
+        maptype = 'ion'
+        if ion == 'H1':
+            _maptype_args = {'ps20depletion': False, 
+                             'ionfrac-method': 'sim'}
+        else:
+            _maptype_args = {'ps20depletion': False}
+        _maptype_args.update({'ion': ion})
+        maptype_argss = [_maptype_args.copy()] 
+
+    for maptype_args in maptype_argss:
+        depl = ''
+        if maptype == 'ion':
+            qt = maptype_args['ion']
+            if 'ionfrac-method' in maptype_args:
+                if maptype_args['ionfrac-method'] == 'sim':
+                    depl = '_ionfrac-fromsim'
+                else:
+                    _depl = maptype_args['ps20depletion']
+                    if _depl:
+                        depl = '_ps20-depl'
+            else:
+                _depl = maptype_args['ps20depletion']
+                if _depl:
+                    depl = '_ps20-depl'
+        elif maptype == 'Metal':
+            qt = maptype_args['element']
+        elif maptype == 'Mass':
+            qt = 'gas-mass'
+        elif maptype == 'Volume':
+            qt = 'gas-vol'
+
+        outfilen = outdir + _outfilen.format(sc=simname, sn=snapnum, 
+                                             depl=depl, qt=qt, los=los,
+                                             llos=rlos_rvir)
+        if checkfileflag:
+            if os.path.isfile(outfilen):
+                msg = 'For opt {}, output file already exists:\n{}'
+                print(msg.format(opt, outfilen))
+                print('Not running this map again')
+                return None
+
+        mm.massmap(dirpath, snapnum, radius_rvir=2., particle_type=0,
+                   pixsize_pkpc=3., axis=los, outfilen=outfilen,
+                   center='shrinksph', norm='pixsize_phys',
+                   weighttype=maptype, weighttype_args=maptype_args,
+                   maptype=wtdtype, maptype_args=wtdtype_args,
+                   save_weightmap=True, logmap=False,
+                   logweightmap=True, losradius_rvir=rlos_rvir)

@@ -280,6 +280,9 @@ def fromcommandline(index):
     elif index >= 39952 and index < 40000:
         rhp.run_haloprop_f2md(index - 39952)
         # 48 indices
+    elif index >= 40000 and index < 41152:
+        rim.run_vdoplosmaps_f2md(opt=index - 40000)
+        # 1152 indices
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

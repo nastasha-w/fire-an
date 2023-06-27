@@ -261,7 +261,7 @@ def run_haloprop_f2md(opt):
     # 48 indices
     ind = opt - 0
     simnames = sl.m12_f2md # 8
-    snaps = sl.snaps_sr # 6
+    snaps = sl.snaps_f2md # 6
 
     simi = ind // len(snaps)
     snapi = ind % len(snaps)

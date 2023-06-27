@@ -18,40 +18,75 @@ import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.opts_locs as ol
 
-def addcoldata(ax, data_bur, labelmeas=None, labelul=None):
+def addcoldata(ax, data_bur, labelmeas=None, labelul=None, datasel=None):
     isul = data_bur['log_N_Ne8_isUL'].copy()
     notul = np.logical_not(isul)
-    ax.errorbar(data_bur['impact_parameter_kpc'][notul], 
-                data_bur['log_N_Ne8_pcm2'][notul],
-                yerr=data_bur['log_N_Ne8_pcm2_err'][notul], 
-                linestyle='None', elinewidth=1.5, marker='o', 
-                markersize=3, color='black', capsize=3,
-                label=labelmeas, zorder=5)
-    ax.scatter(data_bur['impact_parameter_kpc'][isul], 
-                data_bur['log_N_Ne8_pcm2'][isul],
-                linestyle='None', marker='v', 
-                s=10, facecolors='none', edgecolors='black', 
-                label=labelul, zorder=5)
+    if datasel is None:
+        datasel = np.ones((len(data_bur),), dtype=bool)
+    color_main = 'black'
+    color_rest = 'gray'
+    dsel_main_ul = np.logical_and(isul, datasel)
+    dsel_main_noul = np.logical_and(notul, datasel)
+    dsel_rest_ul = np.logical_and(isul, np.logical_not(datasel))
+    dsel_rest_noul = np.logical_and(notul, np.logical_not(datasel))
+    
+    labelsset = False
+    for dsel_ul, dsel_noul, color in [(dsel_main_ul, dsel_main_noul, 
+                                       color_main),
+                                      (dsel_rest_ul, dsel_rest_noul, 
+                                       color_rest)]:
+        if not labelsset:
+            _labelmeas = labelmeas
+            _labelul = labelul
+            labelsset = True
+        else:
+            _labelmeas = None
+            _labelul = None
+        ax.errorbar(data_bur['impact_parameter_kpc'][dsel_noul], 
+                    data_bur['log_N_Ne8_pcm2'][dsel_noul],
+                    yerr=data_bur['log_N_Ne8_pcm2_err'][dsel_noul], 
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=3, color=color, capsize=3,
+                    label=_labelmeas, zorder=5)
+        ax.scatter(data_bur['impact_parameter_kpc'][dsel_ul], 
+                    data_bur['log_N_Ne8_pcm2'][dsel_ul],
+                    linestyle='None', marker='v', 
+                    s=10, facecolors='none', edgecolors=color, 
+                    label=_labelul, zorder=5)
 
-def addveldata(ax, data_bur, label=None, absvals=True):
+def addveldata(ax, data_bur, label=None, absvals=True, datasel=None):
     isul = data_bur['log_N_Ne8_isUL'].copy()
     notul = np.logical_not(isul)
-    ydata = (data_bur['v_kmps'][notul]).astype(np.float)
+    ydata = (data_bur['v_kmps']).astype(np.float)
     if absvals: 
         ydata = np.abs(ydata)
-    ax.errorbar(data_bur['impact_parameter_kpc'][notul], 
-                ydata,
-                yerr=data_bur['v_kmps_err'][notul], 
-                linestyle='None', elinewidth=1.5, marker='o', 
-                markersize=3, color='black', capsize=3,
-                label=label, zorder=5)
+    if datasel is None:
+        datasel = np.ones((len(data_bur),), dtype=bool)
+    color_main = 'black'
+    color_rest = 'gray'
+    dsel_main_noul = np.logical_and(datasel, notul)
+    dsel_rest_noul = np.logical_and(np.logical_not(datasel), notul)
+    labelsset = False
+    for dsel_noul, color in [(dsel_main_noul, color_main),
+                             (dsel_rest_noul, color_rest)]:
+        if not labelsset:
+            _label = label
+            labelsset = True
+        else:
+            _label = None
+        ax.errorbar(data_bur['impact_parameter_kpc'][dsel_noul], 
+                    ydata[dsel_noul],
+                    yerr=data_bur['v_kmps_err'][dsel_noul], 
+                    linestyle='None', elinewidth=1.5, marker='o', 
+                    markersize=3, color=color, capsize=3,
+                    label=_label, zorder=5)
 
 def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                           showscatter='clean',
                           datafieldsels=None, outname=None,
                           plottype='coldens', ne8_colsel=None):
     '''
-    plottype: 'coldens' or 'abslosvel'
+    plottype: 'coldens', 'abslosvel', or 'losvel'
     '''
     oddir = '/projects/b1026/nastasha/extdata/'
     ofilen = oddir + 'data_burchett_etal_2019_table1.txt'
@@ -63,6 +98,9 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                   '[\\mathrm{cm}^{-2}]$')
     elif plottype == 'abslosvel':
         ylabel = ('$|v_{\\mathrm{los}}| \\; '
+                  '[\\mathrm{km}\\, \\mathrm{s}^{-1}]$')
+    elif plottype == 'losvel':
+        ylabel = ('$v_{\\mathrm{los}} \\; '
                   '[\\mathrm{km}\\, \\mathrm{s}^{-1}]$')
     axtitles = ['noBH', 'AGN-noCR', 'AGN-CR']
     phystab = {'noBH': lambda x: '_sdp1e10_' in x,
@@ -135,6 +173,10 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
             weightmap = False
             absvals = True
             unitconv = 1e-5
+        elif plottype == 'losvel':
+            weightmap = False
+            absvals = False
+            unitconv = 1e-5
         plo, pmed, phi = gpr.get_profile_massmap(filens, rbins_pkpc,
                                                  rbin_units='pkpc',
                                                  profiles=['perc-0.1', 
@@ -169,6 +211,10 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
             ax.plot(rcens, phi * unitconv, color=color, 
                     alpha=1., linestyle='dotted',
                     linewidth=1.)
+            if plottype == 'losvel':
+                ax.plot(rcens, plo * unitconv, color=color, 
+                        alpha=1., linestyle='dotted',
+                        linewidth=1.)
             
     data_bur = bva.readdata_b19(nsigma=1.)
     cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
@@ -179,13 +225,16 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                                csm, meandef='200m')
         return mv / c.solar_mass
     data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
+    datasel = np.ones((len(data_bur),), dtype=bool)
     if datafieldsels is not None:
         for seltuple in datafieldsels:
             field = seltuple[0]
             minv = seltuple[1]
             maxv = seltuple[2]
-            data_bur = data_bur[data_bur[field] >= minv]
-            data_bur = data_bur[data_bur[field] <= maxv]
+            #data_bur = data_bur[data_bur[field] >= minv]
+            #data_bur = data_bur[data_bur[field] <= maxv]
+            datasel &= data_bur[field] >= minv
+            datasel &= data_bur[field] <= maxv
 
     for axi, (ax, axtitle) in enumerate(zip(axes, axtitles)):
         ax.set_title(axtitle, fontsize=fontsize)
@@ -200,16 +249,22 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
         ax.tick_params(labelsize=fontsize - 1., direction='in', which='both',
                        top=True, right=True, labelleft=axi == 0)
         if plottype == 'coldens':
-            addcoldata(ax, data_bur, labelmeas=_label, labelul=_ullabel)
+            addcoldata(ax, data_bur, labelmeas=_label, labelul=_ullabel,
+                       datasel=datasel)
         elif plottype == 'abslosvel':
-            addveldata(ax, data_bur, label=_label, absvals=True)
+            addveldata(ax, data_bur, label=_label, absvals=True,
+                       datasel=datasel)
+        elif plottype == 'losvel':
+            addveldata(ax, data_bur, label=_label, absvals=False,
+                       datasel=datasel)
     ylims = [ax.get_ylim() for ax in axes]
+    ymax = min([yl[1] for yl in ylims])
+    ymin = max([yl[0] for yl in ylims])
     if plottype == 'coldens':
         ymin = min([yl[0] for yl in ylims])
         ymin = max(ymin, 11.1)
     elif plottype == 'abslosvel':
         ymin = 0.
-    ymax = min([yl[1] for yl in ylims])
     [ax.set_ylim((ymin, ymax)) for ax in axes]
 
     hlist = []
@@ -221,6 +276,17 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                 mpatch.Patch(label='FIRE perc. 10-90', linewidth=0.5, 
                              color='black', alpha=alpha_range)
                 ]
+    if plottype in ['coldens', 'abslosvel']:
+        handles1 = handles1 + \
+                   [mlines.Line2D((), (), linewidth=lw_main, 
+                                  linestyle='dotted',
+                                  label='FIRE 90%', color='black')]
+    elif plottype == 'losvel':
+        handles1 = handles1 + \
+                   [mlines.Line2D((), (), linewidth=lw_main, 
+                                  linestyle='dotted',
+                                  label='FIRE 10, 90%', color='black')]
+
     lax.axis('off')
     lax.legend(handles=handles1 + hlist, fontsize=fontsize, ncol=numcols,
                loc='upper center')
@@ -278,8 +344,8 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
             datafieldsels = [('log_Mstar_Msun',) + dcrange_m[mset],
                              ('zgal',) + dcrange_z[mset]]
         print(datafieldsels)
-        for plottype in ['coldens', 'abslosvel']:
-            if plottype == 'abslosvel':
+        for plottype in ['coldens', 'abslosvel', 'losvel']:
+            if plottype in ['abslosvel', 'losvel']:
                 for ne8_colsel in ne8_colsels:
                     cstr = ('' if ne8_colsel is None else 
                             f'_Ne8_qe_{ne8_colsel[0]:.1f}')
@@ -288,19 +354,19 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
                                         f'_{masscomp}mass_sel{cstr}.pdf')
             
                     cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
-                                        rbins[mset],
-                                        showscatter='clean',
-                                        datafieldsels=datafieldsels,
-                                        outname=outname,
-                                        plottype=plottype, 
-                                        ne8_colsel=ne8_colsel)
+                                         rbins[mset],
+                                         showscatter='clean',
+                                         datafieldsels=datafieldsels,
+                                         outname=outname,
+                                         plottype=plottype, 
+                                         ne8_colsel=ne8_colsel)
             else:
                 outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
                                         f'_{masscomp}mass_sel.pdf')
             
                 cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
-                                     rbins[mset],
-                                     showscatter='clean',
-                                     datafieldsels=datafieldsels,
-                                     outname=outname,
-                                     plottype=plottype)
+                                      rbins[mset],
+                                      showscatter='clean',
+                                      datafieldsels=datafieldsels,
+                                      outname=outname,
+                                      plottype=plottype)

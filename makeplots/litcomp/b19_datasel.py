@@ -115,8 +115,10 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     m12_nobh = sl.m12_nobh_clean2 + sl.m12_nobh_rest2
     m12_agnnocr = sl.m12_agnnocr_clean2 + sl.m12_agnnocr_rest2
     m12_agncr = sl.m12_agncr_clean2 + sl.m12_agncr_rest2
+    m12_f2md = sl.m12_f2md
     _snapfiles = m13_nobh + m13_agnnocr + m13_agncr + \
-                 m12_nobh + m12_agnnocr + m12_agncr
+                 m12_nobh + m12_agnnocr + m12_agncr + \
+                 m12_f2md
     for sn in sl.buglist1:
         if sn in _snapfiles:
             _snapfiles.remove(sn)
@@ -127,16 +129,18 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     elif hset == 'clean':
         _ics = np.array(_ics)
         _snapfiles = np.array(_snapfiles)
-        icsel = np.array([sum([_ic == ic for _ic in _ics]) == 3 for ic in _ics])
+        icsel = np.array([sum([_ic == ic for _ic in _ics]) == 4 for 
+                          ic in _ics])
         ics = _ics[icsel]
         snapfiles = _snapfiles[icsel]
 
     nobh = m12_nobh + m13_nobh
     agnnocr = m12_agnnocr + m13_agnnocr
     agncr = m12_agncr + m13_agncr
+    f2md = m12_f2md
     snaplabels = [ic + ' noBH' if filen in nobh else
                   ic + ' AGN-noCR' if filen in agnnocr else
-                  ic + ' FIRE-2 MD' if len(filen.split('_')) == 2 else
+                  ic + ' FIRE-2' if filen in f2md else
                   ic + ' AGN-CR' if filen in agncr else
                   None
                   for filen, ic in zip(snapfiles, ics)]

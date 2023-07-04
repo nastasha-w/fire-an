@@ -3,6 +3,7 @@ convenient lists of simulations to avoid copying lists too often
 '''
 
 import fire_an.makeplots.tol_colors as tc
+import fire_an.utils.opts_locs as ol
 
 # clean: ICs for each noBH/AGN-noCR/AGN-CR run, snapshots down to z=0.5
 # 15 IC + phys
@@ -115,6 +116,8 @@ m12_f2md = ['m12z_r4200',
            'm12b_r7100',
            'm12m_r7100',
            'm12f_r7100',
+           'crheatfix_m12f_r7100'
+           'crheatfix_m12i_r7100'
            ]
 
 ## experimental m11 selection for C ion series
@@ -361,3 +364,38 @@ physlinestyles = {'AGN-CR': 'dotted',
                   'AGN-noCR': 'dashed',
                   'noBH': 'solid',
                   'FIRE-2 MD': 'dashdot'}
+
+## because the FIRE-2 directory = phys. model structure broke my
+# 'store by single directory level' setup
+def dirpath_from_simname(simname):
+    if simname in m12_f2md:
+        if simname.startswith('crheatfix'):
+            _sn = simname.split('_')[1:]
+            dirpath = ol.simdir_fire + 'cr_heating_fix/' + '_'.join(_sn)
+        else:
+            dirpath = ol.simdir_fire + simname
+    else:
+        dp2 = '_'.join(simname.split('_')[:2])
+        if dp2.startswith('m13h02_'):
+            dp2 = dp2.replace('m13h02', 'm13h002')
+        dirpath = '/'.join([ol.simdir_fire, dp2, simname])
+    return dirpath
+
+def simname_from_dirpath(dirpath):
+    # remove 'output' subdir, trailing slashes
+    if dirpath.endswith('output'):
+        simpart = dirpath.split('/')[:-2]
+    elif dirpath.endswith('output/'):
+        simparts = dirpath.split('/')[-3]
+    elif dirpath.endswith('/'):
+        simparts = dirpath.split('/')[-2]
+    else:
+        simparts = dirpath.split('/')[-1]
+    if simparts[-2] == 'cr_heating_fix':
+        simname = 'crheatfix_' + simparts[-1]
+    else:
+        simname = simparts[-1]
+    return simname
+    
+
+

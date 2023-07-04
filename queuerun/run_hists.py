@@ -830,8 +830,9 @@ def run_hist_rad_vrad_weighted(opt):
     outdir = '/scratch/08466/tg877653/output/hists/r_vr_wtd/'
     
     # 48 haloes, 576 indices
+    # + 12 haloes, 144 indices
     ind = opt - 0
-    simnames = sl.m12_f2md # len 8
+    simnames = sl.m12_f2md # len 8, + 2 for crheatfix
     snaps = sl.snaps_f2md # len 6
 
     wts = ['Mass', 'Volume', 'Metal'] + ['ion'] 
@@ -843,7 +844,7 @@ def run_hist_rad_vrad_weighted(opt):
     atargs = [{'vel': 'vrad'}]
     axbins = [5e5]
 
-    _dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
+    #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps) * len(wts) * len(atsplus))
     snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
            // (len(wts) * len(atsplus))
@@ -860,7 +861,8 @@ def run_hist_rad_vrad_weighted(opt):
     runit = 'Rvir'
     rbins = np.linspace(0.0, 1.3, 27)
 
-    dirpath = '/'.join([_dirpath, simname])
+    #dirpath = '/'.join([_dirpath, simname])
+    dirpath = sl.dirpath_from_simname(simname)
 
     atstr = 'rcen_vcen_' + atlabels[ati]
     wtstr = 'gasmass' if wt == 'Mass' else\

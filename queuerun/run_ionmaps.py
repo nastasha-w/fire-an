@@ -1383,7 +1383,8 @@ def run_vdoplosmaps_f2md(opt=0):
     wtdtype = 'coords'
     wtdtype_args = {'vel': 'doplos'}
     
-    # 48 haloes
+    # 48 haloes (0 - 1151)
+    # + 12 haloes (crheatingfix; 1152 - 1440, 288 indices)
     ind = opt - 0
     simnames = sl.m12_f2md # len 8
     snaps = sl.snaps_f2md # len 6
@@ -1401,7 +1402,7 @@ def run_vdoplosmaps_f2md(opt=0):
     los = loss[losi]
     rlos_rvir = rloss_rvir[rlosi]
 
-    dirpath = '/'.join([_dirpath, simname])
+    dirpath = sl.simname_from_dirpath(simname)
 
     if ion == 'Mass':
         maptype = 'Mass'

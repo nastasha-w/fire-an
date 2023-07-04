@@ -289,6 +289,12 @@ def fromcommandline(index):
     elif index >= 41728 and index < 41740:
         rhp.run_haloprop_f2md(index - 41728 + 48)
         # 12 indices; adding crheatfix snaps
+    elif index >= 41740 and index < 42028:
+        # + 12 haloes (crheatingfix; 1152 - 1440, 288 indices)
+        rim.run_vdoplosmaps_f2md(opt=index - 41740 + 1152)
+    elif index >= 42048 and index < 42192:
+        # + 12 haloes (crheatingfix; 144 indices, starting at 576)
+        rim.run_vdoplosmaps_f2md(opt=index - 42048 + 576)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

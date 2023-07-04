@@ -384,16 +384,18 @@ def dirpath_from_simname(simname):
 def simname_from_dirpath(dirpath):
     # remove 'output' subdir, trailing slashes
     if dirpath.endswith('output'):
-        simparts = dirpath.split('/')[:-2]
-    elif dirpath.endswith('output/'):
-        simparts = dirpath.split('/')[:-3]
-    elif dirpath.endswith('/'):
-        simparts = dirpath.split('/')[:-2]
-    else:
         simparts = dirpath.split('/')[:-1]
+    elif dirpath.endswith('output/'):
+        simparts = dirpath.split('/')[:-2]
+    elif dirpath.endswith('/'):
+        simparts = dirpath.split('/')[:-1]
+    else:
+        simparts = dirpath.split('/')
     if simparts[-2] == 'cr_heating_fix':
         simname = 'crheatfix_' + simparts[-1] 
-    else:
+    elif simparts[-1].startswith('m1'):
         simname = simparts[-1]
+    else:
+        simname = simparts[-2]
     return simname
     

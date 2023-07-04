@@ -378,13 +378,13 @@ def dirpath_from_simname(simname):
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
             dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([ol.simdir_fire, dp2, simname])
+        dirpath = '/'.join([ol.simdir_fire, dp2, simname]) + '/'
     return dirpath
 
 def simname_from_dirpath(dirpath):
     # remove 'output' subdir, trailing slashes
     if dirpath.endswith('output'):
-        simpart = dirpath.split('/')[:-2]
+        simparts = dirpath.split('/')[:-2]
     elif dirpath.endswith('output/'):
         simparts = dirpath.split('/')[:-3]
     elif dirpath.endswith('/'):
@@ -392,8 +392,8 @@ def simname_from_dirpath(dirpath):
     else:
         simparts = dirpath.split('/')[:-1]
     if simparts[-2] == 'cr_heating_fix':
-        simname = 'crheatfix_' + simparts[-1] + '/'
+        simname = 'crheatfix_' + simparts[-1] 
     else:
-        simname = simparts[-1] + '/'
+        simname = simparts[-1]
     return simname
     

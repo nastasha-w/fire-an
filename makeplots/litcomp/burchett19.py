@@ -84,7 +84,8 @@ def addveldata(ax, data_bur, label=None, absvals=True, datasel=None):
 def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
                           showscatter='clean',
                           datafieldsels=None, outname=None,
-                          plottype='coldens', ne8_colsel=None):
+                          plottype='coldens', ne8_colsel=None,
+                          inclf2md=True):
     '''
     plottype: 'coldens', 'abslosvel', or 'losvel'
     '''
@@ -102,20 +103,25 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
     elif plottype == 'losvel':
         ylabel = ('$v_{\\mathrm{los}} \\; '
                   '[\\mathrm{km}\\, \\mathrm{s}^{-1}]$')
-    axtitles = ['noBH', 'AGN-noCR', 'AGN-CR']
+    if inclf2md:
+        axtitles = ['FIRE-2', 'noBH', 'AGN-noCR', 'AGN-CR']
+    else: 
+        axtitles = ['noBH', 'AGN-noCR', 'AGN-CR']
     phystab = {'noBH': lambda x: '_sdp1e10_' in x,
                'AGN-CR': lambda x: '_MHDCRspec1_' in x,
+               'FIRE-2': lambda x: len(x.split('_')) == 2,
                'AGN-noCR': lambda x: ('_sdp1e10_' not in x 
                                       and '_MHDCRspec1_' not in x),
               }
     otherfills = [{'pax': 'x'}, {'pax': 'y'}, {'pax': 'z'}]
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+    sims_f2md = sl.m12_f2md
 
     if showscatter == 'clean':
         ics = [simname.split('_')[0] for simname in simnames]
         icsset = np.array(list(set(ics)))
-        cleansel = np.array([sum([_ic == ic for _ic in ics]) == 3
+        cleansel = np.array([sum([_ic == ic for _ic in ics]) == len(axtitles)
                             for ic in icsset])
         scatterics = icsset[cleansel]
     elif showscatter == 'all':
@@ -158,6 +164,8 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
             snapnums = sl.snaps_sr
         elif simn in sims_hr:
             snapnums = sl.snaps_hr
+        elif simn in sims_f2md:
+            snapnums = sl.snaps_f2md
         else:
             msg = (f'No snap list for simname {simn}; options:'
                    f'{sims_hr},\n{sims_sr}')
@@ -303,8 +311,8 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
         plt.savefig(outname, bbox_inches='tight')
 
 def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
-    mdir = '/projects/b1026/nastasha/maps/clean2_vlos/'
-    filen_temp = ('vlos_by_coldens_Ne8_{simname}_snap{snapnum}'
+    mdir = '/projects/b1026/nastasha/maps/vdopmaps_all2/'
+    filen_temp = ('vdoplos_by_coldens_Ne8_{simname}_snap{snapnum}'
                   '_shrink-sph-cen_BN98_depth_2.0rvir_{pax}-proj_v3.hdf5')
     dcrange_m, dcrange_z = bds.plotMz_burchett_etal_2019(hset=hsel, 
                                                          masscomp=masscomp)
@@ -312,7 +320,7 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
     rbins_pkpc_m13 = np.linspace(0., 600., 50)
     rbins = {'m12': rbins_pkpc_m12,
              'm13': rbins_pkpc_m13}
-    simnames_all = {'m12': sl.m12_sr_all2 + sl.m12_hr_all2,
+    simnames_all = {'m12': sl.m12_sr_all2 + sl.m12_hr_all2 + sl.m12_f2md,
                     'm13': sl.m13_sr_all2 + sl.m13_hr_all2}
     simnames = dict()
     for key in simnames_all:
@@ -351,7 +359,7 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
                             f'_Ne8_qe_{ne8_colsel[0]:.1f}')
                     cstr = cstr.replace('.', 'p')
                     outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
-                                        f'_{masscomp}mass_sel{cstr}.pdf')
+                                        f'_{masscomp}mass_sel{cstr}_v2.pdf')
             
                     cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
                                          rbins[mset],
@@ -359,14 +367,16 @@ def plotsets_ne8_burchett19(hsel='all', masscomp='halo_recalc'):
                                          datafieldsels=datafieldsels,
                                          outname=outname,
                                          plottype=plottype, 
-                                         ne8_colsel=ne8_colsel)
+                                         ne8_colsel=ne8_colsel,
+                                         inclf2md=mset=='m12')
             else:
                 outname = outdir + (f'{plottype}_Ne8comp_{mset}_{hsel}2'
-                                        f'_{masscomp}mass_sel.pdf')
+                                        f'_{masscomp}mass_sel_v2.pdf')
             
                 cdprof_ne8_burchett19(mdir + filen_temp, simnames[mset], 
                                       rbins[mset],
                                       showscatter='clean',
                                       datafieldsels=datafieldsels,
                                       outname=outname,
-                                      plottype=plottype)
+                                      plottype=plottype,
+                                      inclf2md=mset=='m12')

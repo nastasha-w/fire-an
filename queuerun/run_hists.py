@@ -843,7 +843,7 @@ def run_hist_rad_vrad_weighted(opt):
     atargs = [{'vel': 'vrad'}]
     axbins = [5e5]
 
-    _dirpath = '/scratch3/01799/phopkins/fire3_suite_done/'
+    _dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps) * len(wts) * len(atsplus))
     snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
            // (len(wts) * len(atsplus))

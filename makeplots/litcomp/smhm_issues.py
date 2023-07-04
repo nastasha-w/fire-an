@@ -400,6 +400,68 @@ def plot_sm_hm_b19_vs_fire():
     outdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
     outname = 'mstar_mh_distcomp_B19_methods_fire.pdf'
     plt.savefig(outdir + outname, bbox_inches='tight')
+
+def plot_hm_uncertainty_um_b19():
+    data_b19 = getdata_b19()
+    z_bur = data_b19['zgal']
+    ms_bur = data_b19['log_Mstar_Msun']
+    ms_bur_err = data_b19['log_Mstar_Msun_err']
+    isul = data_b19['log_N_Ne8_isUL']
+    binsize = 0.1
+
+    _b19colors = tc.tol_cset('vibrant')
+    color_allb19 = _b19colors[0]
+    color_detb19 = _b19colors[1]
+
+    fig = plt.figure(figsize=(5.5, 4.))
+    ax = fig.add_subplot(1, 1, 1)
+    fontsize = 12
+
+    ax.set_xlabel('$\\log_{10}\\, \\mathrm{M}_{\\mathrm{vir}} \\;'
+                  '[\\mathrm{M}_{\\odot}]$',
+                  fontsize=fontsize)
+    ax.set_ylabel('probability density', fontsize=fontsize)
+
+    ax.tick_params(which='both', direction='in', 
+                   labelsize=fontsize - 1., top=True, 
+                   right=True, labelbottom=True, labelleft=True)  
+    
+    histobj = smhmld.SMHMhists(np.array(z_bur), binsize=binsize)
+    ullabeldone = False
+    detlabeldone = False
+    for ms, mserr, _isul, _zgal in zip(ms_bur, ms_bur_err, 
+                                       isul, z_bur):
+        msbins_hist = histobj.getbins(_zgal, mode='ms')
+        _Pcbin_ms = smhman.cumulgauss((msbins_hist - ms) / mserr)
+        _Pbin_ms = np.diff(_Pcbin_ms)
+        mhp, _mhbins = histobj.matrixconv(_Pbin_ms, _zgal, 
+                                          mode='mstomh')
+        mhpd = mhp / np.diff(_mhbins)
+        mhcens = 0.5 * (_mhbins[:-1] + _mhbins[1:])
+        if _isul:
+            color = color_allb19
+            alpha = 0.3
+            if not ullabeldone:
+                _label = 'B+19 Ne VIII UL'
+                ullabeldone = True
+            else:
+                _label = None
+        else:
+            color = color_detb19
+            alpha = 0.6
+            if not detlabeldone:
+                _label = 'B+19 Ne VIII det.'
+                detlabeldone = True
+            else:
+                _label = None
+        ax.plot(mhcens, mhpd, color=color, alpha=alpha, label=_label)
+    
+    ax.set_xlim((10.4, 14.8))
+    ax.legend(fontsize=fontsize, loc='upper right')
+
+    outdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
+    outname = 'mh_pdists_b19_umcalc.pdf'
+    plt.savefig(outdir + outname, bbox_inches='tight')
     
     
 

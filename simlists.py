@@ -358,12 +358,12 @@ _physcolors = tc.tol_cset('bright')
 physcolors = {'AGN-CR': _physcolors.green,
               'AGN-noCR': _physcolors.red,
               'noBH': _physcolors.blue,
-              'FIRE-2 MD': _physcolors.yellow}
+              'FIRE-2': _physcolors.yellow}
 
 physlinestyles = {'AGN-CR': 'dotted',
                   'AGN-noCR': 'dashed',
                   'noBH': 'solid',
-                  'FIRE-2 MD': 'dashdot'}
+                  'FIRE-2': 'dashdot'}
 
 ## because the FIRE-2 directory = phys. model structure broke my
 # 'store by single directory level' setup
@@ -397,5 +397,3 @@ def simname_from_dirpath(dirpath):
         simname = simparts[-1]
     return simname
     
-
-

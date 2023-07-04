@@ -15,7 +15,7 @@ import fire_an.utils.math_utils as mu
 def getphys(simname):
     phys = ('noBH' if '_sdp1e10_' in simname 
             else 'AGN-CR' if '_MHDCRspec1_' in simname 
-            else 'FIRE-2 MD' if len(simname.split('_')) == 2
+            else 'FIRE-2' if len(simname.split('_')) == 2
             else 'AGN-noCR')
     return phys
 
@@ -123,7 +123,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
                         yweightmap, xlabel=None, ylabel=None,
                         ncols=None, fontsize=12,
                         wspace=0.0, hspace=0.0,
-                        syncaxlims=True):
+                        syncaxlims=True, showphys='all'):
     '''
     plot data points against each other, with x/y points matched
     by ics/phys. model/snapshot. 
@@ -140,7 +140,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
     physmarkers = {'noBH': '*',
                    'AGN-noCR': 'o',
                    'AGN-CR': 'P',
-                   'FIRE-2 MD': 'd'}
+                   'FIRE-2': 'd'}
     markeredgewidth = 2
     size = 5
     fontsize = 12
@@ -222,6 +222,10 @@ def plotdata_censcatter(datax, datay, xweightmap,
                       ncol=ncol_leg[1],
                       bbox_to_anchor=(lcen, ltop), loc='upper center',
                       handletextpad=0.4, columnspacing=1.0)
+    if showphys == 'all':
+        _pmleg = physmarkers.keys()
+    else:
+        _pmleg = showphys
     handles3 = [mlines.Line2D((), (), label=phys, 
                               markersize=size,
                               markerfacecolor='gray', 
@@ -229,7 +233,7 @@ def plotdata_censcatter(datax, datay, xweightmap,
                               markeredgecolor='black',
                               linestyle='none',
                               markeredgewidth=markeredgewidth)
-                for phys in physmarkers]
+                for phys in _pmleg]
     leg3 = lax.legend(handles=handles3, fontsize=fontsize, 
                       ncol=ncol_leg[2],
                       bbox_to_anchor=(1.0, ltop), loc='upper right',

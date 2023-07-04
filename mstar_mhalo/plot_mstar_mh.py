@@ -200,7 +200,15 @@ def plot_mhdist_for_mstar(z_target):
     plt.savefig(outname, bbox_inches='tight')
         
 
-def plot_mstar_mh(zs_target):
+def plot_mstar_mh(zs_target, variation='main'):
+    '''
+    zs_target: array-like of floats
+        redshifts to compute the relation for. (Closest UM
+        tabulated values are used.)
+    variation: {'main', 'appendix'}
+        show the UM relation + B+19 (main text) or the UM
+        relation + median M* at Mh (appendix)
+    '''
     binsize = 0.1
     # 1, 2 sigma
     sig1 = an.cumulgauss(1.) - an.cumulgauss(-1.)
@@ -278,10 +286,11 @@ def plot_mstar_mh(zs_target):
             ax.plot(msx, mhy, linestyle=ls, color=color_mstomh,
                     linewidth=linewidth, path_effects=path_effects)
         
-        msxs, mhy = histobj.getperc_msmh(z_target, mode='mhtoms', 
-                                        percvals=np.array([0.5]))
-        ax.plot(msxs[0], mhy, linestyle='solid', color=color_mhtoms,
-                linewidth=linewidth, path_effects=path_effects)
+        if variation == 'appendix':
+            msxs, mhy = histobj.getperc_msmh(z_target, mode='mhtoms', 
+                                            percvals=np.array([0.5]))
+            ax.plot(msxs[0], mhy, linestyle='solid', color=color_mhtoms,
+                    linewidth=linewidth, path_effects=path_effects)
         
         xlims = ax.get_xlim()
         ax.set_xlim(8., xlims[1])
@@ -291,10 +300,12 @@ def plot_mstar_mh(zs_target):
         #xv_moster13 = np.log10(an.mstar_moster_etal_2013(10**mhbins_hist, z_used))
         #ax.plot(xv_moster13, mhbins_hist, color=color_moster13, linewidth=linewidth,
         #        linestyle='dashdot', path_effects=path_effects)
-        ms_burchett19 = np.log10(an.mstar_burchett_etal_2019(10**mhbins_hist, 
-                                                            z_used))
-        ax.plot(ms_burchett19, mhbins_hist, color=color_burchett19, linewidth=linewidth,
-                linestyle='dashdot', path_effects=path_effects)
+        if variation == 'main':
+            ms_burchett19 = np.log10(an.mstar_burchett_etal_2019
+                                     (10**mhbins_hist, z_used))
+            ax.plot(ms_burchett19, mhbins_hist, color=color_burchett19, 
+                    linewidth=linewidth,
+                    linestyle='dashdot', path_effects=path_effects)
     xlims = [ax.get_xlim() for ax in axes]
     xmin = min([xlim[0] for xlim in xlims])
     xmax = max([xlim[1] for xlim in xlims])
@@ -331,6 +342,10 @@ def plot_mstar_mh(zs_target):
                               linestyle='dashdot', 
                               path_effects=path_effects,
                               label=label_burchett19)]
+    if variation == 'main':
+        handles2 = handles2[1:]
+    elif variation == 'appendix':
+        handles2 = handles2[:2]
     if len(axes) == 1:
         axes[0].legend(handles=handles1 + handles2, 
                        fontsize=fontsize -1, 
@@ -352,7 +367,8 @@ def plot_mstar_mh(zs_target):
                        handlelength=2., columnspacing=1.,
                        handletextpad=0.4, framealpha=0.3)
     zstr = '_'.join([f'{z_used:.2f}' for z_used in zs_used])
-    outname = f'mhalo_mstar_relation_universemachine_smdpl_z_{zstr}'
+    outname = ('mhalo_mstar_relation_universemachine_smdpl_z'
+               f'_{zstr}_{variation}')
     outname = imgdir + outname.replace('.', 'p') + '.pdf'
     plt.savefig(outname, bbox_inches='tight')    
    

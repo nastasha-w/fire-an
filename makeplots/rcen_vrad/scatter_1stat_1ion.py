@@ -8,7 +8,7 @@ import fire_an.simlists as sl
 
 def plot_props_ion_vs_vol(ion, rranges_rvir_col, simnames,
                           outname=None, ionlabel=None,
-                          coltitles=None):
+                          coltitles=None, showphys='all'):
     haloweight = 'gasvol'
     fqtys = ['temperature', 'hdens', 'NeonAbundance']
     targetvals = ['T', 'nH', 'N']
@@ -22,7 +22,7 @@ def plot_props_ion_vs_vol(ion, rranges_rvir_col, simnames,
     snaps_f2md = sl.snaps_f2md
     sims_sr = sl.m13_sr_all2 + sl.m12_sr_all2
     sims_hr = sl.m13_hr_all2 + sl.m12_hr_all2
-    sims_f2md  = sl.snaps_f2md
+    sims_f2md  = sl.m12_f2md
     ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     filen_temp = ('hist_rcen_vcen_{compqty}_by_{weight}_{simname}'
                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
@@ -92,7 +92,8 @@ def plot_props_ion_vs_vol(ion, rranges_rvir_col, simnames,
                                                    ncols=len(fqtys),
                                                    fontsize=fontsize,
                                                    syncaxlims=False,
-                                                   hspace=0.28)
+                                                   hspace=0.28,
+                                                   showphys=showphys)
     fontsize = axdoc['fontsize']
     nrows = len(fqtys)
     ncols = len(rranges_rvir_col)
@@ -154,27 +155,36 @@ def runplotprop_ion_vs_vol(ion='Ne8', ionlabel='Ne VIII'):
             for simname in toscan:
                 if simname.split('_')[0] in bugics:
                     simnames.remove(simname)
+            for simname in sl.m12_f2md:
+                ic = simname.split('_')[0]
+                if np.any([sn.startswith(ic) for sn in simnames]):
+                    simnames.append(simname)
+            showphys = 'all'
         elif simset == 'm12_all2':
-            simnames = sl.m12_hr_all2 + sl.m12_sr_all2
+            simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md
             toscan = simnames.copy()
             for simname in toscan:
                 if simname.split('_')[0] in buglist:
                     simnames.remove(simname)
+            showphys = 'all'
         elif simset == 'm13_clean2':
             simnames = sl.m13_hr_clean2 + sl.m13_sr_clean2
             toscan = simnames.copy()
             for simname in toscan:
                 if simname.split('_')[0] in bugics:
                     simnames.remove(simname)
+            showphys = ['noBH', 'AGN-noCR', 'AGN-CR']
         elif simset == 'm13_all2':
             simnames = sl.m13_hr_all2 + sl.m13_sr_all2
             toscan = simnames.copy()
             for simname in toscan:
                 if simname.split('_')[0] in buglist:
                     simnames.remove(simname)
-        outname = (f's2_vol_vs_{ion}_TnHZ_{simset}'
+            showphys = ['noBH', 'AGN-noCR', 'AGN-CR']
+        outname = (f's3_vol_vs_{ion}_TnHZ_{simset}'
                     'rrange_var')
         outname = outdir + outname.replace('.', 'p') + '.pdf'
         plot_props_ion_vs_vol(ion, rranges_rvir, simnames,
                                 outname=outname, ionlabel=ionlabel,
-                                coltitles=coltitles)
+                                coltitles=coltitles, 
+                                showphys=showphys)

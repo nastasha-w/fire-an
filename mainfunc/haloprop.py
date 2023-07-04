@@ -9,6 +9,8 @@ import uuid
 
 import matplotlib.pyplot as plt # debugging
 
+import fire_an.simlists as sl
+
 
 # Andrew Wetzel's Rockstar halo catalogue wrangler
 try:
@@ -262,12 +264,13 @@ def readhalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
                                                 
     filen_main = ol.filen_halocenrvir
     
-    pparts = path.split('/')
-    while '' in pparts:
-        pparts.remove('')
-    if pparts[-1] == 'output':
-        pparts = pparts[:-1]
-    simid = pparts[-1]
+    #pparts = path.split('/')
+    #while '' in pparts:
+    #    pparts.remove('')
+    #if pparts[-1] == 'output':
+    #    pparts = pparts[:-1]
+    #simid = pparts[-1]
+    simid = sl.simname_from_dirpath(path)
     
     with h5py.File(filen_main, 'r') as f:
         todoc = {}
@@ -355,12 +358,13 @@ def gethalodata_shrinkingsphere(path, snapshot, meandef=('200c', 'BN98')):
     fdir = ol.dir_halodata
     
     newcalc = False
-    pparts = path.split('/')
-    while '' in pparts:
-        pparts.remove('')
-    if pparts[-1] == 'output':
-        pparts = pparts[:-1]
-    simid = pparts[-1]
+    #pparts = path.split('/')
+    #while '' in pparts:
+    #    pparts.remove('')
+    #if pparts[-1] == 'output':
+    #    pparts = pparts[:-1]
+    #simid = pparts[-1]
+    simid = sl.simname_from_dirpath(path)
     
     try:
         halodat, todoc = readhalodata_shrinkingsphere(
@@ -734,13 +738,14 @@ def readdata_vcom(path, snapshot, radius_rvir, meandef_rvir='BN98',
     else:
         filen_main = datafile
     
-    pparts = path.split('/')
-    while '' in pparts:
-        pparts.remove('')
-    if pparts[-1] == 'output':
-        pparts = pparts[:-1]
-    simid = pparts[-1]
-    
+    #pparts = path.split('/')
+    #while '' in pparts:
+    #    pparts.remove('')
+    #if pparts[-1] == 'output':
+    #    pparts = pparts[:-1]
+    #simid = pparts[-1]
+    simid = sl.simname_from_dirpath(path)
+
     with h5py.File(filen_main, 'r') as f:
         # find the halo center/rvir group
         smgrp = f[simid]
@@ -812,12 +817,13 @@ def writedata_vcom(halodat, todoc,
     else:
         filen = datafile
     
-    pparts = path.split('/')
-    while '' in pparts:
-        pparts.remove('')
-    if pparts[-1] == 'output':
-        pparts = pparts[:-1]
-    simid = pparts[-1]
+    #pparts = path.split('/')
+    #while '' in pparts:
+    #    pparts.remove('')
+    #if pparts[-1] == 'output':
+    #    pparts = pparts[:-1]
+    #simid = pparts[-1]
+    simid = sl.simname_from_dirpath(path)
 
     with h5py.File(filen, 'a') as fo:
         # should have one sim, snap, cen group

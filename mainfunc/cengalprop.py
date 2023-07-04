@@ -12,6 +12,7 @@ import uuid
 
 import fire_an.mainfunc.haloprop as hp
 import fire_an.readfire.readin_fire_data as rf
+import fire_an.simlists as sl
 import fire_an.utils.h5utils as h5u
 import fire_an.utils.opts_locs as ol
 
@@ -81,14 +82,15 @@ def savedata_cengalcen(simpath, snapnum, pcen_cm, vcom_cmps, todoc):
     filen = ol.dir_halodata + f'temp_pvcengal_{uuid.uuid1()}.hdf5'
     if os.path.isfile(filen):
         raise RuntimeError(f'temp. file {filen} already exists')
-    if simpath.endswith('output'):
-        simname = simpath.split('/')[-2]
-    elif simpath.endswith('output/'):
-        simname = simpath.split('/')[-3]
-    elif simpath.endswith('/'):
-        simname = simpath.split('/')[-2]
-    else:
-        simname = simpath.split('/')[-1]
+    #if simpath.endswith('output'):
+    #    simname = simpath.split('/')[-2]
+    #elif simpath.endswith('output/'):
+    #    simname = simpath.split('/')[-3]
+    #elif simpath.endswith('/'):
+    #    simname = simpath.split('/')[-2]
+    #else:
+    #    simname = simpath.split('/')[-1]
+    simname = sl.simname_from_dirpath(simpath)
 
     with h5py.File(filen, 'w') as f:
         g1 = f.create_group(simname)
@@ -102,7 +104,8 @@ def savedata_cengalcen(simpath, snapnum, pcen_cm, vcom_cmps, todoc):
 def readdata_cengalcen(simpath, snapnum, startrad_rvir=0.3,
                        vcenrad_rvir=0.05, mstarrad_rvir=0.1):
     filen = ol.dir_halodata + 'pvcengal.hdf5'
-    simname = simpath.split('/')[-1]
+    #simname = simpath.split('/')[-1]
+    simname = sl.simname_from_dirpath(simpath)
     with h5py.File(filen, 'r') as f:
         if simname not in f:
             raise hp.NoStoredMatchError(f'simname {simname} data not stored')

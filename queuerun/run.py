@@ -286,6 +286,9 @@ def fromcommandline(index):
     elif index >= 41152 and index < 41728:
         # 576 indices
         rhs.run_hist_rad_vrad_weighted(index - 41152)
+    elif index >= 41728 and index < 41740:
+        rhp.run_haloprop_f2md(index - 41728 + 48)
+        # 12 indices; adding crheatfix snaps
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

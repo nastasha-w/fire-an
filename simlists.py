@@ -392,8 +392,8 @@ def simname_from_dirpath(dirpath):
     else:
         simparts = dirpath.split('/')[-1]
     if simparts[-2] == 'cr_heating_fix':
-        simname = 'crheatfix_' + simparts[-1]
+        simname = 'crheatfix_' + simparts[-1] + '/'
     else:
-        simname = simparts[-1]
+        simname = simparts[-1] + '/'
     return simname
     

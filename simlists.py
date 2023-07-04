@@ -378,8 +378,8 @@ def dirpath_from_simname(simname):
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
             dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([ol.simdir_fire, dp2, simname]) + '/'
-    return dirpath
+        dirpath = '/'.join([ol.simdir_fire, dp2, simname]) 
+    return dirpath + '/'
 
 def simname_from_dirpath(dirpath):
     # remove 'output' subdir, trailing slashes

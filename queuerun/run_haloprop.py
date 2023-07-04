@@ -269,8 +269,9 @@ def run_haloprop_f2md(opt):
     simname = simnames[simi]
     snapnum = snaps[snapi]
 
-    dirpath = '/'.join([_dirpath, simname]) 
-    
+    #dirpath = '/'.join([_dirpath, simname]) 
+    dirpath = sl.dirpath_from_simname(simname)
+
     print(f'Whole halo center, {simname}, snap {snapnum}')
     hp.gethalodata_shrinkingsphere(dirpath, snapnum, 
                                    meandef=('BN98', '200c', '200m'))

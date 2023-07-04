@@ -116,7 +116,7 @@ m12_f2md = ['m12z_r4200',
            'm12b_r7100',
            'm12m_r7100',
            'm12f_r7100',
-           'crheatfix_m12f_r7100'
+           'crheatfix_m12f_r7100',
            'crheatfix_m12i_r7100'
            ]
 

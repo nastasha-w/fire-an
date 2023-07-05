@@ -1402,7 +1402,7 @@ def run_vdoplosmaps_f2md(opt=0):
     los = loss[losi]
     rlos_rvir = rloss_rvir[rlosi]
 
-    dirpath = sl.simname_from_dirpath(simname)
+    dirpath = sl.dirpath_from_simname(simname)
 
     if ion == 'Mass':
         maptype = 'Mass'

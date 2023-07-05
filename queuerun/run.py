@@ -294,7 +294,7 @@ def fromcommandline(index):
         rim.run_vdoplosmaps_f2md(opt=index - 41740 + 1152)
     elif index >= 42028 and index < 42172:
         # + 12 haloes (crheatingfix; 144 indices, starting at 576)
-        rim.run_vdoplosmaps_f2md(opt=index - 42048 + 576)
+        rhs.run_hist_rad_vrad_weighted(opt=index - 42048 + 576)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

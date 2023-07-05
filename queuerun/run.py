@@ -292,7 +292,7 @@ def fromcommandline(index):
     elif index >= 41740 and index < 42028:
         # + 12 haloes (crheatingfix; 1152 - 1440, 288 indices)
         rim.run_vdoplosmaps_f2md(opt=index - 41740 + 1152)
-    elif index >= 42048 and index < 42192:
+    elif index >= 42028 and index < 42172:
         # + 12 haloes (crheatingfix; 144 indices, starting at 576)
         rim.run_vdoplosmaps_f2md(opt=index - 42048 + 576)
     else:

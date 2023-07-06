@@ -341,6 +341,8 @@ buglist1 = [
      '_gacc31_fa0.5_fcr1e-3_vw3000'),
     ('m12m_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
      '_gacc31_fa0.5_fcr1e-3_vw3000'),
+    'm12i_r7100',
+    'm12f_r7100',
 ]
 
 
@@ -398,4 +400,41 @@ def simname_from_dirpath(dirpath):
     else:
         simname = simparts[-2]
     return simname
+
+def ic_from_simname(simname):
+    simparts = simname.split('_')
+    if simparts[0] in ['crheatfix']:
+        ic = simparts[1]
+    else:
+        ic = simparts[0]
+    return ic
+
+def physlabel_from_simname(simname):
+    if simname.startswith('crheatfix'):
+        physlabel = 'FIRE-2'
+    elif len(simname.split('_')) == 2:
+        physlabel = 'FIRE-2'
+    elif '_sdp1e10_' in simname:
+        physlabel = 'noBH'
+    elif '_MHDCRspec1_' in simname:
+        physlabel = 'AGN-CR'
+    else:
+        physlabel = 'AGN-noCR'
+    return physlabel
+
+plotlabel_from_physlabel_short = {
+    'FIRE-2': 'F2 noBH',
+    'noBH': 'F3 noBH',
+    'AGN-noCR': 'F3 AGN-noCR',
+    'AGN-CR': 'F3 AGN-CR',
+}
+
+plotlabel_from_physlabel = {
+    'FIRE-2': 'FIRE-2 noBH',
+    'noBH': 'FIRE-3 noBH',
+    'AGN-noCR': 'FIRE-3 AGN-noCR',
+    'AGN-CR': 'FIRE-3 AGN-CR',
+}
+
+
     

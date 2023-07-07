@@ -198,8 +198,8 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
         #    icusedlist.append(simlabel)
         #    ici = len(icusedlist) - 1 
         plab = sl.physlabel_from_simname(simn) 
-        ismain = simlabel in scatterics
-        lw = lw_main #if ismain else lw_sup
+        #ismain = simlabel in scatterics
+        lw = 1.5 #lw_main if ismain else lw_sup
         ax = axes[np.where([plab == axt for axt in axlabels])[0][0]] 
         color = colors[simlabel]
         ls = 'solid'
@@ -213,11 +213,11 @@ def cdprof_ne8_burchett19(filen_temp, simnames, rbins_pkpc,
         #else:
         ax.plot(rcens, phi * unitconv, color=color, 
                 alpha=1., linestyle='dashed',
-                linewidth=1.5)
+                linewidth=1.2)
         if plottype == 'losvel':
             ax.plot(rcens, plo * unitconv, color=color, 
                     alpha=1., linestyle='dashed',
-                    linewidth=1.5)
+                    linewidth=1.2)
         else:
             ax.plot(rcens, plo * unitconv, color=color, 
                 alpha=1., linestyle='dotted',

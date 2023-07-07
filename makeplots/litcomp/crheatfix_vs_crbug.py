@@ -29,7 +29,11 @@ def comp_crheatfix_crbug():
                                                 snapnum=snap, **ofill)
                        for snap in snapnums for ofill in otherfills]
               for simkey in simnames}
-    
+    filens_z = {simkey: [[mdir + filen_temp.format(simname=simnames[simkey], 
+                                                  snapnum=snap, **ofill)
+                          for ofill in otherfills]
+                         for snap in snapnums]
+                for simkey in simnames}
     fig = plt.figure(figsize=(5.5, 3.))
     grid = gsp.GridSpec(ncols=2, nrows=1, hspace=0.0, wspace=0.0)
     axes = [fig.add_subplot(grid[0, i]) for i in range(2)]
@@ -50,9 +54,10 @@ def comp_crheatfix_crbug():
                 transform=ax.transAxes, horizontalalignment='right',
                 verticalalignment='top')
 
-        for opt in ['bug', 'fix']:
+        for opti, opt in enumerate(['bug', 'fix']):
             snkey = f'sn_{opt}_{ic}'
             _filens = filens[snkey]
+            _filens_z = filens_z[snkey]
             plo, pmed, phi = gpr.get_profile_massmap(_filens, 
                                                      rbins_pkpc,
                                                      rbin_units='pkpc',
@@ -60,10 +65,21 @@ def comp_crheatfix_crbug():
                                                                'perc-0.5', 
                                                                'perc-0.9'],
                                                      weightmap=True)
+            meds_z = [gpr.get_profile_massmap(_fzs, 
+                                              rbins_pkpc,
+                                              rbin_units='pkpc',
+                                              profiles=['perc-0.5'],
+                                              weightmap=True)
+                      for _fzs in _filens_z]
+            meds_z = (np.array(meds_z)[:, 0, :])
+            yerr = np.array([pmed - np.min(meds_z, axis=0), 
+                             np.max(meds_z, axis=0) - pmed])
             ax.plot(rcens, plo, color=colors[opt], linestyle='dotted',
                     linewidth=1.)
             ax.plot(rcens, pmed, color=colors[opt], linestyle='solid',
                     linewidth=2.)
+            ax.errorbar(rcens[opti::2], pmed[opti::2], yerr=yerr[:, opti::2],
+                        color=colors[opt], linewidth=1.1, linestyle='none')
             ax.plot(rcens, phi, color=colors[opt], linestyle='dashed',
                     linewidth=1.5)
         if axi == 1:

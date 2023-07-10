@@ -122,7 +122,7 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     for sn in sl.buglist1:
         if sn in _snapfiles:
             _snapfiles.remove(sn)
-    _ics = [filen.split('_')[0] for filen in _snapfiles]
+    _ics = [sl.ic_from_simname(filen) for filen in _snapfiles]
     if hset == 'all':
         snapfiles = _snapfiles 
         ics = _ics
@@ -134,15 +134,11 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
         ics = _ics[icsel]
         snapfiles = _snapfiles[icsel]
 
-    nobh = m12_nobh + m13_nobh
-    agnnocr = m12_agnnocr + m13_agnnocr
-    agncr = m12_agncr + m13_agncr
-    f2md = m12_f2md
-    snaplabels = [ic + ' noBH' if filen in nobh else
-                  ic + ' AGN-noCR' if filen in agnnocr else
-                  ic + ' FIRE-2' if filen in f2md else
-                  ic + ' AGN-CR' if filen in agncr else
-                  None
+    #nobh = m12_nobh + m13_nobh
+    #agnnocr = m12_agnnocr + m13_agnnocr
+    #agncr = m12_agncr + m13_agncr
+    #f2md = m12_f2md
+    snaplabels = [ic + ' ' + sl.physlabel_from_simname(filen)
                   for filen, ic in zip(snapfiles, ics)]
 
     if masscomp == 'halo':
@@ -172,7 +168,7 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
         m_bur = data_bur['Mvir_Msun']
         isul = data_bur['log_N_Ne8_isUL']
         ax.scatter(z_bur[isul], m_bur[isul], marker='o', linestyle='None',
-                edgecolor='black', facecolor='none', label='Bur.+19 (UL)',
+                edgecolor='black', facecolor='none', label='Bur.+19\n(UL)',
                 s=40, zorder=5)
         ax.scatter(z_bur[np.logical_not(isul)], m_bur[np.logical_not(isul)], 
                 marker='o', linestyle='None', edgecolor='black', 
@@ -189,13 +185,13 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
         noul = np.logical_not(isul)
         ax.errorbar(z_bur[noul], m_bur[noul], yerr=m_bur_err[:, noul], 
                     linestyle='None', elinewidth=1.5, marker='o', 
-                    markersize=4, color='black', capsize=3,
+                    markersize=7, color='black', capsize=3,
                     zorder=5, label='Bur.+19')
         ax.errorbar(z_bur[isul], m_bur[isul], yerr=m_bur_err[:, isul], 
                     color='black',
                     linestyle='None', elinewidth=1.5, marker='o', 
-                    markersize=4, markeredgecolor='black', capsize=3,
-                    markerfacecolor='none', zorder=5, label='Bur.+19 (UL)')
+                    markersize=7, markeredgecolor='black', capsize=3,
+                    markerfacecolor='none', zorder=5, label='Bur.+19\n(UL)')
     elif masscomp == 'stellar':
         isul = data_bur['log_N_Ne8_isUL']
         noul = np.logical_not(isul)
@@ -210,20 +206,22 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
                     color='black',
                     linestyle='None', elinewidth=1.5, marker='o', 
                     markersize=4, markeredgecolor='black', capsize=3,
-                    markerfacecolor='none', zorder=5, label='Bur.+19 (UL)')
+                    markerfacecolor='none', zorder=5, label='Bur.+19\n(UL)')
 
     mass_minmax = {'m13': (np.inf, -np.inf),
                    'm12': (np.inf, -np.inf)}
     z_minmax = {'m13': (np.inf, -np.inf),
                 'm12': (np.inf, -np.inf)}
-    zmar = 0.05
-    mmar = 0.2
+    zmars = (0.05, 0.1)
+    mmars = (0.2, 0.4)
     m13ics_used = set()
     m12ics_used = set()
     physmodels_used = set()
     for snapfile, snaplabel, firemass, fireredshift \
             in zip(snapfiles[::-1], snaplabels[::-1], firemasses[::-1],
                    fireredshifts[::-1]):
+        if snapfile in sl.buglist1:
+            continue
         hlabel, plabel = snaplabel.split(' ')
         if hlabel.startswith('m13'):
             color = sl.m13_iccolors[hlabel]
@@ -231,14 +229,12 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
         elif hlabel.startswith('m12'):
             color = sl.m12_iccolors[hlabel]
             m12ics_used.add(hlabel)
+        
         linestyle = sl.physlinestyles[plabel]
         physmodels_used.add(plabel)
-        if snapfile in sl.buglist1:
-            marker = 'x'
-            ms = 5
-        else:
-            marker = 'o'
-            ms = 3
+
+        marker = 'o'
+        ms = 3
         ax.plot(fireredshift, firemass, color=color,
                 linestyle=linestyle, linewidth=1.5,
                 marker=marker, markersize=ms)
@@ -253,35 +249,47 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
                 zmax = max(_prev[1], np.max(fireredshift))
                 z_minmax[key] = (zmin, zmax)
     if masscomp in ['halo']:
-        mass_minmax = {key: (10**(np.log10(mass_minmax[key][0]) - mmar),
-                             10**(np.log10(mass_minmax[key][1]) + mmar))
-                       for key in mass_minmax}
+        mass_minmax = [{key: (10**(np.log10(mass_minmax[key][0]) - mmar),
+                              10**(np.log10(mass_minmax[key][1]) + mmar))
+                        for key in mass_minmax}
+                       for mmar in mmars]
     elif masscomp in ['halo_recalc']:
-        mass_minmax = {key: (mass_minmax[key][0] - mmar,
-                             mass_minmax[key][1] + mmar)
-                       for key in mass_minmax}
+        mass_minmax = [{key: (mass_minmax[key][0] - mmar,
+                              mass_minmax[key][1] + mmar)
+                        for key in mass_minmax}
+                       for mmar in mmars]
     elif masscomp == 'stellar':
-        mass_minmax = {key: (mass_minmax[key][0] - mmar,
-                             mass_minmax[key][1] + mmar)
-                       for key in mass_minmax}
-    z_minmax = {key: (z_minmax[key][0] - zmar, z_minmax[key][1] + zmar)
-                for key in z_minmax}
+        mass_minmax = [{key: (mass_minmax[key][0] - mmar,
+                              mass_minmax[key][1] + mmar)
+                        for key in mass_minmax}
+                       for mmar in mmars]
+    z_minmax = [{key: (z_minmax[key][0] - zmar, z_minmax[key][1] + zmar)
+                 for key in z_minmax}
+                for zmar in zmars]
     print(mass_minmax)
     print(z_minmax)
-    for key in mass_minmax:
-        line1 = [mass_minmax[key][0], mass_minmax[key][1], 
-                 mass_minmax[key][1], mass_minmax[key][0], 
-                 mass_minmax[key][0]]
-        line0 = [z_minmax[key][0], z_minmax[key][0], 
-                 z_minmax[key][1], z_minmax[key][1], 
-                 z_minmax[key][0]]
-        ax.plot(line0, line1, linestyle='solid', color='gray',
-                linewidth=2, alpha=0.5)
+    for mi, ls in enumerate(['solid', 'dashed']):
+        for key in mass_minmax[mi]:
+            line1 = [mass_minmax[mi][key][0], mass_minmax[mi][key][1], 
+                     mass_minmax[mi][key][1], mass_minmax[mi][key][0], 
+                     mass_minmax[mi][key][0]]
+            line0 = [z_minmax[mi][key][0], z_minmax[mi][key][0], 
+                     z_minmax[mi][key][1], z_minmax[mi][key][1], 
+                     z_minmax[mi][key][0]]
+            ax.plot(line0, line1, linestyle=ls, color='gray',
+                    linewidth=2, alpha=0.5)
+    for key in ['m12', 'm13']:
+        if key == 'm12':
+            i0 = 0
+            i1 = 0
+        elif key == 'm13':
+            i0 = 1
+            i1 = 1
         if masscomp in ['halo']:
-            top = mass_minmax[key][1] * 0.95
+            top = mass_minmax[i0][key][i1] * 0.95
         elif masscomp in ['stellar', 'halo_recalc']:
-            top = mass_minmax[key][1] - 0.1
-        ax.text(z_minmax[key][1] - 0.02, top,
+            top = mass_minmax[i0][key][i1] - 0.05
+        ax.text(z_minmax[0][key][1] - 0.02, top,
                 key, fontsize=fontsize, color='gray',
                 horizontalalignment='right', verticalalignment='top')
 
@@ -298,14 +306,19 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
                        fontsize=fontsize)
     ax.set_xlabel('redshift', fontsize=fontsize)
     ax.tick_params(labelsize=fontsize - 1., direction='in', which='both')
+    xl = ax.get_xlim()
+    ax.set_xlim((xl[0], 1.53))
     
     m13ics_used = sorted(list(m13ics_used))
     m12ics_used = sorted(list(m12ics_used))
     physmodels_used = sorted(list(physmodels_used))
     _handles, _ = ax.get_legend_handles_labels()
+    _labels1 = {pm: (sl.plotlabel_from_physlabel[pm]).replace(' ', '\n')
+                for pm in physmodels_used}
     handles1 = [mlines.Line2D((), (), linewidth=1.5, 
                               linestyle=sl.physlinestyles[key],
-                              label=key, color='black') \
+                              label=_labels1[key],
+                              color='black') \
                 for key in physmodels_used]
     handles2 = [mlines.Line2D((), (), linewidth=1.5, 
                               color=sl.m12_iccolors[key],

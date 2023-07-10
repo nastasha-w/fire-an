@@ -17,7 +17,8 @@ cosmopars_base_fire = {'h': 0.702,
                        'omegam': 0.272, 
                        'omegalambda': 0.728}
 class PLmodel:
-    def __init__(self, mvir_msun, redshift, fcgm, z_sol, pli):
+    def __init__(self, mvir_msun, redshift, fcgm, z_sol, pli_vc, 
+                 pli_entropy=None):
         '''
         Parameters:
         -----------
@@ -30,10 +31,13 @@ class PLmodel:
            relative to Omega_baryon / Omega_matter
         z_sol: float
            metallicity in solar units
-        pli: float
-           power law index (for the circular velocity profile)
+        pli_vc: float
+           power law index for the circular velocity profile
            0. : isothermal profile
            0.5: point mass
+        pli_entropy: float or None
+           if None, set to 1 + (4/3) * pli_vc (cooling flow from 
+           Stern et al., 2019).
         '''
         self.mvir_cgs = mvir_msun * c.solar_mass
         self.cosmopars = cosmopars_base_fire.copy()
@@ -41,8 +45,11 @@ class PLmodel:
         self.cosmopars['a'] = 1. / (1. + redshift)
         self.fcgm = fcgm
         self.z_sol = z_sol 
-        self.pli = pli
-
+        self.pli_vc = pli_vc
+        if pli_entropy is None:
+            self.pli_entropy = 1. + (4. / 3.) * self.pli_vc
+        else:
+            self.pli_entropy = pli_entropy
         self._setup_model()
 
     def _setup_model(self):
@@ -56,26 +63,28 @@ class PLmodel:
         
         self.vc_rvir_cgs = np.sqrt(c.gravity * self.mvir_cgs 
                                    / self.rvir_cgs)
-        self.tvir_cgs = self.mu * c.u * self.vc_rvir_cgs**2 \
+        self.tvir_cgs = self.mu * c.u * c.atomw_H * self.vc_rvir_cgs**2 \
                         / (2. * c.boltzmann)
         # eq 20
-        self.nH_rvir_cgs = (1.5 + self.pli) * self.hmassfrac \
-                           * self.cgmmass_cgs \
-                           / (4. * np.pi * c.atomw_H * c.u * self.rvir_cgs**3)
+        self.nH_rvir_cgs = (3. + 3. * self.pli_vc - 1.5 * self.pli_entropy) \
+                             * self.cgmmass_cgs \
+                           / (self.mu * c.atomw_H * c.u \
+                              * 4. * np.pi * self.rvir_cgs**3)
+        self.pli_nH = -1.5 * self.pli_entropy + 3. * self.pli_vc
         
     def vc_cmps(self, r3d_cm):
         # eq 19
-        return self.vc_rvir_cgs * (r3d_cm / self.rvir_cgs)**self.pli
+        return self.vc_rvir_cgs * (r3d_cm / self.rvir_cgs)**self.pli_vc
     def t_K(self, r3d_cm):
         # eq 21, 24
-        self._a = 0.9 * (1. - 2. * self.pli)
+        self._a = -3. * self.pli_vc + 0.9 * self.pli_entropy
         self._t = 6. / (5. * self._a) \
-                  * (r3d_cm / self.rvir_cgs)**(2. * self.pli) \
+                  * (r3d_cm / self.rvir_cgs)**(2. * self.pli_vc) \
                   * self.tvir_cgs
         return self._t
     def nH_cm3(self, r3d_cm):
         # eq 20
-        return self.nH_rvir_cgs * (r3d_cm / self.rvir_cgs)**(-1.5 + self.pli)
+        return self.nH_rvir_cgs * (r3d_cm / self.rvir_cgs)**self.pli_nH
     
     def coldensprof(self, ion, impactpars_pkpc, loslen_rvir=4.,
                     sigma_logT=0.3):

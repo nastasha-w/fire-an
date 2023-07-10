@@ -14,8 +14,10 @@ import fire_an.utils.opts_locs as ol
 # copied from m12q AGN-CR
 cosmopars_base_fire = {'h': 0.702, 
                        'omegab': 0.0455,
-                       'omegam': 0.272, 
+                       'omegam': 0.272,
                        'omegalambda': 0.728}
+# after entropy index option added:
+# re-tested Rvir, Tvir calculations, nH normalization
 class PLmodel:
     def __init__(self, mvir_msun, redshift, fcgm, z_sol, pli_vc, 
                  pli_entropy=None):

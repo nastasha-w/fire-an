@@ -31,7 +31,8 @@ def run_clumpiness(opt):
         ind = opt - 936
         simnames = sl.m12_f2md # len 10
         snapnums = sl.snaps_f2md
-    mts = ['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
+    mts = ['Ne8num_Ne8dens', 'Vol_Ne8dens', 'Mass_dens', '']
+    #['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 
     simi = ind // (len(snapnums) * len(mts))
     snapi = (ind % (len(snapnums) * len(mts))) // len(mts)
@@ -71,6 +72,26 @@ def run_clumpiness(opt):
         maptype2 = 'ion'
         maptype_args2 = {'ion': 'Ne8', 'ps20depletion': False, 
                         'density': True, 'lintable': True}
+    elif mt == 'Ne8num_Ne8dens':
+        maptype1 = 'ion'
+        maptype_args1 = {'ion': 'Ne8', 'ps20depletion': False, 
+                        'density': False, 'lintable': True}
+        maptype2 = 'ion'
+        maptype_args2 = {'ion': 'Ne8', 'ps20depletion': False, 
+                        'density': True, 'lintable': True}
+    elif mt == 'Vol_Ne8dens':
+        maptype1 = 'Volume'
+        maptype_args1 = {}
+        maptype2 = 'ion'
+        maptype_args2 = {'ion': 'Ne8', 'ps20depletion': False, 
+                        'density': True, 'lintable': True}
+    elif mt == 'Mass_dens':
+        maptype1 = 'sim-direct'
+        maptype_args1 = {'field': 'Density'}
+        maptype2 = 'Mass'
+        maptype_args2 = {}
+    elif mt == '':
+        return None
 
     if os.path.isfile(outname):
         print(f'File already exists: {outname}; skipping')

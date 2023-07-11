@@ -8,29 +8,34 @@ import fire_an.utils.opts_locs as ol
 def run_clumpiness(opt):
     if opt >= 0 and opt < 360:
         # 360 indices
+        ind = opt
         simnames = sl.m13_sr_all2 # len 15
         snapnums = sl.snaps_sr
     elif opt >= 360 and opt < 408:
         # 48 indices
+        ind = opt - 360
         simnames = sl.m13_hr_all2 # len 2
         snapnums = sl.snaps_hr
     if opt >= 408 and opt < 504:
         # 96 indices
+        ind = opt - 408
         simnames = sl.m12_sr_all2 # len 4
         snapnums = sl.snaps_sr
     elif opt >= 504 and opt < 936:
         # 432 indices
+        ind = opt - 504
         simnames = sl.m12_hr_all2 # len 18
         snapnums = sl.snaps_hr
     elif opt >= 936 and opt < 1176:
         # 240 indices
+        ind = opt - 936
         simnames = sl.m12_f2md # len 10
         snapnums = sl.snaps_f2md
     mts = ['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 
-    simi = opt // (len(snapnums) * len(mts))
-    snapi = (opt % (len(snapnums) * len(mts))) // len(mts)
-    mti = opt % len(mts)
+    simi = ind // (len(snapnums) * len(mts))
+    snapi = (ind % (len(snapnums) * len(mts))) // len(mts)
+    mti = ind % len(mts)
     simname = simnames[simi]
     snapnum = snapnums[snapi]
     mt = mts[mti]

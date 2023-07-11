@@ -1,6 +1,7 @@
 
 import sys
 
+import fire_an.explore.run_clumpiness as rcn
 import fire_an.explore.run_partsel_pv as spv
 import fire_an.mainfunc.haloprop as hp
 import fire_an.tests.test_haloprops as th
@@ -295,6 +296,14 @@ def fromcommandline(index):
     elif index >= 42028 and index < 42172:
         # + 12 haloes (crheatingfix; 144 indices, starting at 576)
         rhs.run_hist_rad_vrad_weighted(opt=index - 42028 + 576)
+    elif index >= 42172 and index < 43348:
+        # 1176 total
+        # m13_sr_all2: 42172 - 42531 (360 indices)
+        # m13_hr_all2: 42532 - 42579 ( 48 indices)
+        # m12_sr_all2: 42580 - 42675 ( 96 indices)
+        # m12_hr_all2: 42676 - 43107 (432 indices)
+        # m12_f2md:    43108 - 43347 (240 indices)
+        rcn.run_clumpiness(opt - 42172)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

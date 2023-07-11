@@ -112,7 +112,6 @@ def wtdavnorm(dirpath, snapnum, parttype,
 
 
 
-
     
 
 

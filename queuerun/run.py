@@ -303,7 +303,7 @@ def fromcommandline(index):
         # m12_sr_all2: 42580 - 42675 ( 96 indices)
         # m12_hr_all2: 42676 - 43107 (432 indices)
         # m12_f2md:    43108 - 43347 (240 indices)
-        rcn.run_clumpiness(opt - 42172)
+        rcn.run_clumpiness(index - 42172)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

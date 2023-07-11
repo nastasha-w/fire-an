@@ -29,7 +29,7 @@ def run_clumpiness(opt):
     mts = ['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 
     simi = opt // (len(snapnums) * len(mts))
-    snapi = (opt % (len(snapnums) * len(mts))) // len(snapnums)
+    snapi = (opt % (len(snapnums) * len(mts))) // len(mts)
     mti = opt % len(mts)
     simname = simnames[simi]
     snapnum = snapnums[snapi]
@@ -60,8 +60,8 @@ def run_clumpiness(opt):
         maptype2 = 'Volume'
         maptype_args2 = {}
     elif mt == 'Ne8dens_Ne8dens':
-        maptype2 = 'ion'
-        maptype_args2 = {'ion': 'Ne8', 'ps20depletion': False, 
+        maptype1 = 'ion'
+        maptype_args1 = {'ion': 'Ne8', 'ps20depletion': False, 
                         'density': True, 'lintable': True}
         maptype2 = 'ion'
         maptype_args2 = {'ion': 'Ne8', 'ps20depletion': False, 

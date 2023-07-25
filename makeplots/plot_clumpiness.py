@@ -61,7 +61,7 @@ def plot_clumpiness_prof(target='Ne8'):
     target: {'Ne8', 'rho'}
         what to plot the clumpiness of: Ne VIII density or mass density
     '''
-    showcolor_ics = ['m12f', 'm13h113']
+    showcolor_ics = [] #['m12f', 'm13h113']
     icsnap_emph = [('m12f', sl.snaps_f2md[0]), ('m12f', sl.snaps_sr[0]),
                    ('m12f', sl.snaps_hr[0]),
                    ('m13h113', sl.snaps_hr[0]), ('m13h113', sl.snaps_sr[0]),
@@ -103,13 +103,15 @@ def plot_clumpiness_prof(target='Ne8'):
     
     xlabel = '$r_{\\mathrm{3D}} \\; [\\mathrm{R}_{\\mathrm{vir}}]$'
     if target == 'Ne8':
-        ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
-                  '(\mathrm{n}_{\\mathrm{Ne\\,VIII}})$')
+        #ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
+        #          '(\mathrm{n}_{\\mathrm{Ne\\,VIII}})$')
+        ylabel = 'smoothness'
         cprof_func = get_cprof_voltwtne8clumpfact
         ymax = 0.55
     elif target == 'rho':
-        ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
-                  '(\\rho)$')
+        #ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
+        #          '(\\rho)$')
+        ylabel = 'smoothness'
         cprof_func = get_cprof_voltwtdensclumpfact
         ymax = 1.15
 
@@ -166,8 +168,9 @@ def plot_clumpiness_prof(target='Ne8'):
                     rcens = 0.5 * (rbins[:-1] + rbins[1:])
                     if (ic, snap) in icsnap_emph:
                         _lw = 2.
-                        _path_effects = pu.getoutline(_lw)
-                        _color = color
+                        _path_effects = None #pu.getoutline(_lw)
+                        _color = colors[ic]
+                        alpha = 1.
                         _zo = 4
                     else:
                         _path_effects = None
@@ -183,14 +186,23 @@ def plot_clumpiness_prof(target='Ne8'):
 
     lax = fig.add_subplot(grid[2, 0])
     lax.axis('off')
-    handles = [mlines.Line2D((), (), linewidth=1.5, alpha=1., 
-                             color=colors[ic], label=ic, linestyle='solid')
-               for ic in showcolor_ics]
+    #ics_highlight = set(showcolor_ics)
+    #ics_highlight = ics_highlight | set(ic for ic, _ in icsnap_emph)
+    #ics_highlight = sorted(list(ics_highlight))
+    #handles = [mlines.Line2D((), (), linewidth=2., alpha=1., 
+    #                         color=colors[ic], label=ic + ', $z=1$', 
+    #                         linestyle='solid')
+    #           for ic in ics_highlight]
+    handles = [mlines.Line2D((), (), linewidth=2., color=colors['m12f'],
+                             label='m12f, $z=1$', linestyle='solid'),
+               mlines.Line2D((), (), linewidth=2., color=colors['m13h113'],
+                             label='m13h113,\n$z=1$', linestyle='solid')]
     handles = handles + [mlines.Line2D((), (), linewidth=1.0, alpha=0.5, 
-                                       color=color_default, label='other ICs',
+                                       color=color_default, 
+                                       label='other',
                                        linestyle='solid')]
     lax.legend(handles=handles, loc='center left', fontsize=fontsize - 1,
-               bbox_to_anchor=(-0.02, 0.5))
+               bbox_to_anchor=(-0.02, 0.5), handlelength=1.5)
 
     outname = outdir + f'volwtd_clumpfactor_prof_{target}.pdf'
     plt.savefig(outname, bbox_inches='tight')                    

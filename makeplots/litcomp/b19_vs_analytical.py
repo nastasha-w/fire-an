@@ -211,9 +211,9 @@ def plot_plmodel_datacomp_Kvar():
     fcgm = 1.0
     z_sol = 0.3
     redshift = 0.75
-    plis_vc = [0.0, -0.20]
-    colors_vc = ['black', 'blue']
-    plis_k = [0.1, 2./3., 1.0]
+    plis_vc = [-0.1] #[0.0, -0.20]
+    colors_vc = ['black'] #['black', 'blue']
+    plis_k = [0.0, 2./3., 1.2]
     linestyles_k = ['dotted', 'dashed', 'solid']
 
     data_bur = readdata_b19(nsigmas=nsigmas)
@@ -254,7 +254,7 @@ def plot_plmodel_datacomp_Kvar():
         ax.text(0.95, 0.95, axlabel,
                 transform=ax.transAxes, fontsize=fontsize,
                 verticalalignment='top', horizontalalignment='right')
-
+        yvir_max = - np.inf
         for ls, pli_k in zip(linestyles_k, plis_k):
             for color, pli_vc in zip(colors_vc, plis_vc):
                 print(10**mvir, redshift, fcgm, z_sol, pli_vc, pli_k)
@@ -264,6 +264,14 @@ def plot_plmodel_datacomp_Kvar():
                 ax.plot(impactpars_kpc, np.log10(cvs), 
                         color=color, linestyle=ls,
                         linewidth=linewidth)
+                rvir = hmod.rvir_cgs / (c.cm_per_mpc * 1e-3)
+                if rvir > impactpars_kpc[-1]:
+                    continue
+                yv = mu.linterpsolve(impactpars_kpc, np.log10(cvs), rvir)
+                yvir_max = max(yvir_max, yv)
+        if rvir <= impactpars_kpc[-1]:
+            ax.plot([rvir, rvir], [11., yvir_max + 0.2], color='gray',
+                    linestyle='solid', alpha=0.3, linewidth=3)
         ulsig0done = False
         ulsig1done = False
         detsig0done = False

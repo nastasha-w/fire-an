@@ -437,4 +437,67 @@ plotlabel_from_physlabel = {
 }
 
 
-    
+## info for methods section
+
+resolutions_Msun = {
+    'm13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h002_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h007_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h029_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h223_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm13h236_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    ('m13h206_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m13h113_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m13h113_m3e4_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e-4_gacc31'
+     '_fa0.5'): 0,
+    ('m13h206_m3e4_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp3e-4_gacc31'
+     '_fa0.5'): 0,
+    ('m13h002_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m13h007_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m13h009_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0, 
+    ('m13h029_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m13h037_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0, 
+    ('m13h236_m3e5_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1'
+     '_sdp1e-4_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    'm12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12r_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
+    'm12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5': 0,
+    'm12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5': 0,
+    'm12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5': 0,
+    'm12q_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5': 0,
+    ('m12f_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m12i_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m12m_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
+     '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
+    'm12z_r4200': 0,
+    'm12w_r7100': 0,
+    'm12r_r7100': 0,
+    'm12i_r7100': 0,
+    'm12c_r7100': 0,
+    'm12b_r7100': 0,
+    'm12m_r7100': 0,
+    'm12f_r7100': 0,
+    'crheatfix_m12f_r7100': 0,
+    'crheatfix_m12i_r7100': 0, 
+}

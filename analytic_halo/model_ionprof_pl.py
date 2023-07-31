@@ -107,11 +107,13 @@ class PLmodel:
         #self._normob = spstat.norm()
         #self._dTweights = self._normob.pdf(self._dTsample / sigma_logT)
         #self._dTweights *= 1. / np.sum(self._dTweights)
+        print(self.t_K(self._r3d_cm))
         self._logT_K = np.log10(self.t_K(self._r3d_cm))
         #self._logT_K = self._logT_K[..., np.newaxis] \
         #               + self._dTsample[np.newaxis, np.newaxis, :]
         self._logZ = np.log10(self.z_sol * self._tab.solarZ) \
                      * np.ones(np.prod(self._logT_K.shape))
+        print(self.nH_cm3(self._r3d_cm))
         self._lognH_cm3 = np.log10(self.nH_cm3(self._r3d_cm))
         #self.__lognH_cm3 = np.tile(self._lognH_cm3, 
         #                           (1, 1, len(self._dTsample)))

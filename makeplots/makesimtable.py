@@ -10,50 +10,47 @@ resolutions = {'m3e5': 3e5,
                'm3e4': 3e4,
                'm6e4': 6e4,
                'm4e3': 4e3,
-               'm7e3': 7e3}
-
-def get_model(simname):
-    if '_sdp1e10_' in simname:
-        return 'noBH'
-    elif '_MHDCRspec1_' in simname:
-        return 'AGN-CR'
-    else:
-        return 'AGN-noCR'
-
-def get_ic(simname):
-    return simname.split('_')[0]
+               'm7e3': 7e3,
+               'r7100': 7.1e3,
+               'r4200': 4.2e3,
+               }
 
 # more sig. digits are listed for the FIRE-2 haloes
 # but not generally for FIRE-3. Some other papers also give
 # 1 sig. digit in their descriptions.
 def get_resolution(simname):
-    respart = simname.split('_')[1]
+    pt = sl.physlabel_from_simname(simname)
+    if pt == 'FIRE-2':
+        if simname.startswith('crheatfix'):
+            respart = simname.split('_')[2]
+        else:
+            respart = simname.split('_')[1]
+    else:
+        respart = simname.split('_')[1]
     res = resolutions[respart]
     return res 
 
 def get_refs(simname):
     return 'TODO'
 
-def getpath(simname):
-    dp2 = '_'.join(simname.split('_')[:2])
-    if dp2.startswith('m13h02_'):
-        dp2 = dp2.replace('m13h02', 'm13h002')
-    simpath = '/'.join([ol.simdir_fire, dp2, simname]) 
-    return simpath
-
-def maketable_main(simset='FIRE-3'):
+def maketable_main(simset='all'):
     if simset == 'FIRE-3':
         simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
-                sl.m13_hr_all2 + sl.m13_sr_all2
-        sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
-        sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+                   sl.m13_hr_all2 + sl.m13_sr_all2
     elif simset == 'FIRE-2':
         simnames = sl.m12_f2md
+    elif simset == 'all':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+
+    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+    sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+    sims_f2md = sl.m12_f2md
     simnames.sort()
     for sn in sl.buglist1:
         if sn in simnames:
             simnames.remove(sn)
-    ics = [get_ic(sn) for sn in simnames]
+    ics = [sl.ic_from_simname(sn) for sn in simnames]
     ics_clean = ['m12f', 'm13h113', 'm13h206'] 
     # ics_clean = [ic for ic in ics if sum([ic == _ic for _ic in ics]) == 3]
     ics_clean = np.unique(ics_clean)
@@ -62,27 +59,36 @@ def maketable_main(simset='FIRE-3'):
     ics_rest.sort()
     
     simnames_clean = [simname for simname in simnames 
-                      if get_ic(simname) in ics_clean]
-    simnames_clean.sort(key=lambda x: (get_ic(x), get_model(x)))
+                      if sl.ic_from_simname(simname) in ics_clean]
+    simnames_clean.sort(key=lambda x: (sl.ic_from_simname(x), 
+                                       sl.physlabel_from_simname(x)))
     simnames_rest = [simname for simname in simnames 
-                     if get_ic(simname) in ics_rest]
-    simnames_rest.sort(key=lambda x: (get_ic(x), get_model(x)))
+                     if sl.ic_from_simname(simname) in ics_rest]
+    simnames_rest.sort(key=lambda x: (sl.ic_from_simname(x), 
+                                      sl.physlabel_from_simname(x)))
 
     colsmain = ['{ic}', '{phys}', '{gasres}',
                 '{mhalo0}', '{mstar0}', '{rhalo0}', 
                 '{mhalo1}', '{mstar1}', '{rhalo1}']
     ncols = len(colsmain)
-    aligndict = {'ic': 'l', 'phys': 'l', 'gasres': 'r',
-                 'mhalo0': 'r', 'mstar0': 'r', 'rhalo0': 'r',
-                 'mhalo1': 'r', 'mstar1': 'r', 'rhalo1': 'r',
+    aligndict = {'ic': 'l', 'phys': 'l', 'gasres': 'l',
+                 'mhalo0': 'l', 'mstar0': 'l', 'rhalo0': 'l',
+                 'mhalo1': 'l', 'mstar1': 'l', 'rhalo1': 'l',
                  'refs': 'c'}
-    head1dct = {'ic': 'ICs', 'phys': 'model', 'gasres': 'resolution',
-                'mhalo0': '$\\mathrm{M}_{\\mathrm{vir}}(1.0)$', 
-                'mstar0': '$\\mathrm{M}_{\\star}(1.0)$', 
-                'rhalo0': '$\\mathrm{R}_{\\mathrm{vir}}(1.0)$',
-                'mhalo1': '$\\mathrm{M}_{\\mathrm{vir}}(0.5)$', 
-                'mstar1': '$\\mathrm{M}_{\\star}(0.5)$', 
-                'rhalo1': '$\\mathrm{R}_{\\mathrm{vir}}(0.5)$',
+    head0parts = ['', '', '',
+                  '\\multicolumn{3}{c}{$z=1.0$}',
+                  '\\multicolumn{3}{c}{$z=0.5$}',
+                   ]
+    head0 = ' \t & '.join(head0parts) + ' \t \\\\'
+    head1dct = {'ic': 'ICs', 
+                'phys': 'model', 
+                'gasres': 'resolution',
+                'mhalo0': '$\\mathrm{M}_{\\mathrm{vir}}$', 
+                'mstar0': '$\\mathrm{M}_{\\star}$', 
+                'rhalo0': '$\\mathrm{R}_{\\mathrm{vir}}$',
+                'mhalo1': '$\\mathrm{M}_{\\mathrm{vir}}$', 
+                'mstar1': '$\\mathrm{M}_{\\star}$', 
+                'rhalo1': '$\\mathrm{R}_{\\mathrm{vir}}$',
                 'refs': 'references',
                 }
     head2dct = {'ic': '', 'phys': '', 
@@ -95,8 +101,9 @@ def maketable_main(simset='FIRE-3'):
                 'rhalo1': '[pkpc]',
                 'refs': '',
                 }
-    fmtdct = {'ic': '{ic}', 'phys': '{phys}', 
-              'gasres': '{gasres:.1e}',
+    fmtdct = {'ic': '{ic}',
+              'phys': '{phys}', 
+              'gasres': '{gasres:.0e}',
               'mhalo0': '{mhalo0:.1e}',
               'mstar0': '{mstar0:.1e}',
               'rhalo0': '{rhalo0:.0f}',
@@ -118,21 +125,24 @@ def maketable_main(simset='FIRE-3'):
     fillmain = _fillmain.format(**fmtdct)
     head1 = _fillmain.format(**head1dct)
     head2 = _fillmain.format(**head2dct)
-    printlist = [start, hline, head1, head2, hline, cleanhead, hline]
+    printlist = [start, hline, head0, head1, head2, hline, cleanhead, hline]
 
     for simname in simnames_clean:
         _filldct = {}
-        _filldct['ic'] = get_ic(simname)
-        _filldct['phys'] = get_model(simname)
+        _filldct['ic'] = sl.ic_from_simname(simname)
+        _filldct['phys'] = sl.plotlabel_from_physlabel[
+            sl.physlabel_from_simname(simname)]
         res = get_resolution(simname)
         _filldct['gasres'] = res
         snap1 = max(sl.snaps_sr) if simname in sims_sr \
                 else max(sl.snaps_hr) if simname in sims_hr \
+                else max(sl.snaps_f2md) if simname in sims_f2md \
                 else None
         snap0 = min(sl.snaps_sr) if simname in sims_sr \
                 else min(sl.snaps_hr) if simname in sims_hr \
+                else min(sl.snaps_f2md) if simname in sims_f2md \
                 else None
-        simpath = getpath(simname)
+        simpath = sl.dirpath_from_simname(simname)
         _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
         _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
         _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
@@ -148,21 +158,28 @@ def maketable_main(simset='FIRE-3'):
         _filldct['mstar1'] = halodat1['mstar_gal_g'] \
                              / c.solar_mass
         _filldct['refs'] = get_refs(simname)
-        printlist.append(fillmain.format(**_filldct))
+        _str = fillmain.format(**_filldct)
+        # 3e+05 -> 3e5, 3e+12 -> 3e12
+        _str = _str.replace('+0', '')
+        _str = _str.replace('+', '')
+        printlist.append(_str)
     printlist = printlist + [hline, resthead, hline]
     for simname in simnames_rest:
         _filldct = {}
-        _filldct['ic'] = get_ic(simname)
-        _filldct['phys'] = get_model(simname)
+        _filldct['ic'] = sl.ic_from_simname(simname)
+        _filldct['phys'] = sl.plotlabel_from_physlabel[
+            sl.physlabel_from_simname(simname)]
         res = get_resolution(simname)
         _filldct['gasres'] = res
         snap1 = max(sl.snaps_sr) if simname in sims_sr \
                 else max(sl.snaps_hr) if simname in sims_hr \
+                else max(sl.snaps_f2md) if simname in sims_f2md \
                 else None
         snap0 = min(sl.snaps_sr) if simname in sims_sr \
                 else min(sl.snaps_hr) if simname in sims_hr \
+                else min(sl.snaps_f2md) if simname in sims_f2md \
                 else None
-        simpath = getpath(simname)
+        simpath = sl.dirpath_from_simname(simname)
         _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
         _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
         _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
@@ -178,10 +195,100 @@ def maketable_main(simset='FIRE-3'):
         _filldct['mstar1'] = halodat1['mstar_gal_g'] \
                              / c.solar_mass
         _filldct['refs'] = get_refs(simname)
-        printlist.append(fillmain.format(**_filldct))
+        _str = fillmain.format(**_filldct)
+        # 3e+05 -> 3e5, 3e+12 -> 3e12
+        _str = _str.replace('+0', '')
+        _str = _str.replace('+', '')
+        printlist.append(_str)
     printlist = printlist + [hline, end]
     table = '\n'.join(printlist)
     print(table)
-        
 
+def getlongname(simname):
+    if sl.physlabel_from_simname(simname) == 'FIRE-2':
+        if simname.startswith('crheatfix'):
+            longname = '_'.join(simname.split('_')[1:])
+            longname = 'core + metal diffusion + CR heating fix, ' \
+                       + longname
+        else:
+            longname = 'core + metal diffusion, ' + simname
+    else:
+        longname = simname
+    longname = longname.replace('_', '\\_')
+    return longname
 
+def maketable_appendix(simset='all'):
+    if simset == 'FIRE-3':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-2':
+        simnames = sl.m12_f2md
+    elif simset == 'all':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+
+    simnames.sort()
+    for sn in sl.buglist1:
+        if sn in simnames:
+            simnames.remove(sn)
+    ics = [sl.ic_from_simname(sn) for sn in simnames]
+    ics_clean = ['m12f', 'm13h113', 'm13h206'] 
+    # ics_clean = [ic for ic in ics if sum([ic == _ic for _ic in ics]) == 3]
+    ics_clean = np.unique(ics_clean)
+    ics_clean.sort()
+    ics_rest = np.array(list(set(ics) - set(ics_clean)))
+    ics_rest.sort()
+    
+    simnames_clean = [simname for simname in simnames 
+                      if sl.ic_from_simname(simname) in ics_clean]
+    simnames_clean.sort(key=lambda x: (sl.ic_from_simname(x), 
+                                       sl.physlabel_from_simname(x)))
+    simnames_rest = [simname for simname in simnames 
+                     if sl.ic_from_simname(simname) in ics_rest]
+    simnames_rest.sort(key=lambda x: (sl.ic_from_simname(x), 
+                                      sl.physlabel_from_simname(x)))
+    colsmain = ['{ic}', '{phys}', '{simname}']
+    ncols = len(colsmain)
+    aligndict = {'ic': 'l', 'phys': 'l', 'simname': 'l'}
+    head1dct = {'ic': 'ICs', 
+                'phys': 'model', 
+                'simname': 'FIRE collaboration internal name',
+                }
+    fmtdct = {'ic': '{ic}',
+              'phys': '{phys}', 
+              'simname': '{simname}'
+              }
+    cleanhead = (f'\\multicolumn{{{ncols}}}{{c}}'
+                 '{clean sample} \\\\')
+    resthead = (f'\\multicolumn{{{ncols}}}{{c}}'
+                 '{full sample} \\\\')
+    hline = '\\hline'
+    colspecfill = ' '.join(colsmain)
+    colspec = colspecfill.format(**aligndict)
+    start = f'\\begin{{tabular}}{{{colspec}}}'
+    end = '\\end{tabular}'
+    _fillmain = ' \t & '.join(colsmain) + ' \t \\\\'
+    fillmain = _fillmain.format(**fmtdct)
+    head1 = _fillmain.format(**head1dct)
+    printlist = [start, hline, head1, hline, cleanhead, hline]
+
+    for simname in simnames_clean:
+        _filldct = {}
+        _filldct['ic'] = sl.ic_from_simname(simname)
+        _filldct['phys'] = sl.plotlabel_from_physlabel[
+            sl.physlabel_from_simname(simname)]
+        _filldct['simname'] = getlongname(simname)
+        _str = fillmain.format(**_filldct)
+        printlist.append(_str)
+    printlist = printlist + [hline, resthead, hline]
+    for simname in simnames_rest:
+        _filldct = {}
+        _filldct['ic'] = sl.ic_from_simname(simname)
+        _filldct['phys'] = sl.plotlabel_from_physlabel[
+            sl.physlabel_from_simname(simname)]
+        _filldct['simname'] = getlongname(simname)
+        _str = fillmain.format(**_filldct)
+        printlist.append(_str)
+    printlist = printlist + [hline, end]
+    table = '\n'.join(printlist)
+    print(table)

@@ -23,6 +23,9 @@ def get_model(simname):
 def get_ic(simname):
     return simname.split('_')[0]
 
+# more sig. digits are listed for the FIRE-2 haloes
+# but not generally for FIRE-3. Some other papers also give
+# 1 sig. digit in their descriptions.
 def get_resolution(simname):
     respart = simname.split('_')[1]
     res = resolutions[respart]
@@ -38,17 +41,21 @@ def getpath(simname):
     simpath = '/'.join([ol.simdir_fire, dp2, simname]) 
     return simpath
 
-def maketable_main():
-    simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
-               sl.m13_hr_all2 + sl.m13_sr_all2
-    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
-    sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+def maketable_main(simset='FIRE-3'):
+    if simset == 'FIRE-3':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
+                sl.m13_hr_all2 + sl.m13_sr_all2
+        sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+        sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-2':
+        simnames = sl.m12_f2md
     simnames.sort()
     for sn in sl.buglist1:
         if sn in simnames:
             simnames.remove(sn)
     ics = [get_ic(sn) for sn in simnames]
-    ics_clean = [ic for ic in ics if sum([ic == _ic for _ic in ics]) == 3]
+    ics_clean = ['m12f', 'm13h113', 'm13h206'] 
+    # ics_clean = [ic for ic in ics if sum([ic == _ic for _ic in ics]) == 3]
     ics_clean = np.unique(ics_clean)
     ics_clean.sort()
     ics_rest = np.array(list(set(ics) - set(ics_clean)))
@@ -63,12 +70,8 @@ def maketable_main():
 
     colsmain = ['{ic}', '{phys}', '{gasres}',
                 '{mhalo0}', '{mstar0}', '{rhalo0}', 
-                '{mhalo1}', '{mstar1}', '{rhalo1}',
-                '{refs}']
+                '{mhalo1}', '{mstar1}', '{rhalo1}']
     ncols = len(colsmain)
-    logmassunit_halo_msun = 11
-    logmassunit_gal_msun = 10
-    logmassunit_res_msun = 3
     aligndict = {'ic': 'l', 'phys': 'l', 'gasres': 'r',
                  'mhalo0': 'r', 'mstar0': 'r', 'rhalo0': 'r',
                  'mhalo1': 'r', 'mstar1': 'r', 'rhalo1': 'r',
@@ -83,30 +86,25 @@ def maketable_main():
                 'refs': 'references',
                 }
     head2dct = {'ic': '', 'phys': '', 
-                'gasres': (f'$[10^{{{logmassunit_res_msun}}}'
-                           '\\,\\mathrm{M}_{\\odot}]$'),
-                'mhalo0': (f'$[10^{{{logmassunit_halo_msun}}}'
-                           '\\,\\mathrm{M}_{\\odot}]$'),
-                'mstar0': (f'$[10^{{{logmassunit_gal_msun}}}'
-                           '\\,\\mathrm{M}_{\\odot}]$'),
+                'gasres': ('$[\\mathrm{M}_{\\odot}]$'),
+                'mhalo0': ('$[\\mathrm{M}_{\\odot}]$'),
+                'mstar0': ('$[\\mathrm{M}_{\\odot}]$'),
                 'rhalo0': '[pkpc]',
-                'mhalo1': (f'$[10^{{{logmassunit_halo_msun}}}'
-                           '\\,\\mathrm{M}_{\\odot}]$'),
-                'mstar1': (f'$[10^{{{logmassunit_gal_msun}}}'
-                           '\\,\\mathrm{M}_{\\odot}]$'),
+                'mhalo1': ('$[\\mathrm{M}_{\\odot}]$'),
+                'mstar1': ('$[\\mathrm{M}_{\\odot}]$'),
                 'rhalo1': '[pkpc]',
                 'refs': '',
                 }
     fmtdct = {'ic': '{ic}', 'phys': '{phys}', 
-              'gasres': '{gasres:.2f}',
-              'mhalo0': '{mhalo0:.2f}',
-              'mstar0': '{mstar0:.2f}',
+              'gasres': '{gasres:.1e}',
+              'mhalo0': '{mhalo0:.1e}',
+              'mstar0': '{mstar0:.1e}',
               'rhalo0': '{rhalo0:.0f}',
-              'mhalo1': '{mhalo1:.2f}',
-              'mstar1': '{mstar1:.2f}',
+              'mhalo1': '{mhalo1:.1e}',
+              'mstar1': '{mstar1:.1e}',
               'rhalo1': '{rhalo1:.0f}',
               'refs': '{refs}',
-                }
+              }
     cleanhead = (f'\\multicolumn{{{ncols}}}{{c}}'
                  '{clean sample} \\\\')
     resthead = (f'\\multicolumn{{{ncols}}}{{c}}'
@@ -127,7 +125,7 @@ def maketable_main():
         _filldct['ic'] = get_ic(simname)
         _filldct['phys'] = get_model(simname)
         res = get_resolution(simname)
-        _filldct['gasres'] = res / 10**logmassunit_res_msun
+        _filldct['gasres'] = res
         snap1 = max(sl.snaps_sr) if simname in sims_sr \
                 else max(sl.snaps_hr) if simname in sims_hr \
                 else None
@@ -138,17 +136,17 @@ def maketable_main():
         _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
         _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
         _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
-                             / c.solar_mass / 10**logmassunit_halo_msun
+                             / c.solar_mass
         _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
                              / (c.cm_per_mpc * 1e-3)
         _filldct['mstar0'] = halodat0['mstar_gal_g'] \
-                             / c.solar_mass / 10**logmassunit_gal_msun
+                             / c.solar_mass
         _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
-                             / c.solar_mass / 10**logmassunit_halo_msun
+                             / c.solar_mass
         _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
                              / (c.cm_per_mpc * 1e-3)
         _filldct['mstar1'] = halodat1['mstar_gal_g'] \
-                             / c.solar_mass / 10**logmassunit_gal_msun
+                             / c.solar_mass
         _filldct['refs'] = get_refs(simname)
         printlist.append(fillmain.format(**_filldct))
     printlist = printlist + [hline, resthead, hline]
@@ -157,7 +155,7 @@ def maketable_main():
         _filldct['ic'] = get_ic(simname)
         _filldct['phys'] = get_model(simname)
         res = get_resolution(simname)
-        _filldct['gasres'] = res / 10**logmassunit_res_msun
+        _filldct['gasres'] = res
         snap1 = max(sl.snaps_sr) if simname in sims_sr \
                 else max(sl.snaps_hr) if simname in sims_hr \
                 else None
@@ -168,17 +166,17 @@ def maketable_main():
         _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
         _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
         _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
-                             / c.solar_mass / 10**logmassunit_halo_msun
+                             / c.solar_mass
         _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
                              / (c.cm_per_mpc * 1e-3)
         _filldct['mstar0'] = halodat0['mstar_gal_g'] \
-                             / c.solar_mass / 10**logmassunit_gal_msun
+                             / c.solar_mass
         _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
-                             / c.solar_mass / 10**logmassunit_halo_msun
+                             / c.solar_mass
         _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
                              / (c.cm_per_mpc * 1e-3)
         _filldct['mstar1'] = halodat1['mstar_gal_g'] \
-                             / c.solar_mass / 10**logmassunit_gal_msun
+                             / c.solar_mass
         _filldct['refs'] = get_refs(simname)
         printlist.append(fillmain.format(**_filldct))
     printlist = printlist + [hline, end]

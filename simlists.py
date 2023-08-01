@@ -439,6 +439,10 @@ plotlabel_from_physlabel = {
 
 ## info for methods section
 
+# m12r, m12w: Samuel et al. paper says same res as m12b-m12m, 
+# but spreadsheet says 7130 Msun, not 7070 Msun
+# crheatfix: resolution from FIRE-2 spreadsheet
+
 resolutions_Msun = {
     'm13h206_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
     'm13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690_sdp1e10_gacc31_fa0.5': 0,
@@ -490,14 +494,15 @@ resolutions_Msun = {
      '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
     ('m12q_m6e4_MHDCRspec1_fire3_fireBH_fireCR1_Oct252021_crdiffc1_sdp1e-4'
      '_gacc31_fa0.5_fcr1e-3_vw3000'): 0,
-    'm12z_r4200': 0,
-    'm12w_r7100': 0,
-    'm12r_r7100': 0,
-    'm12i_r7100': 0,
-    'm12c_r7100': 0,
-    'm12b_r7100': 0,
-    'm12m_r7100': 0,
-    'm12f_r7100': 0,
-    'crheatfix_m12f_r7100': 0,
-    'crheatfix_m12i_r7100': 0, 
+    'm12z_r4200': 4174,
+    'm12w_r7100': 7067,
+    'm12r_r7100': 7067,
+    'm12i_r7100': 7067,
+    'm12c_r7100': 7067,
+    'm12b_r7100': 7067,
+    'm12m_r7100': 7067,
+    'm12f_r7100': 7067,
+    'crheatfix_m12f_r7100': 7070,
+    'crheatfix_m12i_r7100': 7070, 
 }
+

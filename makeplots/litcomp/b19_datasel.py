@@ -106,7 +106,7 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
             return mv / c.solar_mass
         data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
     elif masscomp in ['halo_recalc']:
-        data_bur = bva.readdata_b19(nsigma=1)
+        data_bur = bva.readdata_b19(nsigmas=1)
     
     ## FIRE data
     m13_nobh = sl.m13_nobh_clean2 + sl.m13_nobh_rest2
@@ -311,7 +311,12 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
     
     m13ics_used = sorted(list(m13ics_used))
     m12ics_used = sorted(list(m12ics_used))
-    physmodels_used = sorted(list(physmodels_used))
+    physorder = {'FIRE-2': 0,
+                 'noBH': 1,
+                 'AGN-noCR': 2,
+                 'AGN-CR': 3}
+    physmodels_used = sorted(list(physmodels_used), 
+                             key=lambda x: physorder[x])
     _handles, _ = ax.get_legend_handles_labels()
     _labels1 = {pm: (sl.plotlabel_from_physlabel[pm]).replace(' ', '\n')
                 for pm in physmodels_used}

@@ -132,7 +132,7 @@ def plot_radprof_eagle_b19_comp():
                 ' for each M200c range, given meas. pkpc')
     
     eagledat = readin_eagledata()
-    data_bur = bva.eaddata_b19(nsigmas=(1, 2))
+    data_bur = bva.readdata_b19(nsigmas=(1, 2))
     # define used mass ranges
     deltaM200c = 0.5
     massbins_m200c_eagle = list(eagledat.keys())

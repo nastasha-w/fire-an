@@ -176,7 +176,7 @@ def plot_radprof_eagle_b19_comp():
         mmin200c = massbins_m200c_eagle[axi]
         mmax200c = massbins_m200c_eagle[axi + 1]
         mminbn98 = massbins_mbn98_eagle[axi]
-        mmaxbn98 = massbins_m200c_eagle[axi + 1]
+        mmaxbn98 = massbins_mbn98_eagle[axi + 1]
         r200cmin_cm = cu.Rhalo(10**mmin200c * c.solar_mass, 
                                  delta=200, ref='rhocrit', 
                                  z=cosmopars_ea_23['z'],
@@ -265,11 +265,15 @@ def plot_radprof_eagle_b19_comp():
     [ax.set_ylim(ylim) for ax in axes]
     # legend add
     handles, labels = axes[getlegax].get_legend_handles_labels()
-    axes[-1].legend(handles=handles, fontsize=fontsize)
+    axes[-1].legend(handles=handles, fontsize=fontsize - 2,
+                    handlelength=1., labelspacing=0.15, handletextpad=0.2,
+                    loc='upper right', bbox_to_anchor=(1.0, 0.85))
     hndl1 = [mpatch.Patch(label=f'${ypercs[0]:.0f}\\endash{ypercs[-1]:.0f}$%',
                           **kwa_pfills),
              mlines.Line2D((), (), label='median', **kwa_med)]
-    axes[-2].legend(handles=hndl1, fontsize=fontsize)
+    axes[-2].legend(handles=hndl1, fontsize=fontsize, fontsize=fontsize - 2,
+                    handlelength=1., labelspacing=0.15, handletextpad=0.2,
+                    loc='upper right', bbox_to_anchor=(1.0, 0.85))
 
     plt.savefig(imgname, format='pdf', bbox_inches='tight')
 

@@ -17,8 +17,8 @@ import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.math_utils as mu
 
-mdir = ''
-eagledatadir = ''
+mdir = '/projects/b1026/nastasha/imgs/datacomp/eagle/'
+eagledatadir = '/projects/b1026/nastasha/extdata/eaglepaper2/'
 
 cosmopars_ea_23 = {'a': 0.6652884960735025,
                    'boxsize': 67.77,
@@ -87,7 +87,7 @@ def m200c_to_mvir(m200c_msun):
     m200c_g = m200c_msun * c.solar_mass
     r200c_cgs = (m200c_g / meandens_200c * 3. / (4. * np.pi))**(1./3.)
     
-    rbins = np.linspace(0., 5. * r200c_cgs, 5000.)
+    rbins = np.linspace(0., 5. * r200c_cgs, 5000)
     rcens = 0.5 * (rbins[:-1] + rbins[1:])
     dr = np.average(np.diff(rbins))
     rhovals = cu.rho_NFW(rcens, m200c_g, delta=200, ref='rhocrit', 

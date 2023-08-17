@@ -271,7 +271,7 @@ def plot_radprof_eagle_b19_comp():
     hndl1 = [mpatch.Patch(label=f'${ypercs[0]:.0f}\\endash{ypercs[-1]:.0f}$%',
                           **kwa_pfills),
              mlines.Line2D((), (), label='median', **kwa_med)]
-    axes[-2].legend(handles=hndl1, fontsize=fontsize, fontsize=fontsize - 2,
+    axes[-2].legend(handles=hndl1, fontsize=fontsize - 2,
                     handlelength=1., labelspacing=0.15, handletextpad=0.2,
                     loc='upper right', bbox_to_anchor=(1.0, 0.85))
 

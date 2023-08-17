@@ -116,7 +116,7 @@ def plot_radprof_eagle_b19_comp():
     imgname = 'ne8_b19_cols_vs_eaglez0p5_w20_roughcomp_v1.pdf'
     imgname = mdir + imgname
 
-    kwa_pfills = {'color': (0.2, 0.2, 0.2)}
+    kwa_pfills = {'color': (0.8, 0.8, 0.8)}
     kwa_med = {'color': 'black', 'linestyle': 'solid', 'linewidth': 2.}
     
     ylabel = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne\\,VIII}) '
@@ -209,6 +209,8 @@ def plot_radprof_eagle_b19_comp():
         for dbi in range(len(data_bur)):
             cloer = data_bur['logmvir_msun_loer'][dbi]
             chier = data_bur['logmvir_msun_hier'][dbi]
+            print(mminbn98, mmaxbn98)
+            print(cloer, chier)
             if cloer > mmaxbn98 or chier < mminbn98:
                 continue
 

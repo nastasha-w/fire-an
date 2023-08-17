@@ -139,7 +139,7 @@ def plot_radprof_eagle_b19_comp():
     massbins_m200c_eagle.sort()
     massbins_m200c_eagle = massbins_m200c_eagle \
                            + [massbins_m200c_eagle[-1] + deltaM200c]
-    massbins_mbn98_eagle = [m200c_to_mvir(10**me) 
+    massbins_mbn98_eagle = [np.log10(m200c_to_mvir(10**me)) 
                             for me in massbins_m200c_eagle]
 
     npanels = len(massbins_m200c_eagle) - 1

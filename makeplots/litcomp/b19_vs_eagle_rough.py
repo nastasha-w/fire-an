@@ -177,11 +177,11 @@ def plot_radprof_eagle_b19_comp():
         mmax200c = massbins_m200c_eagle[axi + 1]
         mminbn98 = massbins_mbn98_eagle[axi]
         mmaxbn98 = massbins_m200c_eagle[axi + 1]
-        r200cmin_pkpc = cu.Rhalo(10**mmin200c * c.solar_mass, 
+        r200cmin_cm = cu.Rhalo(10**mmin200c * c.solar_mass, 
                                  delta=200, ref='rhocrit', 
                                  z=cosmopars_ea_23['z'],
                                  cosmopars=cosmopars_ea_23)
-        r200cmax_pkpc = cu.Rhalo(10**mmax200c * c.solar_mass, 
+        r200cmax_cm = cu.Rhalo(10**mmax200c * c.solar_mass, 
                                  delta=200, ref='rhocrit', 
                                  z=cosmopars_ea_23['z'],
                                  cosmopars=cosmopars_ea_23)
@@ -215,8 +215,8 @@ def plot_radprof_eagle_b19_comp():
                 continue
 
             _xv = data_bur['impact_parameter_kpc'][dbi]
-            xlo = _xv / r200cmax_pkpc
-            xhi = _xv / r200cmin_pkpc
+            xlo = _xv * 1e-3 * c.cm_per_mpc / r200cmax_cm 
+            xhi = _xv * 1e-3 * c.cm_per_mpc / r200cmin_cm 
             xmid = 0.5 * (xlo + xhi)
             xerr = xhi - xmid
             yv = data_bur['log_N_Ne8_pcm2'][dbi]
@@ -266,10 +266,10 @@ def plot_radprof_eagle_b19_comp():
     # legend add
     handles, labels = axes[getlegax].get_legend_handles_labels()
     axes[-1].legend(handles=handles, fontsize=fontsize)
-    leg1 = [mpatch.Patch(label=f'${ypercs[0]:.0f}\\endash{ypercs[-1]:.0f}$%', 
-                         **kwa_pfills),
-            mlines.Line2D((), (), label='median', **kwa_med)]
-    axes[-2].legend(leg1, fontsize=fontsize)
+    hndl1 = [mpatch.Patch(label=f'${ypercs[0]:.0f}\\endash{ypercs[-1]:.0f}$%',
+                          **kwa_pfills),
+             mlines.Line2D((), (), label='median', **kwa_med)]
+    axes[-2].legend(handles=hndl1, fontsize=fontsize)
 
     plt.savefig(imgname, format='pdf', bbox_inches='tight')
 

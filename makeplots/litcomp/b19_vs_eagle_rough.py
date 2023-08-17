@@ -50,9 +50,9 @@ def readin_eagledata():
             pvals = {_p: f[galset + subpath + pkeys[_p]][:]
                      for _p in percentiles}
             mmin = f[galset].attrs['seltag'].decode()
-            mmin = mmin.split['_'][0]
+            mmin = mmin.split('_')[0]
             mmin = float(mmin[3:])
-            percdct['mmin'] = {'edges': edges, 'pvals': pvals}
+            percdct[mmin] = {'edges': edges, 'pvals': pvals}
     return percdct
 
 def mvir_to_m200c(mvir_msun):

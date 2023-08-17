@@ -91,7 +91,7 @@ def m200c_to_mvir(m200c_msun):
     rcens = 0.5 * (rbins[:-1] + rbins[1:])
     dr = np.average(np.diff(rbins))
     rhovals = cu.rho_NFW(rcens, m200c_g, delta=200, ref='rhocrit', 
-                         z=cosmopars_ea_23['z'], 
+                         z=cosmopars_ea_23['z'],
                          cosmopars=cosmopars_ea_23, c='Schaller15')
     menc = np.cumsum(4. * np.pi / 3. * rhovals * rcens**2 * dr)
     rhomean = menc / (4. * np.pi / 3. * rbins[1:]**3)
@@ -228,7 +228,7 @@ def plot_radprof_eagle_b19_comp():
             chi = data_bur['logmvir_msun_hi'][dbi]
             print(clo, chi)
             
-            issig0 = (clo < mmaxbn98 or chi > mminbn98)
+            issig0 = not (clo > mmaxbn98 or chi < mminbn98)
             _label = None
             if issig0:
                 _color = 'black'

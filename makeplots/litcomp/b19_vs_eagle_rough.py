@@ -116,7 +116,7 @@ def plot_radprof_eagle_b19_comp():
     imgname = 'ne8_b19_cols_vs_eaglez0p5_w20_roughcomp_v1.pdf'
     imgname = mdir + imgname
 
-    kwa_pfills = {'color': 'gray'}
+    kwa_pfills = {'color': (0.2, 0.2, 0.2)}
     kwa_med = {'color': 'black', 'linestyle': 'solid', 'linewidth': 2.}
     
     ylabel = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne\\,VIII}) '
@@ -201,7 +201,11 @@ def plot_radprof_eagle_b19_comp():
         
         ax.fill_between(cens, plo, phi, **kwa_pfills)
         ax.plot(cens, med, **kwa_med)
-
+        
+        detsig1done = False
+        detsig0done = False
+        ulsig1done = False
+        ulsig0done = False
         for dbi in range(len(data_bur)):
             cloer = data_bur['logmvir_msun_loer'][dbi]
             chier = data_bur['logmvir_msun_hier'][dbi]

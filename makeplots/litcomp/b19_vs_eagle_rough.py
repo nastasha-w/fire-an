@@ -139,9 +139,10 @@ def plot_radprof_eagle_b19_comp():
     massbins_m200c_eagle.sort()
     massbins_m200c_eagle = massbins_m200c_eagle \
                            + [massbins_m200c_eagle[-1] + deltaM200c]
+    print(massbins_m200c_eagle)
     massbins_mbn98_eagle = [np.log10(m200c_to_mvir(10**me)) 
                             for me in massbins_m200c_eagle]
-
+    print(massbins_mbn98_eagle)
     npanels = len(massbins_m200c_eagle) - 1
     ncols = min(npanels, 4)
     nrows = (npanels - 1) // ncols + 1
@@ -225,8 +226,9 @@ def plot_radprof_eagle_b19_comp():
             #cbest = data_bur['logmvir_msun_bestest'][dbi]
             clo = data_bur['logmvir_msun_lo'][dbi]
             chi = data_bur['logmvir_msun_hi'][dbi]
+            print(clo, chi)
             
-            issig0 = not (clo < mminbn98 or chi >= mmaxbn98)
+            issig0 = (clo < mmaxbn98 or chi > mminbn98)
             _label = None
             if issig0:
                 _color = 'black'
@@ -265,15 +267,15 @@ def plot_radprof_eagle_b19_comp():
     [ax.set_ylim(ylim) for ax in axes]
     # legend add
     handles, labels = axes[getlegax].get_legend_handles_labels()
-    axes[-1].legend(handles=handles, fontsize=fontsize - 2,
-                    handlelength=1., labelspacing=0.15, handletextpad=0.2,
-                    loc='upper right', bbox_to_anchor=(1.0, 0.85))
+    axes[-1].legend(handles=handles, fontsize=fontsize - 1,
+                    handlelength=1., labelspacing=0.15, handletextpad=0.4,
+                    loc='upper right', bbox_to_anchor=(1.0, 0.90))
     hndl1 = [mpatch.Patch(label=f'${ypercs[0]:.0f}\\endash{ypercs[-1]:.0f}$%',
                           **kwa_pfills),
              mlines.Line2D((), (), label='median', **kwa_med)]
-    axes[-2].legend(handles=hndl1, fontsize=fontsize - 2,
-                    handlelength=1., labelspacing=0.15, handletextpad=0.2,
-                    loc='upper right', bbox_to_anchor=(1.0, 0.85))
+    axes[-2].legend(handles=hndl1, fontsize=fontsize - 1,
+                    handlelength=1., labelspacing=0.15, handletextpad=0.4,
+                    loc='upper right', bbox_to_anchor=(1.0, 0.90))
 
     plt.savefig(imgname, format='pdf', bbox_inches='tight')
 

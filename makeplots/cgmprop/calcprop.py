@@ -35,7 +35,7 @@ simnames_f2 = sl.m12_f2md
 snaps_sr = sl.snaps_sr
 snaps_hr = sl.snaps_hr
 snaps_f2 = sl.snaps_f2md
-simnames_all = simnames_sr + simnames_hr + simnames_f2
+simnames_all = simnames_sr[:2] #+ simnames_hr + simnames_f2
 
 tranges_logk = [(-np.inf, np.inf), (5., np.inf), (5.5, np.inf)]
 rsels_cat = [(0.1, 1.0), (0.0, 1.0), (0.0, 0.1)]

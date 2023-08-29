@@ -1,6 +1,4 @@
-from re import L
 import h5py
-from matplotlib import patheffects
 import matplotlib as mpl
 import matplotlib.collections as mcol
 import matplotlib.colors as mcolors

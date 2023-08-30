@@ -35,7 +35,7 @@ simnames_f2 = sl.m12_f2md
 snaps_sr = sl.snaps_sr
 snaps_hr = sl.snaps_hr
 snaps_f2 = sl.snaps_f2md
-simnames_all = simnames_sr[:2] #+ simnames_hr + simnames_f2
+simnames_all = simnames_sr + simnames_hr + simnames_f2
 
 tranges_logk = [(-np.inf, np.inf), (5., np.inf), (5.5, np.inf)]
 rsels_cat = [(0.1, 1.0), (0.0, 1.0), (0.0, 0.1)]
@@ -159,8 +159,8 @@ def getline_masses(outdct, simname=None, snapnum=None, rrange_rvir=None,
                       'weight',
                       'total [g or num. part.]',
                       'Mvir_g',
-                      'Omegab', 
-                      'Omegam', 
+                      'Omega_b', 
+                      'Omega_m', 
                       'redshift']) + '\n'
     if first:
         return head
@@ -169,9 +169,9 @@ def getline_masses(outdct, simname=None, snapnum=None, rrange_rvir=None,
               f'{trange_logk[0]:.3f}', f'{trange_logk[-1]:.3f}',
               weight,
               f'{outdct["total"]:.8e}',
-              f'{outdct["Mvir_g"]:.8e}',
-              f'{outdct["cosmopars"]["Omegab"]:.6f}',
-              f'{outdct["cosmopars"]["Omegam"]:.6f}',
+              f'{outdct["mvir_g"]:.8e}',
+              f'{outdct["cosmopars"]["omegab"]:.6f}',
+              f'{outdct["cosmopars"]["omegam"]:.6f}',
               f'{outdct["cosmopars"]["z"]:.6f}',
               ]
     return '\t'.join(values) + '\n'
@@ -207,18 +207,18 @@ def getline_wtdav(outdct, simname=None, snapnum=None, rrange_rvir=None,
                       'weight',
                       'wtd. mean Ne abundance (mass fraction)',
                       'Mvir_g',
-                      'Omegab', 
-                      'Omegam', 
+                      'Omega_b', 
+                      'Omega_m', 
                       'redshift']) + '\n'
     if first:
         return head
     values = [simname, f'{snapnum:d}', 
               f'{rrange_rvir[0]:.3f}', f'{rrange_rvir[-1]:.3f}',
               weight,
-              f'{outdct["total"]:.8e}',
               f'{outdct["wtdav"]:.8e}',
-              f'{outdct["cosmopars"]["Omegab"]:.6f}',
-              f'{outdct["cosmopars"]["Omegam"]:.6f}',
+              f'{outdct["mvir_g"]:.8e}',
+              f'{outdct["cosmopars"]["omegab"]:.6f}',
+              f'{outdct["cosmopars"]["omegam"]:.6f}',
               f'{outdct["cosmopars"]["z"]:.6f}',
               ]
     return '\t'.join(values) + '\n'

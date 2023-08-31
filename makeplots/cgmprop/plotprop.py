@@ -277,6 +277,74 @@ def plot_Ne8frachists(rrange_rvir=(0.1, 1.0),
     outname = outname.replace('.', 'p') + '.pdf'
     plt.savefig(outname, bbox_inches='tight')
 
+def plot_prophists(qty='fgas',
+                   rrange_rvir=(0.1, 1.0),
+                   trange_logk=(-np.inf, np.inf),
+                   massset='m12'):
+    if qty == 'fgas':
+        data = readfgas(rrange_rvir=rrange_rvir,
+                        trange_logk=trange_logk,
+                        massset=massset)
+        datakey = 'fgas'
+        xlabel = ('$\\mathrm{M}_{\mathrm{gas}} \\,/\\, '
+                  '(\\Omega_{\\mathrm{b}} '
+                  ' \\mathrm{M}_{\mathrm{vir}} \\,/ \\,'
+                  '\\Omega_{\\mathrm{m}})$')
+        outnamestr = 'fgas'
+        titlestr = 'gas'
+    
+
+    vmin = np.log10(data[datakey].min())
+    vmax = np.log10(data[datakey].max())
+    bins = np.linspace(0.99 * vmin, 1.01 * vmax, 16)
+
+    fig = plt.figure(figsize=(5.5, 5.))
+    ax = fig.add_subplot(1, 1, 1)
+    fontsize = 12
+    hatches = ['\\', '/', '|', '-']
+
+    for physmodel, hatch in zip(physmodels[massset], hatches):
+        color = sl.physcolors[physmodel]
+        label = sl.plotlabel_from_physlabel[physmodel]
+        f1 = data['physmodel'] == physmodel
+        ax.hist(data.loc[f1, datakey], label=label, bins=bins, color=color,
+                density=False, histtype='step', linewidth=2,
+                linestyle='solid', hatch=hatch)
+        #f2 = np.logical_and(f1, data['isclean'])
+        #ax.hist(data.loc[f2, 'fgas'], label=None, bins=bins, color=color,
+        #        density=False, histtype='stepfilled', alpha=0.5,
+        #        linewidth=2, linestyle='dashed')
+    
+    handles0, _ = ax.get_legend_handles_labels()
+    #handles1 = [mpatch.Patch((), (), label='full sample', color='gray',
+    #                         linewidth=2, linestyle='dashed'),
+    #            mpatch.Patch((), (), label='clean sample', color='gray',
+    #                         alpha=0.5),
+    #            ]
+    ax.legend(handles=handles0, fontsize=fontsize - 1)
+
+    ax.tick_params(which='both', direction='in', labelsize=fontsize - 1.,
+                   top=True, right=True)
+    
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel('number of snapshots', fontsize=fontsize)
+    if trange_logk == (-np.inf, np.inf):
+        title = massset + f', {titlestr} at ' \
+                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
+                    '\\, \\mathrm{R}_{\\mathrm{vir}}$')
+    else:
+        title = massset + f', {titlestr} at ' \
+                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
+                   '\\, \\mathrm{R}_{\\mathrm{vir}}, '
+                   f' \\mathrm{{T}} > 10^{{{trange_logk[0]:.1f}}}'
+                   '\\mathrm{{K}}$')
+    fig.suptitle(title, fontsize=fontsize)
+
+    outname = mdir + (f'{outnamestr}comp_{massset}_{rrange_rvir[0]}_to'
+                      f'{rrange_rvir[1]}_Rvir_Tgas_ge_{trange_logk[0]:.1f}')
+    outname = outname.replace('.', 'p') + '.pdf'
+    plt.savefig(outname, bbox_inches='tight')
+
 def compmodels_fgas(rrange_rvir=(0.1, 1.0),
                     trange_logk=(-np.inf, np.inf),
                     massset='m12'):

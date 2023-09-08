@@ -304,6 +304,13 @@ def fromcommandline(index):
         # m12_hr_all2: 42676 - 43107 (432 indices)
         # m12_f2md:    43108 - 43347 (240 indices)
         rcn.run_clumpiness(index - 42172)
+    elif index >= 43348 and index < 44524:
+        # m12_f2md:    43348 - 43587 (240 indices)
+        # m12_sr_all2: 43588 - 43683 ( 96 indices)
+        # m12_hr_all2: 43684 - 44115 (432 indices)
+        # m13_sr_all2: 44116 - 44475 (360 indices)
+        # m13_hr_all2: 44476 - 44523 ( 48 indices)
+        rhs.run_phasediagrams_radius(index - 43348)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

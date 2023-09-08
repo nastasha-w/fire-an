@@ -889,6 +889,8 @@ def run_phasediagrams_radius(opt):
     outdir = '/scratch1/08466/tg877653/output/hists/phasediagrams_all2/'
     
     if opt >= 0  and opt < 240:
+        # outdir stampede2
+        outdir = '/scratch/08466/tg877653/output/hists/phasediagrams_all2/'
         # 240 indices
         ind = opt - 0
         simnames = sl.m12_f2md # len 8, + 2 for crheatfix

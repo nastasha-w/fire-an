@@ -207,19 +207,21 @@ def get_cie_pie_nHT(ion, redshift, useZ_log10sol=0.):
     maxval_maxlogTi = ciemax_logTi
     
     # bisection search, I think
+    # not the most efficient probably, but it's fast enough
     while minval_minlogTi < maxval_maxlogTi - 1:
-        nHtrans = getCPIEtrans(tab_T_nH[guess_Ti], 
-                               lognH, minjump_CPIEtrans=2.)
-        if nHtrans > -np.inf: # has a transition CIE -> PIE, or all CIE
-            maxval_maxlogTi = guess_Ti
-        elif nHtrans == -np.inf: # only PIE
-            minval_minlogTi = guess_Ti
-        guess_Ti = (minval_minlogTi + maxval_maxlogTi) // 2
         # integer division means guesses could miss values
         if guess_Ti == minval_minlogTi:
             guess_Ti = guess_Ti + 1
         elif guess_Ti == maxval_maxlogTi:
             guess_Ti = guess_Ti - 1
+        nHtrans = getCPIEtrans(tab_T_nH[guess_Ti, :], 
+                               lognH, 
+                               minjump_CPIEtrans=minjump_CPIEtrans)
+        if nHtrans < np.inf: # has a transition CIE -> PIE, or all CIE
+            maxval_maxlogTi = guess_Ti
+        elif nHtrans == np.inf: # only PIE
+            minval_minlogTi = guess_Ti
+        guess_Ti = (minval_minlogTi + maxval_maxlogTi) // 2
     # minimum T with a CIE transition is somewhere between
     # minval (PIE only) and maxval (CIE + PIE or just CIE)
     # for a 'round' number, just take the lower values, i.e.,
@@ -241,7 +243,6 @@ def get_cie_pie_nHT(ion, redshift, useZ_log10sol=0.):
     todoc['ionbaltable_lintable'] = True
     todoc['lognHcut_cm3'] = lognHcut_cm3
     todoc['logTcut_K'] = logTcut_K 
-
     return lognHcut_cm3, logTcut_K, todoc
 
 def get_ionclass(dct_lognH_logT, ion, redshift):
@@ -417,9 +418,175 @@ def checkZdep(ion, redshifts):
         print(f'\tdifferences: {difflist}')
             
 
+def check_cutvals(ion, redshift):
+    '''
+    result:
+    for Ne8 at z=0.5 -- 1.0, PS20 tables, comparing different Z:
+    looks generally ok, but there is a regime at the lowest rho/T of
+    the CIE quadrant which deviates from CIE meaningfully, and would
+    be classified as PIE but Clayton Strawn's definition. 
+    Check phase diagrams to see if this actually matters for the haloes
+    in our set.
+    '''
+    outname = f'check_cutvals_{ion}_z{redshift:.2f}'
+    outname = outname.replace('.', 'p')
+    outname = mdir + outname + '.pdf'
 
+    iontab = Linetable_PS20(ion, redshift, emission=False, 
+                            vol=True, lintable=True)    
+    iontab.findiontable()
+    logTK = iontab.logTK
+    lognH = iontab.lognHcm3
+    logZsol = iontab.logZsol
+    tab_T_Z_nH = iontab.iontable_T_Z_nH 
 
-
-
-
+    deltaT = np.average(np.diff(logTK))
+    deltanH = np.average(np.diff(lognH))
+    extent = (lognH[0] - 0.5 * deltanH, lognH[-1] + 0.5 * deltanH,
+              logTK[0] - 0.5 * deltaT, logTK[-1] + 0.5 * deltaT)
     
+    numpanels = len(logZsol)
+    ncols = 5
+    nrows = (numpanels - 1) // ncols + 1
+    panelsize = 2.5
+    cbarwidth = 0.2
+    width_ratios = [panelsize] * ncols + [cbarwidth]
+    height_ratios = [panelsize] * nrows * 2
+    figsize = (sum(width_ratios), sum(height_ratios))
+
+    fig = plt.figure(figsize=figsize)
+    grid = gsp.GridSpec(ncols=ncols + 1, nrows=nrows * 2,
+                        width_ratios=width_ratios, 
+                        height_ratios=height_ratios,
+                        hspace=0., wspace=0.)
+    fcax = fig.add_subplot(grid[0, -1])
+    rcax = fig.add_subplot(grid[1, -1])
+    
+    rclabel = (f'$\\log_{{10}} \\, f(\\mathrm{{{ion}}}) \\, /\\,'
+               f'f(\\mathrm{{{ion}}}, '
+               '\\mathrm{CIE})$')
+    fclabel = (f'$\\log_{{10}} \\, f(\\mathrm{{{ion}}}) $')
+    xlabel = ('$\\log_{10} \\, \\mathrm{n}_{\\mathrm{H}}'
+              '\\; [\\mathrm{cm}^{-3}]$')
+    ylabel = '$\\log_{10} \\, \\mathrm{T} \\; [\\mathrm{K}]$'
+    diffcmap = 'RdBu'
+    fraccmap = 'viridis'
+    refZ = 0.
+    fontsize = 12
+    
+    #refZi = np.where(np.isclose(refZ, logZsol))[0][0]
+    #refZlin = 10**refZ
+    ionfraclevels = [0.001, 0.01, 0.1]
+    difflevels = [0.1, 0.3, 0.5]
+    linewidths = [2., 1., 0.5]
+    ctargs = {'colors': 'gray', 'linestyles': 'solid'}
+    icie = - 6
+
+    cierat = np.log10(tab_T_Z_nH / tab_T_Z_nH[:, :, icie][:, :, np.newaxis])
+    vmaxcierat = np.max(np.abs(cierat[np.isfinite(cierat)]))
+    vmaxcierat = min(vmaxcierat, 1.)
+    vmincierat = -1. * vmaxcierat
+
+    frac_T_Z_nH = np.log10(tab_T_Z_nH)
+    vmaxfrac = np.max(frac_T_Z_nH[np.isfinite(frac_T_Z_nH )])
+    vminfrac = np.min(frac_T_Z_nH[np.isfinite(frac_T_Z_nH )])
+    vminfrac = max(vminfrac, vmaxfrac - 6.)
+
+    lognHcut, logTcut, _ = get_cie_pie_nHT(ion, redshift, 
+                                           useZ_log10sol=refZ)
+
+    axes = []
+    for zi in range(numpanels):
+        xi = zi % ncols
+        yi = zi // ncols
+        doleft = xi == 0
+        dobottom = zi >= numpanels - ncols
+
+        fax = fig.add_subplot(grid[2 * yi, xi])
+        rax = fig.add_subplot(grid[2 * yi + 1, xi])
+        axes.append(fax)
+        axes.append(rax)
+        rax.tick_params(which='both', direction='in', labelsize=fontsize - 1,
+                        top=True, right=True, labelbottom=dobottom,
+                        labelleft=doleft)
+        fax.tick_params(which='both', direction='in', labelsize=fontsize - 1,
+                        top=True, right=True, labelbottom=False,
+                        labelleft=doleft)
+        if dobottom:
+            rax.set_xlabel(xlabel, fontsize=fontsize)
+        if doleft:
+            rax.set_ylabel(ylabel, fontsize=fontsize)
+            fax.set_ylabel(ylabel, fontsize=fontsize)
+
+        fimg = fax.imshow(frac_T_Z_nH[:, zi, :], extent=extent,
+                          cmap=fraccmap, 
+                          vmin=vminfrac, vmax=vmaxfrac, 
+                          interpolation='nearest', origin='lower',
+                          aspect='auto')
+        fax.contour(lognH, logTK, tab_T_Z_nH[:, zi, :], origin='lower',
+                    levels=ionfraclevels, linewidths=linewidths, **ctargs)
+        
+        rimg = rax.imshow(cierat[:, zi, :], extent=extent,
+                          cmap=diffcmap, 
+                          vmin=vmincierat, vmax=vmaxcierat, 
+                          interpolation='nearest', origin='lower',
+                          aspect='auto')
+        rax.contour(lognH, logTK, np.abs(cierat[:, zi, :]), origin='lower',
+                    levels=difflevels, linewidths=linewidths, **ctargs)
+        axtitle = (f'$\\mathrm{{Z}} = 10^{{{logZsol[zi]:.1f}}} \\,'
+                    '\\mathrm{Z}_{\\odot}$')
+        fax.text(0.05, 0.95, axtitle, color='red',
+                 fontsize=fontsize, horizontalalignment='left',
+                 verticalalignment='top', transform=fax.transAxes)
+        
+    plt.colorbar(fimg, cax=fcax, orientation='vertical', aspect=15.,
+                 extend='min')
+    fcax.set_ylabel(fclabel, fontsize=fontsize)
+    plt.colorbar(rimg, cax=rcax, orientation='vertical', aspect=15.,
+                 extend='both')
+    rcax.set_ylabel(rclabel, fontsize=fontsize)
+
+    for axi, ax in enumerate(axes):
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        ax.plot(xlim, (logTcut,) * 2, linestyle='dashed', color='black')
+        ax.plot((lognHcut,) * 2, (logTcut, ylim[1]), 
+                linestyle='dashed', color='black')
+        if axi == 0:
+            ax.text(xlim[0], logTcut, 'PIE',
+                    color='red', fontsize=fontsize,
+                    horizontalalignment='left',
+                    verticalalignment='top')
+            ax.text(xlim[0], logTcut, 'C+PIE',
+                    color='red', fontsize=fontsize,
+                    horizontalalignment='left',
+                    verticalalignment='bottom')
+            ax.text(xlim[1], logTcut, 'CIE',
+                    color='red', fontsize=fontsize,
+                    horizontalalignment='right',
+                    verticalalignment='bottom')
+    
+    handles = [mlines.Line2D((), (), linewidth=lw, label=f'{cl:.1e}',
+                             color=ctargs['colors'], 
+                             linestyle=ctargs['linestyles'])
+               for cl, lw in zip(ionfraclevels, linewidths)]
+    legtitle = (f'$f(\mathrm{{{ion}}})$')
+    axes[0].legend(handles=handles, loc='lower right',
+                   fontsize=fontsize - 2, 
+                   title=legtitle,
+                   title_fontsize=fontsize - 2,
+                   handlelength=1.5)
+    
+    handles = [mlines.Line2D((), (), linewidth=lw, label=f'{cl:.1f}',
+                             color=ctargs['colors'], 
+                             linestyle=ctargs['linestyles'])
+               for cl, lw in zip(difflevels, linewidths)]
+    legtitle = (f'$|\\Delta \\log_{{10}} \\, f(\mathrm{{{ion}}})|$')
+    axes[1].legend(handles=handles, loc='lower right',
+                   fontsize=fontsize - 2, 
+                   title=legtitle,
+                   title_fontsize=fontsize - 2,
+                   handlelength=1.5)
+    
+    plt.savefig(outname, bbox_inches='tight')
+

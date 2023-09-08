@@ -925,7 +925,7 @@ def run_phasediagrams_radius(opt):
     atarg = [{'field': 'Temperature'},
               {'element': 'Hydrogen', 'density': True}]
     axbin = [0.05, 0.05]
-    logaxes = [False, True]
+    logaxes = [True, True]
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps) * len(wts))

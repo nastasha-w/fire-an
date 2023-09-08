@@ -910,7 +910,7 @@ def run_phasediagrams_radius(opt):
         snaps = sl.snaps_sr # len 6
     elif opt >= 1128 and opt < 1176:
         # 48 indices
-        ind = opt - 948
+        ind = opt - 1128
         simnames = sl.m13_hr_all2 # len 2
         snaps = sl.snaps_hr # len 6
     
@@ -923,7 +923,7 @@ def run_phasediagrams_radius(opt):
     rbins = np.linspace(0.0, 1.3, 27)
     at = ['sim-direct', 'Metal']
     atarg = [{'field': 'Temperature'},
-              {'element': 'Hydrogen', 'density': True}]
+             {'element': 'Hydrogen', 'density': True}]
     axbin = [0.05, 0.05]
     logaxes = [True, True]
 

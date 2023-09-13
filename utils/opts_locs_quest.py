@@ -26,7 +26,8 @@ emtab_sylvia_ssh = pre_data + ('iontab/lineem/lines_sp20/UVB_dust1_CR1_G1'
                                '_shield1_lines.hdf5') 
 iontab_sylvia_ssh = pre_data + ('iontab/ionbal/lines_sp20/'
                                 'UVB_dust1_CR1_G1_shield1.hdf5')
-simdir_fire = '/projects/b1026/snapshots/fire3/'
+simdir_fire3 = '/projects/b1026/snapshots/fire3/'
+simdir_fire2_md = '/projects/b1026/snapshots/metal_diffusion/'
 dir_halodata = pre_data + 'halodata_fire/'
 filen_halocenrvir = dir_halodata + 'cen_rvir.hdf5'
 

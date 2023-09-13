@@ -18,7 +18,8 @@ c_halomask    = '' #'/home/wijers/halomaps/gethalomap.so'
 hsml_dir = pre + 'code/proj-an-c/HsmlAndProject_OMP/'
 emtab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1_lines.hdf5' 
 iontab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1.hdf5'
-simdir_fire = '/scratch3/01799/phopkins/fire3_suite_done/'
+simdir_fire3 = '/scratch3/01799/phopkins/fire3_suite_done/'
+simdir_fire2_md = ''
 
 kernel_list = ['C2','gadget']
 # desngb = 58 read out from sample hdf5 file (RunTimePars)

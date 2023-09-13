@@ -482,7 +482,7 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     opts_filetype = ['snap']
     if filetype not in opts_filetype:
         raise ValueError('filetype should be one of {}'.format(opts_filetype))
-    prefix = ol.simdir_fire
+    prefix = ''
     if not os.path.isdir(path):
         if not os.path.isdir(prefix + path):
             msg = 'Could not find a directory {} or {}'

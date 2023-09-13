@@ -466,8 +466,7 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     Parameters:
     -----------
     path: str
-        the path containing the parameter file and snapshot(s).
-        The path may be relative to make_maps_opts_locs.simdir_fire 
+        the full path containing the parameter file and snapshot(s).
     snapnum: int
         the snapshot number
     filetype: str, optional

@@ -159,6 +159,9 @@ def test_transfinder(ion, redshift):
 
     
 def get_cie_pie_nHT(ion, redshift, useZ_log10sol=0.):
+    '''
+    single cut on nH/T
+    '''
     # Clayton Strawn's minimum T criteria:
     # https://ui.adsabs.harvard.edu/abs/2023MNRAS.519....1S
     # https://ui.adsabs.harvard.edu/abs/2021MNRAS.501.4948S

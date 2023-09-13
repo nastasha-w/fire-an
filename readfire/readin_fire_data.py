@@ -494,9 +494,9 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     opts_pardir = ['', 'output/']
     opts_parfile = ['params.txt-usedvalues',
                     'parameters-usedvalues',  
-                    #'gizmo_parameters.txt-usedvalues',
+                    'gizmo_parameters.txt-usedvalues',
                     'params.txt',
-                    #'gizmo_parameters.txt',
+                    'gizmo_parameters.txt',
                     ]
     parameterfile = None
     for subdir in opts_pardir:

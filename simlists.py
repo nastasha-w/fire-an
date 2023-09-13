@@ -373,14 +373,14 @@ def dirpath_from_simname(simname):
     if simname in m12_f2md:
         if simname.startswith('crheatfix'):
             _sn = simname.split('_')[1:]
-            dirpath = ol.simdir_fire + 'cr_heating_fix/' + '_'.join(_sn)
+            dirpath = ol.simdir_fire2_md + 'cr_heating_fix/' + '_'.join(_sn)
         else:
-            dirpath = ol.simdir_fire + simname
+            dirpath = ol.simdir_fire2_md + simname
     else:
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
             dp2 = dp2.replace('m13h02', 'm13h002')
-        dirpath = '/'.join([ol.simdir_fire, dp2, simname]) 
+        dirpath = '/'.join([ol.simdir_fire3, dp2, simname]) 
     return dirpath + '/'
 
 def simname_from_dirpath(dirpath):

@@ -1,11 +1,7 @@
-import matplotlib.gridspec as gsp
-import matplotlib.lines as mlines
-import matplotlib.pyplot as plt
 import numpy as np
-import string
+import scipy.interpolate as scpi
 
 from fire_an.ionrad.ion_utils import Linetable_PS20
-import fire_an.utils.constants_and_units as c
 import fire_an.utils.math_utils as mu
 
 # from Lide D.R., ed. 2003, CRC Handbook of Chemistry and Physics,
@@ -170,10 +166,72 @@ def get_cie_pie_nHT_twolines(ion, redshift, useZ_log10sol=0.):
     todoc['logTcut_K'] = logTcut_K 
     return lognHcut_cm3, logTcut_K, todoc
 
-def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
+def get_cie_pie_nHT_strawn21(ion, redshift, useZ_log10sol=0.):
+    '''
+    get the CIE/PIE transition density from Strawn et al. (2021)
+    at each temperature
+    '''
+        # Clayton Strawn's minimum T criteria:
+    # https://ui.adsabs.harvard.edu/abs/2023MNRAS.519....1S
+    # https://ui.adsabs.harvard.edu/abs/2021MNRAS.501.4948S
+
+    minjump_CPIEtrans = 2.
+    minfactor_CPIEmix = 2.
 
     todoc = {}
-    lognHcut_cm3, logTcut_K, _todoc = get_cie_pie_nHT_twolines(ion, redshift)
+    todoc['method'] = ('Strawn et al. (2021) transition log10 nH '
+                       '[cm**-3]'
+                       ' for each tabulated temperature log10 T [K]. '
+                       'All CIE at a given T: threshold is -np.inf; '
+                       'all PIE at a given T: threshold in np.inf.'
+                       ' Ion fractions are >= minjump_CPIEtrans'
+                       ' times the CIE ion fraction at some '
+                       ' at densities < the transition density.')
+    todoc['ion'] = ion
+    todoc['redshift'] = redshift
+    todoc['useZ_log10sol'] = useZ_log10sol
+    todoc['minjump_CPIEtrans'] = minjump_CPIEtrans
+    todoc['minfactor_CPIEmix'] = minfactor_CPIEmix
+
+    iontab = Linetable_PS20(ion, redshift, emission=False, 
+                            vol=True, lintable=True)
+    iontab.findiontable()
+    logTK = iontab.logTK
+    lognH = iontab.lognHcm3
+    logZsol = iontab.logZsol
+    refZi = np.where(np.isclose(useZ_log10sol, logZsol))[0][0]    
+    tab_T_nH = iontab.iontable_T_Z_nH[:, refZi, :]
+
+    lognHtrans_cm3 = np.array([getCPIEtrans(tab_T_nH[iT, :], 
+                               lognH, 
+                               minjump_CPIEtrans=minjump_CPIEtrans)
+                               for iT in range(len(logTK))])
+    
+    # nHcut at high T (no PIE peak): factor difference with CIE at CIE max T
+    icie = -6
+    ciecurve = tab_T_nH[:, icie]
+    ciemax_logTi = np.argmax(ciecurve)
+    #ciemax_logT = logTK[ciemax_logTi]
+    maxfrac = ciecurve[ciemax_logTi]
+    ionfrac_nH = tab_T_nH[ciemax_logTi]
+    fracrange_cie = (maxfrac / minfactor_CPIEmix, 
+                     maxfrac * minfactor_CPIEmix)
+    nHi_lim = np.where(np.logical_or(ionfrac_nH < fracrange_cie[0],
+                                     ionfrac_nH > fracrange_cie[1]))[0][-1]
+    lognHcut_hiT_cm3 = lognH[nHi_lim + 1]
+
+    todoc['ionbalfile'] = iontab.ionbalfile
+    todoc['ionbaltable_vol'] = True
+    todoc['ionbaltable_lintable'] = True
+    todoc['lognHcut_hiT_cm3'] = lognHcut_hiT_cm3
+    todoc['logT_K'] = logTK
+    todoc['lognHtrans_cm3'] = lognHtrans_cm3 
+    return todoc
+
+
+def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
+    todoc = {}
+    lognHcut_cm3, logTcut_K, _todoc = get_cie_pie_nHT_strawn21(ion, redshift)
     todoc.update(_todoc)
     todoc['ionclasses'] = ionclasses
     lognH = dct_lognH_logT['lognH_cm3']
@@ -188,6 +246,71 @@ def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
     #out[np.logical_and(np.logical_not(hiT), 
     #                   np.logical_not(hinH))] = ionclasses['lo']
     return out, 1, todoc
+    
+def get_ionclass_strawn21(dct_lognH_logT, ion, redshift):
+    '''
+    Strawn et al. (2021)-based division into CIE, PIE, and C+PIE gas
+    '''
+    todoc = {}
+    _todoc = get_cie_pie_nHT_twolines(ion, redshift)
+    todoc.update(_todoc)
+    todoc['ionclasses'] = ionclasses
+    lognH_tocheck = dct_lognH_logT['lognH_cm3']
+    logT_tocheck = dct_lognH_logT['logT_K']
+    out = -1 * np.ones(lognH_tocheck.shape, dtype=np.int8)
 
+    lognHcut_hiT_cm3 = _todoc['lognHcut_hiT_cm3']
+    logTK = np.copy(_todoc['logT_K'])
+    lognHtrans_cm3 = np.copy(_todoc['lognHtrans_cm3'])
+
+    logTmaxi_PIE_K = np.where(lognHtrans_cm3 < np.inf)[0][0]
+    logTmax_PIE_K = logTK[logTmaxi_PIE_K]
+    todoc['logTmax_PIE_K'] = logTmax_PIE_K
+    
+    logTK = logTK[logTmaxi_PIE_K:]
+    lognHtrans_cm3 = lognHtrans_cm3[logTmaxi_PIE_K:]
+    logTmini_allCIE = np.where(lognHtrans_cm3 == -np.inf)[0][0]
+    if lognHcut_hiT_cm3 > lognHtrans_cm3[logTmini_allCIE - 1]:
+        # if the highest-T nH cut is to the right of the T_CIEmax
+        # line in the phase diagram, just connect the line to all 
+        # CIE temperatures
+        logTKlast = logTK[logTmini_allCIE]
+        lognHtranslast_cm3 = lognHcut_hiT_cm3
+        logTK_interp = np.copy(logTK[:logTmini_allCIE + 1])
+        lognHcm3_interp = np.copy(lognHtrans_cm3[:logTmini_allCIE + 1])
+        logTK_interp[-1] = logTKlast
+        lognHcm3_interp[-1] = lognHtranslast_cm3
+    elif lognHcut_hiT_cm3 > np.min(lognHtrans_cm3):
+        # the highest-T nH cut is to the right of all transition
+        # densities -> effective just use the two-line case
+        logTK_interp = np.array([logTK[0], logTK[-1]])
+        lognHcm3_interp = np.array([lognHcut_hiT_cm3] * 2)
+    else:
+        # at each temperature, use the max CIE T transition as the
+        # minimum tranisition density
+        logTKlast = logTK[logTmini_allCIE]
+        lognHtranslast_cm3 = lognHcut_hiT_cm3
+        lognHtranslast_cm3[lognHtranslast_cm3 < lognHcut_hiT_cm3] \
+            = lognHcut_hiT_cm3
+        logTK_interp = np.copy(logTK[:logTmini_allCIE + 1])
+        lognHcm3_interp = np.copy(lognHtrans_cm3[:logTmini_allCIE + 1])
+        logTK_interp[-1] = logTKlast
+        lognHcm3_interp[-1] = lognHtranslast_cm3
+    interpf = scpi.interp1d(logTK_interp, lognHcm3_interp, 
+                            kind='linear', copy=True, bounds_error=False,
+                            fill_value=(np.inf, lognHcut_hiT_cm3),
+                            assume_sorted=False)
+    
+    hiT = logT_tocheck >= logTmax_PIE_K
+    hinH = lognH_tocheck > interpf(logT_tocheck)
+    out[np.logical_not(hiT)] = ionclasses['PIE']
+    out[np.logical_and(hiT, hinH)] = ionclasses['C+PIE']
+    out[np.logical_and(hiT, np.logical_not(hinH))] = ionclasses['CIE']
+    #out[np.logical_and(np.logical_not(hiT), 
+    #                   np.logical_not(hinH))] = ionclasses['lo']
+    return out, 1, todoc
+
+
+    
 
 

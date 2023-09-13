@@ -20,11 +20,7 @@ import fire_an.utils.opts_locs as ol
 
 # 10000 points is too many for 3D interactive plotting on quest
 def getpath(simname):
-    dp2 = '_'.join(simname.split('_')[:2])
-    if dp2.startswith('m13h02_'):
-        dp2 = dp2.replace('m13h02', 'm13h002')
-    simpath = '/'.join([ol.simdir_fire, dp2, simname]) 
-    return simpath
+    return sl.dirpath_from_simname(simname)
 
 def getspacefilter(simname, snapnum, maxradius_rvir, parttype=0):
     simpath = getpath(simname)

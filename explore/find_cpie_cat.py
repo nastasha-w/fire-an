@@ -231,7 +231,7 @@ def get_cie_pie_nHT_strawn21(ion, redshift, useZ_log10sol=0.):
 
 def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
     todoc = {}
-    lognHcut_cm3, logTcut_K, _todoc = get_cie_pie_nHT_strawn21(ion, redshift)
+    lognHcut_cm3, logTcut_K, _todoc = get_cie_pie_nHT_twolines(ion, redshift)
     todoc.update(_todoc)
     todoc['ionclasses'] = ionclasses
     lognH = dct_lognH_logT['lognH_cm3']
@@ -240,8 +240,8 @@ def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
     
     hiT = logT > logTcut_K
     hinH = lognH > lognHcut_cm3
-    out[np.logical_and(hiT, hinH)] = ionclasses['C+PIE']
-    out[np.logical_and(hiT, np.logical_not(hinH))] = ionclasses['CIE']
+    out[np.logical_and(hiT, hinH)] = ionclasses['CIE']
+    out[np.logical_and(hiT, np.logical_not(hinH))] = ionclasses['C+PIE']
     out[np.logical_not(hiT)] = ionclasses['PIE']
     #out[np.logical_and(np.logical_not(hiT), 
     #                   np.logical_not(hinH))] = ionclasses['lo']
@@ -250,9 +250,11 @@ def get_ionclass_twolines(dct_lognH_logT, ion, redshift):
 def get_ionclass_strawn21(dct_lognH_logT, ion, redshift):
     '''
     Strawn et al. (2021)-based division into CIE, PIE, and C+PIE gas
+    only tested for Ne8 (last option for nH cuts relative to T_CIE_max
+    transitions)
     '''
     todoc = {}
-    _todoc = get_cie_pie_nHT_twolines(ion, redshift)
+    _todoc = get_cie_pie_nHT_strawn21(ion, redshift)
     todoc.update(_todoc)
     todoc['ionclasses'] = ionclasses
     lognH_tocheck = dct_lognH_logT['lognH_cm3']
@@ -280,7 +282,7 @@ def get_ionclass_strawn21(dct_lognH_logT, ion, redshift):
         lognHcm3_interp = np.copy(lognHtrans_cm3[:logTmini_allCIE + 1])
         logTK_interp[-1] = logTKlast
         lognHcm3_interp[-1] = lognHtranslast_cm3
-    elif lognHcut_hiT_cm3 > np.min(lognHtrans_cm3):
+    elif lognHcut_hiT_cm3 > np.max(lognHtrans_cm3):
         # the highest-T nH cut is to the right of all transition
         # densities -> effective just use the two-line case
         logTK_interp = np.array([logTK[0], logTK[-1]])
@@ -290,8 +292,7 @@ def get_ionclass_strawn21(dct_lognH_logT, ion, redshift):
         # minimum tranisition density
         logTKlast = logTK[logTmini_allCIE]
         lognHtranslast_cm3 = lognHcut_hiT_cm3
-        lognHtranslast_cm3[lognHtranslast_cm3 < lognHcut_hiT_cm3] \
-            = lognHcut_hiT_cm3
+        lognHtranslast_cm3 = np.maximum(lognHtranslast_cm3, lognHcut_hiT_cm3)
         logTK_interp = np.copy(logTK[:logTmini_allCIE + 1])
         lognHcm3_interp = np.copy(lognHtrans_cm3[:logTmini_allCIE + 1])
         logTK_interp[-1] = logTKlast
@@ -304,8 +305,8 @@ def get_ionclass_strawn21(dct_lognH_logT, ion, redshift):
     hiT = logT_tocheck >= logTmax_PIE_K
     hinH = lognH_tocheck > interpf(logT_tocheck)
     out[np.logical_not(hiT)] = ionclasses['PIE']
-    out[np.logical_and(hiT, hinH)] = ionclasses['C+PIE']
-    out[np.logical_and(hiT, np.logical_not(hinH))] = ionclasses['CIE']
+    out[np.logical_and(hiT, hinH)] = ionclasses['CIE']
+    out[np.logical_and(hiT, np.logical_not(hinH))] = ionclasses['C+PIE']
     #out[np.logical_and(np.logical_not(hiT), 
     #                   np.logical_not(hinH))] = ionclasses['lo']
     return out, 1, todoc

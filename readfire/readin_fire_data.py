@@ -466,8 +466,7 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     Parameters:
     -----------
     path: str
-        the path containing the parameter file and snapshot(s).
-        The path may be relative to make_maps_opts_locs.simdir_fire 
+        the full path containing the parameter file and snapshot(s).
     snapnum: int
         the snapshot number
     filetype: str, optional
@@ -482,7 +481,7 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     opts_filetype = ['snap']
     if filetype not in opts_filetype:
         raise ValueError('filetype should be one of {}'.format(opts_filetype))
-    prefix = ol.simdir_fire
+    prefix = ''
     if not os.path.isdir(path):
         if not os.path.isdir(prefix + path):
             msg = 'Could not find a directory {} or {}'
@@ -495,9 +494,9 @@ def get_Firesnap(path, snapnum, filetype='snap'):
     opts_pardir = ['', 'output/']
     opts_parfile = ['params.txt-usedvalues',
                     'parameters-usedvalues',  
-                    #'gizmo_parameters.txt-usedvalues',
+                    'gizmo_parameters.txt-usedvalues',
                     'params.txt',
-                    #'gizmo_parameters.txt',
+                    'gizmo_parameters.txt',
                     ]
     parameterfile = None
     for subdir in opts_pardir:

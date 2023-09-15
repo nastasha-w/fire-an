@@ -12,11 +12,7 @@ import fire_an.utils.opts_locs as ol
 
 
 def getpath(simname):
-    dp2 = '_'.join(simname.split('_')[:2])
-    if dp2.startswith('m13h02_'):
-        dp2 = dp2.replace('m13h02', 'm13h002')
-    simpath = '/'.join([ol.simdir_fire, dp2, simname]) 
-    return simpath
+    return sl.dirpath_from_simname(simname)
 
 def genfilter(simname: str, snapnum: int, 
               qtys: list, qtys_args: list,

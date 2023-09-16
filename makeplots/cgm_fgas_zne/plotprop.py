@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import fire_an.mainfunc.cengalprop as cgp
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
@@ -359,7 +360,7 @@ def compmodels_prop(qty='fgas',
 
 def comp_Ne8mass(rrange_rvir=(0.1, 1.0),
                  trange_logk=(-np.inf, np.inf),
-                 massset='m12'):
+                 massset='m12', xqty='Mvir'):
     data = pd.read_csv(totfilen, sep='\t')
     filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
     filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
@@ -383,8 +384,12 @@ def comp_Ne8mass(rrange_rvir=(0.1, 1.0),
     fontsize = 12
     ylabel = ('$\\log_{10} \\, \mathrm{M}(\\mathrm{Ne\\,VIII})'
               '\\; [\\mathrm{M}_{\\odot}]$')
-    xlabel = ('$\\log_{10} \\, \mathrm{M}_{\\mathrm{vir}}'
-              '\\; [\\mathrm{M}_{\\odot}]$')
+    if xqty == 'Mvir':
+        xlabel = ('$\\log_{10} \\, \mathrm{M}_{\\mathrm{vir}}'
+                '\\; [\\mathrm{M}_{\\odot}]$')
+    elif xqty == 'Mstar':
+        xlabel = ('$\\log_{10} \\, \mathrm{M}_{\\star, \\mathrm{cen}}'
+                  '\\; [\\mathrm{M}_{\\odot}]$')
     ax.set_xlabel(xlabel, fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     ax.tick_params(which='both', direction='in', labelsize=fontsize - 1,
@@ -394,7 +399,16 @@ def comp_Ne8mass(rrange_rvir=(0.1, 1.0),
         color = sl.physcolors[physmodel]
         label = sl.plotlabel_from_physlabel[physmodel]
         f1 = data['physmodel'] == physmodel
-        xv = np.log10(data.loc[f1, 'Mvir_g'] / c.solar_mass)
+        if xqty == 'Mvir':
+            xv = np.log10(data.loc[f1, 'Mvir_g'] / c.solar_mass)
+        elif xqty == 'Mstar':
+            simn = data.loc[f1, 'simname']
+            simpaths = [sl.dirpath_from_simname(_simn) for _simn in simn]
+            snap = data.loc[f1, 'snapnum']
+            mstars_g = np.array([
+                cgp.getcengalcen(_simp, _snap)[2]['mstar_gal_g']
+                for _simp, _snap in zip(simpaths, snap)])
+            xv = np.log10(mstars_g / c.solar_mass)
         yv =  np.log10(data.loc[f1, 'MNe'])
         ax.scatter(xv, yv, label=label, facecolor=color,
                    edgecolor='black', s=30)
@@ -415,7 +429,7 @@ def comp_Ne8mass(rrange_rvir=(0.1, 1.0),
                    '\\mathrm{{K}}$')
     fig.suptitle(title, fontsize=fontsize)
 
-    outname = mdir + (f'Ne8mass_vs_Mvir_{massset}'
+    outname = mdir + (f'Ne8mass_vs_{xqty}_{massset}'
                       f'_{rrange_rvir[0]}_to'
                       f'{rrange_rvir[1]}_Rvir_Tgas_ge_{trange_logk[0]:.1f}')
     outname = outname.replace('.', 'p') + '.pdf'

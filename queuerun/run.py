@@ -318,6 +318,14 @@ def fromcommandline(index):
         # m12_hr_all2: 44608 - 44715 (108 indices)
         # m13_sr_all2: 44716 - 44805 ( 90 indices)
         # m13_hr_all2: 44806 - 55817 ( 12 indices)
+    elif index >= 44818 and index < 45112:
+        rhs.run_hist_mstellar_Zstellar(index - 44818)
+        # m12_f2md:    44818 - 44877 ( 60 indices)
+        # m12_sr_all2: 44878 - 44901 ( 24 indices)
+        # m12_hr_all2: 44902 - 45009 (108 indices)
+        # m13_sr_all2: 45010 - 45099 ( 90 indices)
+        # m13_hr_all2: 45100 - 45111 ( 12 indices)
+
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

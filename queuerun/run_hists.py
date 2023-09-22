@@ -883,7 +883,7 @@ def run_hist_rad_vrad_weighted(opt):
                          outfilen=outfilen, overwrite=False)
 
 def run_phasediagrams_radius(opt):
-    # nH-T wieghted by M, V, Ne, Ne8
+    # nH-T weighted by M, V, Ne, Ne8
     # sample all2
     # 4 weights -> 4 runs per sim/snap
     outdir = '/scratch1/08466/tg877653/output/hists/phasediagrams_all2/'
@@ -960,6 +960,72 @@ def run_phasediagrams_radius(opt):
                          center='shrinksph', rbins=rbins, runit=runit,
                          logweights=True, logaxes=logaxes, axbins=axbin,
                          outfilen=outfilen, overwrite=False)
+
+def run_hist_Zprof(opt):
+    # for total halo metallicities
+    # 1 run per sim/snap  
+    outdir = '/scratch1/08466/tg877653/output/hists/r_wtd/'
+    if opt >= 0 and opt < 60:
+        # 60 indices
+        outdir = '/scratch/08466/tg877653/output/hists/r_wtd/'
+        ind = opt - 0
+        simnames = sl.m12_f2md # len 8, + 2 for crheatfix
+        snaps = sl.snaps_f2md # len 6
+    elif opt >= 60 and opt < 84:
+        # 24 indices
+        ind = opt - 60
+        simnames = sl.m12_sr_all2 # len 4
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 84 and opt < 192:
+        # 108 indices
+        ind = opt - 84
+        simnames = sl.m12_hr_all2 # len 18
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 192 and opt < 282:
+        # 90 indices
+        ind = opt - 192
+        simnames = sl.m13_sr_all2 # len 15
+        snaps = sl.snaps_sr # len 6
+    elif opt >= 282 and opt < 294:
+        # 12 indices
+        ind = opt - 282
+        simnames = sl.m13_hr_all2 # len 2
+        snaps = sl.snaps_hr # len 6
+
+    #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
+    simi = ind // (len(snaps))
+    snpi = ind % len(snaps)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+
+    at = ['sim-direct', 'sim-direct']
+    atarg = [{'field': 'Metallicity'}, {'field': 'Temperature'}]
+    axbin = [0.05, 0.1]
+    logaxes = [True, True]
+    wt = ['Mass']
+    wtarg = {}
+
+    runit = 'Rvir'
+    rbins = np.linspace(0.0, 1.3, 27)
+
+    #dirpath = '/'.join([_dirpath, simname])
+    dirpath = sl.dirpath_from_simname(simname)
+
+    atstr = 'rcen_Metallicity_Temperature'
+    wtstr = 'gasmass'
+    outfilen = outdir +\
+               (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
+                '_bins1_v1_hvcen.hdf5')
+    if os.path.isfile(outfilen):
+        print(outfilen, ' already exists; skipping')
+        return None
+    mh.histogram_radprof(dirpath, snapnum,
+                         wt, wtarg, at, atarg,
+                         particle_type=0, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=logaxes, axbins=axbin,
+                         outfilen=outfilen, overwrite=False)
+    
 
 def run_hist(opt):
     if opt >= 0 and opt < 60:

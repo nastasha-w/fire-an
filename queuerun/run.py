@@ -311,6 +311,13 @@ def fromcommandline(index):
         # m13_sr_all2: 44116 - 44475 (360 indices)
         # m13_hr_all2: 44476 - 44523 ( 48 indices)
         rhs.run_phasediagrams_radius(index - 43348)
+    elif index >= 44524 and index < 44818:
+        rhs.run_hist_Zprof(index - 44524)
+        # m12_f2md:    44524 - 44583 ( 60 indices)
+        # m12_sr_all2: 44584 - 44607 ( 24 indices)
+        # m12_hr_all2: 44608 - 44715 (108 indices)
+        # m13_sr_all2: 44716 - 44805 ( 90 indices)
+        # m13_hr_all2: 44806 - 55817 ( 12 indices)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

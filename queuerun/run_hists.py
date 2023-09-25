@@ -1002,7 +1002,7 @@ def run_hist_Zprof(opt):
     atarg = [{'field': 'Metallicity'}, {'field': 'Temperature'}]
     axbin = [0.05, 0.1]
     logaxes = [True, True]
-    wt = ['Mass']
+    wt = 'Mass'
     wtarg = {}
 
     runit = 'Rvir'
@@ -1067,7 +1067,7 @@ def run_hist_mstellar_Zstellar(opt):
     atarg = [{'field': 'Metallicity'}]
     axbin = [0.05]
     logaxes = [True]
-    wt = ['Mass']
+    wt = 'Mass'
     wtarg = {}
 
     runit = 'Rvir'

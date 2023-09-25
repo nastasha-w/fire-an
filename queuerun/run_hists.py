@@ -967,7 +967,7 @@ def run_hist_Zprof(opt):
     outdir = '/scratch1/08466/tg877653/output/hists/r_wtd/'
     if opt >= 0 and opt < 60:
         # 60 indices
-        outdir = '/scratch/08466/tg877653/output/hists/r_wtd/'
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
         ind = opt - 0
         simnames = sl.m12_f2md # len 8, + 2 for crheatfix
         snaps = sl.snaps_f2md # len 6
@@ -1032,7 +1032,7 @@ def run_hist_mstellar_Zstellar(opt):
     outdir = '/scratch1/08466/tg877653/output/hists/r_wtd/'
     if opt >= 0 and opt < 60:
         # 60 indices
-        outdir = '/scratch/08466/tg877653/output/hists/r_wtd/'
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
         ind = opt - 0
         simnames = sl.m12_f2md # len 8, + 2 for crheatfix
         snaps = sl.snaps_f2md # len 6

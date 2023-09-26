@@ -4,438 +4,194 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-import fire_an.mainfunc.cengalprop as cgp
+import fire_an.makeplots.cgm_fgas_zne.readprop as rpr
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
-ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
-totfilen = ddir + 'gas_Neon_Ne8_masses_rTcuts.dat'
-avfilen = ddir + 'mean_ZNe_by_mass_volume_rcuts.dat'
-
 mdir = '/projects/b1026/nastasha/imgs/cgmprop/'
 
-physmodels = {'m12': ['FIRE-2', 'noBH', 'AGN-noCR', 'AGN-CR'],
-              'm13': ['noBH', 'AGN-noCR', 'AGN-CR']}
-solarmassfrac_Ne = 10**-2.9008431 #copied from PS20 tables
+#copied from PS20 tables
+solarmassfrac_Ne = 10**-2.9008431 
+solarmassfrac_Ztot = 0.013371374
 
-def readfgas(rrange_rvir=(0.1, 1.0), trange_logk=(-np.inf, np.inf),
-             massset='m12'):
-    data = pd.read_csv(totfilen, sep='\t')
-    filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
-    filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
-    filter &= np.isclose(data['tmin_logk'], trange_logk[0])
-    filter &= np.isclose(data['tmax_logk'], trange_logk[1])
-    filter &= data['weight'] == 'gasmass'
-    data = data[filter]
-    data['ic'] = np.array([sl.ic_from_simname(simname)
-                           for simname in data['simname']])
-    filter2 = np.array([ic.startswith(massset) for ic in data['ic']])
-    filter2 &= np.array([sn not in sl.buglist1 for sn in data['simname']])
-    data = data[filter2]
+def checkfracs_T_ne8():
+    '''
+    fraction of Ne8 < 10^5.0 K
+    m12, (0.1, 1.0) Rvir: max 0.1169863860406003 missing
+    m12, (0.0, 0.1) Rvir: max 0.0017332917011777527 missing
+    m12, (0.0, 1.0) Rvir: max 0.1150003753578468 missing
+    m12, (0.15, 0.25) Rvir: max 0.11599025905318427 missing
+    m12, (0.45, 0.55) Rvir: max 0.21306723218894474 missing
+    m12, (0.9, 1.0) Rvir: max 0.2676769245827688 missing
+    m13, (0.1, 1.0) Rvir: max 0.005922894556624092 missing
+    m13, (0.0, 0.1) Rvir: max 2.8164352013915206e-06 missing
+    m13, (0.0, 1.0) Rvir: max 0.00591089235167197 missing
+    m13, (0.15, 0.25) Rvir: max 1.7881382923801148e-05 missing
+    m13, (0.45, 0.55) Rvir: max 0.00037643901925377143 missing
+    m13, (0.9, 1.0) Rvir: max 0.019033203151526568 missing
+    '''
+    print('fraction of Ne8 < 10^5.0 K')
+    for massset in ['m12', 'm13']:
+        for rrange_rvir in [(0.1, 1.0), (0.0, 0.1), (0.0, 1.0),
+                            (0.15, 0.25), (0.45, 0.55), (0.9, 1.0)]:
+            data_allT = rpr.readin_all_data(rrange_rvir=rrange_rvir, 
+                                            trange_logk=(-np.inf, np.inf),
+                                            massset=massset)
+            data_hiT = rpr.readin_all_data(rrange_rvir=rrange_rvir, 
+                                           trange_logk=(5.0, np.inf),
+                                           massset=massset)
+            misshi = 1. - data_hiT['Ne8_numpart'] / data_allT['Ne8_numpart']
+            print(f'{massset}, {rrange_rvir} Rvir: max {np.max(misshi)}'
+                  ' missing')
 
-    data['physmodel'] = np.array([sl.physlabel_from_simname(simname)
-                                  for simname in data['simname']])
-    data['fgas'] = data['total [g or num. part.]'] \
-                   / (data['Mvir_g'] * data['Omega_b'] / data['Omega_m'])
-    return data
-
-def readZNe_mass(rrange_rvir=(0.1, 1.0), trange_logk=(-np.inf, np.inf),
-                 massset='m12'):
-    data = pd.read_csv(totfilen, sep='\t')
-    filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
-    filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
-    filter &= np.isclose(data['tmin_logk'], trange_logk[0])
-    filter &= np.isclose(data['tmax_logk'], trange_logk[1])
-    filter &= data['weight'].isin(['gasmass', 'Neon'])
-    data = data[filter]
-    data['ic'] = np.array([sl.ic_from_simname(simname)
-                           for simname in data['simname']])
-    filter2 = np.array([ic.startswith(massset) for ic in data['ic']])
-    filter2 &= np.array([sn not in sl.buglist1 for sn in data['simname']])
-    data = data[filter2]
-    data['physmodel'] = np.array([sl.physlabel_from_simname(simname)
-                                  for simname in data['simname']])
-    dfgas = data[data['weight'] == 'gasmass']
-    dfne = data[data['weight'] == 'Neon']
-
-    dfmodgas = dfgas.pivot_table(columns=['physmodel', 'ic', 'redshift'],
-                                 index=('simname', 'snapnum'),
-                                 values='total [g or num. part.]')
-    dfmodne = dfne.pivot_table(columns=['physmodel', 'ic', 'redshift'],
-                               index=('simname', 'snapnum'),
-                               values='total [g or num. part.]')
-    dfmodnefrac = dfmodne * c.atomw_Ne * c.u / (dfmodgas * solarmassfrac_Ne) 
-    dfnefrac = dfmodnefrac.melt(value_name='ZNe_solar')
-    # NaN values picked up from missing snapnums (different sets), 
-    # missing physmodel/IC combinations
-    dfnefrac = dfnefrac[np.logical_not(np.isnan(dfnefrac['ZNe_solar']))]
-    return dfnefrac
-
-def readZNe_direct(rrange_rvir=(0.1, 1.0),
-                   weight='gasmass',
-                   massset='m12'):
-    data = pd.read_csv(avfilen, sep='\t')
-    filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
-    filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
-    filter &= data['weight'] == weight
-    data = data[filter]
-    data['ic'] = np.array([sl.ic_from_simname(simname)
-                           for simname in data['simname']])
-    filter2 = np.array([ic.startswith(massset) for ic in data['ic']])
-    filter2 &= np.array([sn not in sl.buglist1 for sn in data['simname']])
-    data = data[filter2]
-    data['physmodel'] = np.array([sl.physlabel_from_simname(simname)
-                                  for simname in data['simname']])
-    data['wtd. mean Ne abundance (mass fraction)'] *= 1. / solarmassfrac_Ne
-    return data
-
-def readNe8frac(rrange_rvir=(0.1, 1.0), trange_logk=(-np.inf, np.inf),
-                massset='m12'):
-    data = pd.read_csv(totfilen, sep='\t')
-    filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
-    filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
-    filter &= np.isclose(data['tmin_logk'], trange_logk[0])
-    filter &= np.isclose(data['tmax_logk'], trange_logk[1])
-    filter &= data['weight'].isin(['Ne8', 'Neon'])
-    data = data[filter]
-    data['ic'] = np.array([sl.ic_from_simname(simname)
-                           for simname in data['simname']])
-    filter2 = np.array([ic.startswith(massset) for ic in data['ic']])
-    filter2 &= np.array([sn not in sl.buglist1 for sn in data['simname']])
-    data = data[filter2]
-    data['physmodel'] = np.array([sl.physlabel_from_simname(simname)
-                                  for simname in data['simname']])
-    dfne8 = data[data['weight'] == 'Ne8']
-    dfne = data[data['weight'] == 'Neon']
-
-    dfmodne8 = dfne8.pivot_table(columns=['physmodel', 'ic', 'redshift'],
-                                 index=('simname', 'snapnum'),
-                                 values='total [g or num. part.]')
-    dfmodne = dfne.pivot_table(columns=['physmodel', 'ic', 'redshift'],
-                               index=('simname', 'snapnum'),
-                               values='total [g or num. part.]')
-    dfmodne8frac = dfmodne8 / dfmodne
-    dfne8frac = dfmodne8frac.melt(value_name='Ne8frac')
-    # NaN values picked up from missing snapnums (different sets), 
-    # missing physmodel/IC combinations
-    dfne8frac = dfne8frac[np.logical_not(np.isnan(dfne8frac['Ne8frac']))]
-    return dfne8frac
-
-def plot_prophists(qty='fgas',
-                   rrange_rvir=(0.1, 1.0),
-                   trange_logk=(-np.inf, np.inf),
-                   massset='m12'):
-    if qty == 'fgas':
-        data = readfgas(rrange_rvir=rrange_rvir,
-                        trange_logk=trange_logk,
-                        massset=massset)
-        datakey = 'fgas'
+def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12):
+    physmodels = np.unique(df['physmodel'])
+    if panel == 'fgas':
         xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\mathrm{gas}} \\,/\\, '
                   '(\\Omega_{\\mathrm{b}} '
                   ' \\mathrm{M}_{\mathrm{vir}} \\,/ \\,'
                   '\\Omega_{\\mathrm{m}})$')
-        outnamestr = 'fgas'
-        titlestr = 'gas'
-        nbins = 20
-    elif qty == 'ZNe':
-        data = readZNe_mass(rrange_rvir=rrange_rvir,
-                            trange_logk=trange_logk,
-                            massset=massset)
-        datakey = 'ZNe_solar'
-        xlabel = ('$\\log_{10} \\, \\mathrm{Z}_{\\mathrm{Ne}}'
-              ' \\; [\\mathrm{Z}_{\\mathrm{Ne}, \\odot}]$')
-        outnamestr = 'ZNe_masswtd_'
-        titlestr = 'gas and Ne'
-        nbins = 20
-    elif qty == 'ZNe_direct':
-        data = readZNe_direct(rrange_rvir=(0.1, 1.0),
-                              weight='gasmass',
-                              massset='m12')
-        datakey = 'wtd. mean Ne abundance (mass fraction)'
-        xlabel = ('$\\log_{10} \\, \\mathrm{Z}_{\\mathrm{Ne}}'
-                  ' \\; [\\mathrm{Z}_{\\mathrm{Ne}, \\odot}]$')
-        outnamestr = 'ZNe_direct_masswtd_'
-        titlestr = 'gas and Ne'
-        nbins = 20
-        if not trange_logk == (-np.inf, np.inf):
-            raise ValueError('Cannot specify a limited T '
-                             'range for ZNe_direct')
-    elif qty == 'Ne8frac':
-        data = readNe8frac(rrange_rvir=rrange_rvir,
-                           trange_logk=trange_logk,
-                           massset=massset)
-        datakey = 'Ne8frac'
-        xlabel = ('$\\log_{10} \\, \\mathrm{Ne\\,VIII} \\,/ \\,'
-                  ' \\mathrm{Ne}$')
-        outnamestr = 'Ne8frac_'
-        titlestr = 'Ne'
-        nbins = 20
-
-    vmin = np.log10(data[datakey].min())
-    vmax = np.log10(data[datakey].max())
-    bins = np.linspace(0.99 * vmin, 1.01 * vmax, nbins + 1)
-
-    fig = plt.figure(figsize=(5.5, 5.))
-    ax = fig.add_subplot(1, 1, 1)
-    fontsize = 12
-    hatches = ['\\', '/', '|', '-']
-
-    for physmodel, hatch in zip(physmodels[massset], hatches):
-        color = sl.physcolors[physmodel]
-        label = sl.plotlabel_from_physlabel[physmodel]
-        f1 = data['physmodel'] == physmodel
-        ax.hist(np.log10(data.loc[f1, datakey]),
-                label=label, bins=bins, color=color,
-                density=False, histtype='step', linewidth=2,
-                linestyle='solid', hatch=hatch)
-        #f2 = np.logical_and(f1, data['isclean'])
-        #ax.hist(data.loc[f2, 'fgas'], label=None, bins=bins, color=color,
-        #        density=False, histtype='stepfilled', alpha=0.5,
-        #        linewidth=2, linestyle='dashed')
-    
-    handles0, _ = ax.get_legend_handles_labels()
-    #handles1 = [mpatch.Patch((), (), label='full sample', color='gray',
-    #                         linewidth=2, linestyle='dashed'),
-    #            mpatch.Patch((), (), label='clean sample', color='gray',
-    #                         alpha=0.5),
-    #            ]
-    ax.legend(handles=handles0, fontsize=fontsize - 1, loc='upper left')
-
-    ax.tick_params(which='both', direction='in', labelsize=fontsize - 1.,
-                   top=True, right=True)
-    
-    ax.set_xlabel(xlabel, fontsize=fontsize)
-    ax.set_ylabel('number of snapshots', fontsize=fontsize)
-    if trange_logk == (-np.inf, np.inf):
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                    '\\, \\mathrm{R}_{\\mathrm{vir}}$')
-    else:
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                   '\\, \\mathrm{R}_{\\mathrm{vir}}, '
-                   f' \\mathrm{{T}} > 10^{{{trange_logk[0]:.1f}}}'
-                   '\\mathrm{{K}}$')
-    fig.suptitle(title, fontsize=fontsize)
-
-    outname = mdir + (f'{outnamestr}comp_{massset}_{rrange_rvir[0]}_to'
-                      f'{rrange_rvir[1]}_Rvir_Tgas_ge_{trange_logk[0]:.1f}')
-    outname = outname.replace('.', 'p') + '.pdf'
-    outname = outname.replace('-', 'm')
-    plt.savefig(outname, bbox_inches='tight')
-
-def compmodels_prop(qty='fgas',
-                    rrange_rvir=(0.1, 1.0),
-                    trange_logk=(-np.inf, np.inf),
-                    massset='m12'):
-    if qty == 'fgas':
-        data = readfgas(rrange_rvir=rrange_rvir,
-                        trange_logk=trange_logk,
-                        massset=massset)
         datakey = 'fgas'
-        xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\mathrm{gas}} \\,/\\, '
-                  '(\\Omega_{\\mathrm{b}} '
-                  ' \\mathrm{M}_{\mathrm{vir}} \\,/ \\,'
-                  '\\Omega_{\\mathrm{m}})$')
-        outnamestr = 'fgas'
-        titlestr = 'gas'
-        nbins = 20
-    elif qty == 'ZNe':
-        data = readZNe_mass(rrange_rvir=rrange_rvir,
-                            trange_logk=trange_logk,
-                            massset=massset)
-        datakey = 'ZNe_solar'
+    elif panel == 'ZNe':
         xlabel = ('$\\log_{10} \\, \\mathrm{Z}_{\\mathrm{Ne}}'
               ' \\; [\\mathrm{Z}_{\\mathrm{Ne}, \\odot}]$')
-        outnamestr = 'ZNe_masswtd_'
-        titlestr = 'gas and Ne'
-        nbins = 20
-    elif qty == 'Ne8frac':
-        data = readNe8frac(rrange_rvir=rrange_rvir,
-                           trange_logk=trange_logk,
-                           massset=massset)
-        datakey = 'Ne8frac'
+        df['ZNe_solar'] = df['Neon_numpart'] * c.atomw_Ne * c.u \
+                          / df['gasmass_g'] / solarmassfrac_Ne
+        datakey = 'ZNe_solar'
+    elif panel == 'Ne8frac':
         xlabel = ('$\\log_{10} \\, \\mathrm{Ne\\,VIII} \\,/ \\,'
                   ' \\mathrm{Ne}$')
-        outnamestr = 'Ne8frac_'
-        titlestr = 'Ne'
-        nbins = 20
-    vmin = np.log10(data[datakey].min())
-    vmax = np.log10(data[datakey].max())
-    bins = np.linspace(0.99 * vmin, 1.01 * vmax, nbins + 1)
+        datakey = 'Ne8frac'
+        df['Ne8frac'] = df['Ne8_numpart'] / df['Neon_numpart']
+    elif panel == 'meanNe8col':
+        xlabel = ('$\\log_{10} \\, \\langle\\mathrm{N}(\\mathrm{Ne\\,VIII})'
+                  '\\rangle \\; [\\mathrm{cm}^{-2}]$')
+        datakey = 'meanNe8col'
+        df['meanNe8col'] = df['Ne8_numpart'] / (np.pi * df['Rvir_cm']**2)
+    elif panel == 'Ztot':
+        xlabel = ('$\\log_{10} \\, \\mathrm{Z}_{\\mathrm{tot}}'
+              ' \\; [\\mathrm{Z}_{\\mathrm{tot}, \\odot}]$')
+        df['Ztot_solar'] = df['Ztot gasmass-wtd (mass fraction)'] \
+                          / solarmassfrac_Ztot
+        datakey ='Ztot_solar'
+    elif panel == 'ZoverMstarcen':
+        xlabel = ('$\\log_{10} \\, \\mathrm{Metal\\,mass}'
+              ' \\,/\\, \\mathrm{M}_{\\star, \\mathrm{cen}}$')
+        df['ZoverMstarcen'] = df['Ztot gasmass-wtd (mass fraction)'] \
+                              * df['gasmass_g'] / df['Mstarcen_g']
+        datakey = 'ZoverMstarcen'
+    elif panel == 'ZoverMstarhalo':
+        xlabel = ('$\\log_{10} \\, \\mathrm{Metal\\,mass}'
+                  ' \\,/\\, \\mathrm{M}_{\\star, \\mathrm{halo}}$')
+        df['ZoverMstarhalo'] = df['Ztot gasmass-wtd (mass fraction)'] \
+                              * df['gasmass_g'] / df['Mstar_current_g']
+        datakey = 'ZoverMstarhalo'
+    elif panel == 'Mvir':
+        xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{vir}}'
+                  ' \\; [\\mathrm{M}_{\\odot}]$')
+        df['Mvir_Msun'] = df['Mvir_g'] / c.solar_mass
+        datakey = 'Mvir_Msun'
+    elif panel == 'Ne8':
+        xlabel = ('$\\log_{10} \\, \\mathrm{M}(\\mathrm{Ne\\,VIII})'
+                  ' \\; [\\mathrm{M}_{\\odot}]$')
+        df['Ne8mass'] = df['Ne8_numpart'] * c.atomw_Ne * c.u / c.solar_mass
+        datakey = 'Ne8mass'
     
-    physmodels_this = physmodels[massset]
-    ncomp = len(physmodels_this) - 1
-    panelsize = 2.
-    figsize = (ncomp * panelsize, ) * 2 
-    fig = plt.figure(figsize=figsize)
-    grid = gsp.GridSpec(ncols=ncomp, nrows=ncomp, 
-                        wspace=0.0, hspace=0.0)
-    fontsize = 12
-    ylabel = 'number of snapshots'
-    
-    axes = []
-    for pi, physmodel in enumerate(physmodels_this):
-        if pi == 0:
-            continue
-        compmodels = physmodels_this[:pi]
-        for ci, compmodel in enumerate(compmodels):
-            ax = fig.add_subplot(grid[pi - 1, ci])
-            axes.append(ax)
-            ax.tick_params(which='both', direction='in', 
-                           labelsize=fontsize - 1.,
-                           top=True, right=True,
-                           labelbottom=(pi == ncomp),
-                           labelleft=(ci == 0))
-            if ci == ncomp // 2 and pi == ncomp:
-                ax.set_xlabel(xlabel, fontsize=fontsize)
-            if pi == ncomp // 2 + 1 and ci == 0:
-                ax.set_ylabel(ylabel, fontsize=fontsize)
+    # somewhat iterative bin determination 
+    # (tiny bins make line overlaps hard to avoid)
+    numbins = 15
+    vmin = np.log10(np.min(df[datakey]))
+    vmax = np.log10(np.max(df[datakey]))
+    numphys = len(physmodels)
+    delta = 0.015
+    bins = np.linspace(vmin - delta * numphys, 
+                       vmax + delta * numphys, 
+                       numbins + 1)
+    if np.average(np.diff(bins)) > 0.15 * delta:
+        numbins = 12
+        bins = np.linspace(vmin - delta * numphys, 
+                           vmax + delta * numphys, 
+                           numbins + 1)
+    if np.average(np.diff(bins)) > 0.2 * delta:
+        numbins = 10
+        bins = np.linspace(vmin - delta * numphys, 
+                           vmax + delta * numphys, 
+                           numbins + 1)
+        
+    print('bin size / offset: ', np.average(np.diff(bins)) / delta)
 
-            c1 = sl.physcolors[physmodel]
-            c2 = sl.physcolors[compmodel]
-            f1 = data['physmodel'] == physmodel
-            f2 = data['physmodel'] == compmodel
-            ax.hist(np.log10(data.loc[f1, datakey]), bins=bins, color=c1,
-                    density=False, histtype='step', linewidth=2,
-                    linestyle='solid')
-            ax.hist(np.log10(data.loc[f2, datakey]), bins=bins, color=c2,
-                    density=False, histtype='step', linewidth=2,
-                    linestyle='dashed')
-            ics1 = set(data.loc[f1, 'ic'])
-            ics2 = set(data.loc[f2, 'ic'])
-            commonics = ics1 & ics2
-            fc = data['ic'].isin(commonics)
-            f1c = np.logical_and(f1, fc)
-            f2c = np.logical_and(f2, fc)
-            ax.hist(np.log10(data.loc[f1c, datakey]), 
-                    label=None, bins=bins, color=c1,
-                    density=False, histtype='stepfilled', alpha=0.5)
-            ax.hist(np.log10(data.loc[f2c, datakey]),
-                    label=None, bins=bins, color=c2,
-                    density=False, histtype='stepfilled', alpha=0.5)
+    for pi, physmodel in enumerate(physmodels):
+        binoffset = delta * (pi + 0.5 - 0.5 * numphys)
+        filter = df['physmodel'] == physmodel
+        ax.hist(np.log10(df.loc[filter, datakey]), 
+                bins=bins + binoffset,
+                **(kwa_phys[physmodel]),
+                histtype='step', density=True)
+        ax.set_xlabel(xlabel, fontsize=fontsize)
+
+def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
+                       trange_logk=(5.0, np.inf),
+                       panels=('fgas', 'ZNe', 'Ne8frac')):
+    fontsize = 12
+    npanels = len(panels)
+    ncols = min(npanels, 2)
+    nrows = (npanels - 1) // ncols + 1
+    panelsize = 2.5
+    width_ratios = [panelsize] * ncols
+    height_ratios = [panelsize] * nrows
+    wspace = 0.0
+    hspace = 0.25
+    width = sum(width_ratios) * (1. + (ncols - 1.) / ncols * wspace)
+    height = sum(height_ratios) * (1. + (nrows - 1.) / ncols * hspace)
+
+    fig = plt.figure(figsize=(width, height))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows, 
+                        height_ratios=height_ratios,
+                        width_ratios=width_ratios,
+                        wspace=wspace, hspace=hspace)
+    axes = [fig.add_subplot(grid[i // ncols, i % ncols])
+            for i in range(npanels)]
+    
+    df = rpr.readin_all_data(massset=massset, rrange_rvir=rrange_rvir,
+                             trange_logk=trange_logk)
+    kwa_phys = {key: {'color': val, 'linewidth': 1.5}
+                for key, val in sl.physcolors.items()}
+
+    for axi, (ax, panel) in enumerate(zip(axes, panels)):
+        doleft = axi % ncols == 0
+        ax.tick_params(which='both', direction='in', labelsize=fontsize - 1,
+                       right=True, top=True, labelbottom=True, 
+                       labelleft=doleft)
+        if doleft:
+            ax.set_ylabel('pdf', fontsize=fontsize)
+        addpanel_hist(ax, df, kwa_phys, panel=panel, 
+                      fontsize=fontsize)
+    xlims = [ax.get_xlim() for ax in axes]
+    xranges = [xl[1] - xl[0] for xl in xlims]
+    xrmax = max(xranges)
     ylims = [ax.get_ylim() for ax in axes]
-    ymin = 0. #min([ylim[0] for ylim in ylims])
-    ymax = max([ylim[1] for ylim in ylims])
-    [ax.set_ylim((ymin, ymax)) for ax in axes]
+    ymin = min([yl[0] for yl in ylims])
+    ymax = max([yl[1] for yl in ylims])
+    for ax in axes:
+        ax.set_ylim((ymin, ymax))
+        xlim = ax.get_xlim()
+        xr = xlim[1] - xlim[0]
+        if xr < xrmax:
+            xmin = xlim[0] - 0.5 * (xrmax - xr)
+            xmax = xlim[1] + 0.5 * (xrmax - xr)
+            ax.set_xlim((xmin, xmax))
     
-    handles0  = [mpatch.Patch(label=sl.plotlabel_from_physlabel[pmodel],
-                              ec=mcolors.to_rgb(sl.physcolors[pmodel]),
-                              linewidth=2, linestyle='solid',
-                              fc=mcolors.to_rgb(sl.physcolors[pmodel]) \
-                                 + (0.5,))
-                 for pmodel in physmodels_this]
-    handles1 = [mpatch.Patch(label='all ICs', edgecolor='gray',
-                             linewidth=2, linestyle='solid',
-                             facecolor='none'),
-                mpatch.Patch(label='shared ICs', 
-                             fc=mcolors.to_rgb('gray') + (0.5,),
-                             edgecolor='none'),
-                ]
-    ax = fig.add_subplot(grid[0, 1])
-    ax.axis('off')
-    ax.legend(handles=handles0 + handles1, fontsize=fontsize - 1,
-              loc='upper left', ncol=1)
+    handles = [mlines.Line2D((), (), label=sl.plotlabel_from_physlabel[key],
+                             **val)
+               for key, val in kwa_phys.items()]
+    axes[0].legend(handles=handles, fontsize=fontsize - 2,
+                   handlelength=1.)
 
-    if trange_logk == (-np.inf, np.inf):
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                    '\\, \\mathrm{R}_{\\mathrm{vir}}$')
-    else:
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                   '\\, \\mathrm{R}_{\\mathrm{vir}}, '
-                   f' \\mathrm{{T}} > 10^{{{trange_logk[0]:.1f}}}'
-                   '\\mathrm{{K}}$')
-    fig.suptitle(title, fontsize=fontsize)
-
-    outname = mdir + (f'{outnamestr}comp_physpairs_{massset}'
-                      f'_{rrange_rvir[0]}_to'
-                      f'{rrange_rvir[1]}_Rvir_Tgas_ge_{trange_logk[0]:.1f}')
-    outname = outname.replace('.', 'p') + '.pdf'
+    outname = (f'cgmprophist_{massset}_{rrange_rvir[0]:.2f}_to_'
+               f'{rrange_rvir[1]:.2f}_gas_ge_{trange_logk[0]:.1f}_logK'
+               '_') + '_'.join(panels)
+    outname = outname.replace('.', 'p')
     outname = outname.replace('-', 'm')
+    outname = mdir + outname + '.pdf'
     plt.savefig(outname, bbox_inches='tight')
-
-def comp_Ne8mass(rrange_rvir=(0.1, 1.0),
-                 trange_logk=(-np.inf, np.inf),
-                 massset='m12', xqty='Mvir'):
-    data = pd.read_csv(totfilen, sep='\t')
-    filter = np.isclose(data['rmin_rvir'], rrange_rvir[0])
-    filter &= np.isclose(data['rmax_rvir'], rrange_rvir[1])
-    filter &= np.isclose(data['tmin_logk'], trange_logk[0])
-    filter &= np.isclose(data['tmax_logk'], trange_logk[1])
-    filter &= data['weight'] == 'Ne8'
-    data = data[filter]
-    data['ic'] = np.array([sl.ic_from_simname(simname)
-                           for simname in data['simname']])
-    filter2 = np.array([ic.startswith(massset) for ic in data['ic']])
-    filter2 &= np.array([sn not in sl.buglist1 for sn in data['simname']])
-    data = data[filter2]
-    data['physmodel'] = np.array([sl.physlabel_from_simname(simname)
-                                  for simname in data['simname']])
-
-    data['MNe'] = data['total [g or num. part.]'] \
-                  * c.atomw_Ne * c.u / c.solar_mass
-    
-    fig = plt.figure(figsize=(5.5, 5.))
-    ax = fig.add_subplot(1, 1, 1)
-    fontsize = 12
-    ylabel = ('$\\log_{10} \\, \mathrm{M}(\\mathrm{Ne\\,VIII})'
-              '\\; [\\mathrm{M}_{\\odot}]$')
-    if xqty == 'Mvir':
-        xlabel = ('$\\log_{10} \\, \mathrm{M}_{\\mathrm{vir}}'
-                '\\; [\\mathrm{M}_{\\odot}]$')
-    elif xqty == 'Mstar':
-        xlabel = ('$\\log_{10} \\, \mathrm{M}_{\\star, \\mathrm{cen}}'
-                  '\\; [\\mathrm{M}_{\\odot}]$')
-    ax.set_xlabel(xlabel, fontsize=fontsize)
-    ax.set_ylabel(ylabel, fontsize=fontsize)
-    ax.tick_params(which='both', direction='in', labelsize=fontsize - 1,
-                   top=True, right=True)
-    
-    for physmodel in physmodels[massset]:
-        color = sl.physcolors[physmodel]
-        label = sl.plotlabel_from_physlabel[physmodel]
-        f1 = data['physmodel'] == physmodel
-        if xqty == 'Mvir':
-            xv = np.log10(data.loc[f1, 'Mvir_g'] / c.solar_mass)
-        elif xqty == 'Mstar':
-            simn = data.loc[f1, 'simname']
-            simpaths = [sl.dirpath_from_simname(_simn) for _simn in simn]
-            snap = data.loc[f1, 'snapnum']
-            mstars_g = np.array([
-                cgp.getcengalcen(_simp, _snap)[2]['mstar_gal_g']
-                for _simp, _snap in zip(simpaths, snap)])
-            xv = np.log10(mstars_g / c.solar_mass)
-        yv =  np.log10(data.loc[f1, 'MNe'])
-        ax.scatter(xv, yv, label=label, facecolor=color,
-                   edgecolor='black', s=30)
-
-    handles0, _ = ax.get_legend_handles_labels()
-    ax.legend(handles=handles0, fontsize=fontsize - 1, loc='upper left')
-
-    titlestr = 'Ne VIII mass'
-    if trange_logk == (-np.inf, np.inf):
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                    '\\, \\mathrm{R}_{\\mathrm{vir}}$')
-    else:
-        title = massset + f', {titlestr} at ' \
-                + (f'${rrange_rvir[0]} \\endash {rrange_rvir[1]}'
-                   '\\, \\mathrm{R}_{\\mathrm{vir}}, '
-                   f' \\mathrm{{T}} > 10^{{{trange_logk[0]:.1f}}}'
-                   '\\mathrm{{K}}$')
-    fig.suptitle(title, fontsize=fontsize)
-
-    outname = mdir + (f'Ne8mass_vs_{xqty}_{massset}'
-                      f'_{rrange_rvir[0]}_to'
-                      f'{rrange_rvir[1]}_Rvir_Tgas_ge_{trange_logk[0]:.1f}')
-    outname = outname.replace('.', 'p') + '.pdf'
-    outname = outname.replace('-', 'm')
-    plt.savefig(outname, bbox_inches='tight')
-
-    
-
-    

@@ -28,6 +28,11 @@ import fire_an.utils.math_utils as mu
 datadir_rvcen = '/projects/b1026/nastasha/hists/r_vr_all2/'
 filetemp_rvcen = ('hist_rcen_vcen_{axis2}_by_{weight}_{simname}'
                   '_snap{snapnum}_bins1_v1_hvcen.hdf5')
+datadir_rcen = '/projects/b1026/nastasha/hists/r_wtd/'
+filetemp_rcen_mstar = ('hist_rcen__by_stellarmass_{simname}_snap{snapnum}'
+                       '_bins1_v1_hvcen.hdf5')
+filetemp_rcen_Ztot = ('hist_rcen_Metallicity_Temperature_by_gasmass_'
+                      '{simname}_snap{snapnum}_bins1_v1_hvcen.hdf5')
 
 simnames_sr = sl.m12_sr_all2 + sl.m13_sr_all2
 simnames_hr = sl.m12_hr_all2 + sl.m13_hr_all2
@@ -151,6 +156,99 @@ def getneonmassfrac_rbins(simname, snapnum, rrange_rvir=(0.1, 1.),
            'wtdav': av}
     return out
 
+def gettotZmassfrac_rbins(simname, snapnum, rrange_rvir=(0.1, 1.),
+                          trange_logk=None):
+    filen = datadir_rcen + filetemp_rcen_Ztot.format(simname=simname, 
+                                                     snapnum=snapnum)
+    with h5py.File(filen, 'r') as f:
+        hist = f['histogram/histogram'][:]
+        islog = bool(f['histogram'].attrs['log'])
+        if islog:
+            hist = 10**hist
+        mvir_g = f['Header/inputpars/halodata'].attrs['Mvir_g']
+        rvir_cm = f['Header/inputpars/halodata'].attrs['Rvir_cm']
+        hsel = [slice(None, None, None)] * 3
+        cosmopars = {key: val for key, val 
+                     in f['Header/cosmopars'].attrs.items()}
+        
+        if rrange_rvir is not None:
+            rbins_rvir = f['axis_0/bins'][:]
+            rimin = np.where(np.isclose(rrange_rvir[0], rbins_rvir))[0]
+            rimax = np.where(np.isclose(rrange_rvir[-1], rbins_rvir))[0]
+            if rrange_rvir[0] == -np.inf:
+                rimin = 0
+            else:
+                rimin = rimin[0]
+            if rrange_rvir[-1] == np.inf:
+                rimax = len(rbins_rvir)
+            else:
+                rimax = rimax[0]
+            hsel[0] = slice(rimin, rimax, None)
+        if trange_logk is not None:
+            tbins_logk = f['axis_2/bins'][:]
+            timin = np.where(np.isclose(trange_logk[0], tbins_logk))[0]
+            timax = np.where(np.isclose(trange_logk[-1], tbins_logk))[0]
+            if trange_logk[0] == -np.inf:
+                timin = 0
+            else:
+                timin = timin[0]
+            if trange_logk[-1] == np.inf:
+                timax = len(tbins_logk)
+            else:
+                timax = timax[0]
+            hsel[2] = slice(timin, timax, None)
+        _hist = np.sum(hist[tuple(hsel)], axis=(0, 2))
+        metbins = f['axis_1/bins'][:]
+        metcens = 0.5 * (metbins[:-1] + metbins[1:])
+        if bool(f['axis_2'].attrs['log']):
+            metcens = 10**metcens # linear average, and avoid issues from Z=0
+        av = np.average(metcens, weights=_hist)
+        
+    out = {'cosmopars': cosmopars,
+           'mvir_g': mvir_g,
+           'rvir_cm': rvir_cm, 
+           'wtdav': av,
+           'weight': 'gasmass',
+           }
+    return out
+
+def getmstellar_rbins(simname, snapnum, rrange_rvir=(0.1, 1.)):
+    filen = datadir_rcen + filetemp_rcen_mstar.format(simname=simname, 
+                                                      snapnum=snapnum)
+    with h5py.File(filen, 'r') as f:
+        hist = f['histogram/histogram'][:]
+        islog = bool(f['histogram'].attrs['log'])
+        if islog:
+            hist = 10**hist
+        mvir_g = f['Header/inputpars/halodata'].attrs['Mvir_g']
+        rvir_cm = f['Header/inputpars/halodata'].attrs['Rvir_cm']
+        hsel = [slice(None, None, None)] * 2
+        cosmopars = {key: val for key, val 
+                     in f['Header/cosmopars'].attrs.items()}
+        
+        if rrange_rvir is not None:
+            rbins_rvir = f['axis_0/bins'][:]
+            rimin = np.where(np.isclose(rrange_rvir[0], rbins_rvir))[0]
+            rimax = np.where(np.isclose(rrange_rvir[-1], rbins_rvir))[0]
+            if rrange_rvir[0] == -np.inf:
+                rimin = 0
+            else:
+                rimin = rimin[0]
+            if rrange_rvir[-1] == np.inf:
+                rimax = len(rbins_rvir)
+            else:
+                rimax = rimax[0]
+            hsel[0] = slice(rimin, rimax, None)
+        total = np.sum(hist[tuple(hsel)])
+        
+    out = {'cosmopars': cosmopars,
+           'mvir_g': mvir_g,
+           'rvir_cm': rvir_cm, 
+           'total': total,
+           'weight': 'gasmass',
+           }
+    return out
+
 def getline_masses(outdct, simname=None, snapnum=None, rrange_rvir=None, 
                    trange_logk=None, weight=None, first=False):
     head = '\t'.join(['simname', 'snapnum', 
@@ -240,5 +338,96 @@ def getdata_wtdav():
                                          weight=weight, first=False)
                     out = out + line
     outfile = datadir_rvcen + 'mean_ZNe_by_mass_volume_rcuts.dat'
+    with open(outfile, 'w') as f:
+        f.write(out)
+
+def getline_avZtot(outdct, simname=None, snapnum=None, rrange_rvir=None, 
+                   trange_logk=None, first=False):
+    head = '\t'.join(['simname', 'snapnum', 
+                      'rmin_rvir', 'rmax_rvir',
+                      'tmin_logk', 'tmax_logk',
+                      'weight',
+                      'wtd. mean total metallicity (mass fraction)',
+                      'Mvir_g',
+                      'Rvir_cm',
+                      'Omega_b', 
+                      'Omega_m', 
+                      'redshift']) + '\n'
+    if first:
+        return head
+    values = [simname, f'{snapnum:d}', 
+              f'{rrange_rvir[0]:.3f}', f'{rrange_rvir[-1]:.3f}',
+              f'{trange_logk[0]:.3f}', f'{trange_logk[-1]:.3f}',
+              outdct['weight'],
+              f'{outdct["wtdav"]:.8e}',
+              f'{outdct["mvir_g"]:.8e}',
+              f'{outdct["rvir_cm"]:.8e}',
+              f'{outdct["cosmopars"]["omegab"]:.6f}',
+              f'{outdct["cosmopars"]["omegam"]:.6f}',
+              f'{outdct["cosmopars"]["z"]:.6f}',
+              ]
+    return '\t'.join(values) + '\n'
+    
+def getdata_avZtot():
+    out = getline_avZtot(None, simname=None, snapnum=None,
+                         rrange_rvir=None, 
+                         trange_logk=None, first=True)
+    for simname in simnames_all:
+        snapnums = getsnaps(simname)
+        for snapnum in snapnums:
+            for rrange_rvir in rsels_cat + rsels_rad:
+                for trange_logk in tranges_logk:
+                    outdct = gettotZmassfrac_rbins(simname, snapnum, 
+                                                   rrange_rvir=rrange_rvir,
+                                                   trange_logk=trange_logk)
+                    line = getline_avZtot(outdct, simname=simname, 
+                                          snapnum=snapnum, 
+                                          rrange_rvir=rrange_rvir, 
+                                          trange_logk=trange_logk, 
+                                          first=False)
+                    out = out + line
+    outfile = datadir_rvcen + 'mean_Ztot_by_mass_rcuts_tcuts.dat'
+    with open(outfile, 'w') as f:
+        f.write(out)
+
+
+def getline_mstellar(outdct, simname=None, snapnum=None, rrange_rvir=None, 
+                     first=False):
+    head = '\t'.join(['simname', 'snapnum', 
+                      'rmin_rvir', 'rmax_rvir',
+                      'total current stellar mass [g]',
+                      'Mvir_g',
+                      'Rvir_cm',
+                      'Omega_b', 
+                      'Omega_m', 
+                      'redshift']) + '\n'
+    if first:
+        return head
+    values = [simname, f'{snapnum:d}', 
+              f'{rrange_rvir[0]:.3f}', f'{rrange_rvir[-1]:.3f}',
+              f'{outdct["total"]:.8e}',
+              f'{outdct["mvir_g"]:.8e}',
+              f'{outdct["rvir_cm"]:.8e}',
+              f'{outdct["cosmopars"]["omegab"]:.6f}',
+              f'{outdct["cosmopars"]["omegam"]:.6f}',
+              f'{outdct["cosmopars"]["z"]:.6f}',
+              ]
+    return '\t'.join(values) + '\n'
+    
+def getdata_mstellar():
+    out = getline_mstellar(None, simname=None, snapnum=None,
+                           rrange_rvir=None, first=True)
+    for simname in simnames_all:
+        snapnums = getsnaps(simname)
+        for snapnum in snapnums:
+            for rrange_rvir in rsels_cat:
+                    outdct = getmstellar_rbins(simname, snapnum, 
+                                               rrange_rvir=rrange_rvir)
+                    line = getline_mstellar(outdct, simname=simname, 
+                                            snapnum=snapnum, 
+                                            rrange_rvir=rrange_rvir,
+                                            first=False)
+                    out = out + line
+    outfile = datadir_rvcen + 'stellarmass_rcuts.dat'
     with open(outfile, 'w') as f:
         f.write(out)

@@ -39,15 +39,16 @@ import fire_an.utils.math_utils as mu
 #     be answered by simulations?
 # Checked in table: no LL/UL stellar masses Ms_rmin or Ms_tot
 
-cubsdf = ('/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+#cubsdf = ('/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
+cubsdf = ('/projects/b1026/nastasha/extdata/'
           'CUBSVII_qu_etal_2022_draft_table2.fits')
 def readin_cubsdata():
     with apfits.open(cubsdf, 'readonly') as hdul:
         data = hdul[1].data
         # TODO: check MS_tot
         mstar = data['Ms_rmin'] # log10 Msun
-        mstar_2s_loerr = data['Ms_rmin0'] 
-        mstar_2s_hierr = data['Ms_rmin1'] 
+        mstar_2s_loerr = data['Ms0_rmin'] 
+        mstar_2s_hierr = data['Ms1_rmin'] 
         impactpar = data['dproj_rmin'] # kpc
         ne8col = data['NeVIII'] # log10 cm**-2
         ne8col_2s_loerr = data['NeVIII0']
@@ -57,7 +58,8 @@ def readin_cubsdata():
         ne8col[ne8col == -1.] = np.NaN # missing values
         isul_ne8 = ne8col_2s_loerr == -1.
         isll_ne8 = ne8col_2s_hierr == -1.
-        if np.any(isll_ne8): # I don't think there are any, but check.
+        # I don't think there are any, but check.
+        if np.any(isll_ne8[np.logical_not(np.isnan(ne8col))]):
             print('Warning: lower limits on Ne VIII col. in data.')
     out = {'mstar_log10Msun': mstar,
            'mstar_2s_loerr_dex': mstar_2s_loerr,
@@ -69,6 +71,7 @@ def readin_cubsdata():
            'ne8col_2s_hierr_dex': ne8col_2s_hierr,
            'isul_ne8': isul_ne8,
            }
+    print('CUBS data read')
     return out
 
 def cumulgauss_lohalf(xsig):
@@ -77,15 +80,15 @@ def cumulgauss_lohalf(xsig):
         _xsig = xsig
     else:
         ins = True
-        insi = np.searchsorted(xsig)
+        insi = np.searchsorted(xsig, 0.)
         _xsig = np.array(list(xsig[:insi]) + [0.] + list(xsig[insi:]))
     pcumul = 0.5 * (1. + sps.erf(_xsig / np.sqrt(2.)))
     pcumul[_xsig >= 0.] = 0.5
     if ins:
-        pcumul = np.array(list(pcumul[:insi]) + [pcumul[insi + 1:]])
+        pcumul = np.array(list(pcumul[:insi]) + list(pcumul[insi + 1:]))
     return pcumul
 
-def cumulgauss_pastehalfs(xpoints, mu, siglo, sighi, nsig_err=2.):
+def cumulgauss_pastehalfs(xpoints, mu, siglo, sighi, nsig_err=1.):
     xsig_lo = (xpoints - mu) / (nsig_err * siglo)
     xsig_hi = (xpoints - mu) / (nsig_err * sighi)
 
@@ -103,23 +106,28 @@ def calchalomassdist_cubs(cubsdatadict):
 
     redshifts = cubsdatadict['z_gal']  
     histobj = ldsmdpl.SMHMhists(np.array(redshifts), binsize=0.1)
-    msbins_hist = histobj.getbins(redshift, mode='ms')
 
     mss = cubsdatadict['mstar_log10Msun']
-    mss_hierr_2s = cubsdatadict['mstar_2s_hierr_dex']
-    mss_loerr_2s = cubsdatadict['mstar_2s_loerr_dex']
+    mss_hierr_1s = 0.5 * cubsdatadict['mstar_2s_hierr_dex']
+    mss_loerr_1s = 0.5 * cubsdatadict['mstar_2s_loerr_dex']
+    calscatter = 0.2 # scatter in SED-fit to few-band M* calibration
+    mss_hierr_1s = np.sqrt(mss_hierr_1s**2 + calscatter**2)
+    mss_loerr_1s = np.sqrt(mss_loerr_1s**2 + calscatter**2)
+
     logmvir_msun_bestest = []
     logmvir_msun_lo = []
     logmvir_msun_hi = []
     logmvir_msun_loer = []
     logmvir_msun_hier = []
 
-    for redshift, ms, ms_hierr_2s, ms_loerr_2s in zip(
-        redshifts, mss, mss_hierr_2s, mss_loerr_2s):
-
-        _Pcbin_ms = cumulgauss_pastehalfs(msbins_hist, ms,
-                                          ms_loerr_2s,
-                                          ms_hierr_2s)
+    for redshift, ms, ms_hierr_1s, ms_loerr_1s in zip(
+        redshifts, mss, mss_hierr_1s, mss_loerr_1s):
+        
+        _msbins_hist = histobj.getbins(redshift, mode='ms')
+        _Pcbin_ms = cumulgauss_pastehalfs(_msbins_hist, ms,
+                                          ms_loerr_1s,
+                                          ms_hierr_1s,
+                                          nsig_err=1.)
         _Pbin_ms = np.diff(_Pcbin_ms)
         _mhP, _mhbins = histobj.matrixconv(_Pbin_ms, redshift, 
                                            mode='mstomh')    
@@ -143,13 +151,14 @@ def calchalomassdist_cubs(cubsdatadict):
            'logmvir_msun_loer': np.array(logmvir_msun_loer),
            'logmvir_msun_hier': np.array(logmvir_msun_hier),
            }
+    print('Halo masses and errors calculated')
     return out
 
 def getplotdata_cubs():
     data = readin_cubsdata()
     _data = calchalomassdist_cubs(data)
     data.update(_data)
-
+    return data
 
 
 

@@ -60,7 +60,10 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     '''
     plotdata_obs = {}
     _colors = tc.tol_cset('high-contrast')
-    obscolors = [_colors.blue, _colors.red]
+    if len(obsdata) == 2:
+        obscolors = [_colors.blue, _colors.red]
+    elif len(obsdata) == 1:
+        obscolors = ['gray']
     if 'B+19' in obsdata:
         data_bur = bva.readdata_b19(nsigmas=1)
         z_bur = data_bur['zgal']
@@ -120,13 +123,14 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
                     yerr=_data['mherr'][:, noul], 
                     linestyle='None', elinewidth=1.5, marker='o', 
                     markersize=7, color=color, capsize=3,
-                    zorder=5, label=noul_label)
+                    zorder=5, label=noul_label, alpha=1.)
         ax.errorbar(_data['z'][isul], _data['mh'][isul], 
                     yerr=_data['mherr'][:, isul], 
                     color=color,
                     linestyle='None', elinewidth=1.5, marker='o', 
                     markersize=7, markeredgecolor=color, capsize=3,
-                    markerfacecolor='none', zorder=5, label=ul_label)
+                    markerfacecolor='none', zorder=5, label=ul_label,
+                    alpha=0.42)
 
     mass_minmax = {'m13': (np.inf, -np.inf),
                    'm12': (np.inf, -np.inf)}
@@ -135,6 +139,7 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     zmars = (0.05, 0.1)
     mmars = (0.2, 0.4)
     ics_used = set()
+    labeldone = False
     for simname, firemass, fireredshift \
             in zip(firesimnames, firemasses, fireredshifts):
         linestyle = 'solid'
@@ -142,9 +147,15 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
         ms = 3
         ic = sl.ic_from_simname(simname)
         if ic not in ics_used: # one curve per IC
+            if not labeldone: 
+                label = 'FIRE'
+            else:
+                label = None
             ax.plot(fireredshift, firemass, color='black',
                     linestyle=linestyle, linewidth=1.5,
-                    marker=marker, markersize=ms)
+                    marker=marker, markersize=ms,
+                    label=label)
+            labeldone = True
         for key in mass_minmax:
             if ic.startswith(key):
                 print(key, ic, simname, firemass)
@@ -207,13 +218,13 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
                 key, fontsize=fontsize, color='gray',
                 horizontalalignment='right', verticalalignment='top')
         
-    _handles, _ = ax.get_legend_handles_labels()
-    handles1 = [mlines.Line2D((), (), linewidth=1.5, 
-                              linestyle='solid',
-                              label='FIRE',
-                              color='black')]
-    handles = _handles + handles1
-    ax.legend(handles=handles, fontsize=fontsize - 1, handlelength=1.5)
+    #_handles, _ = ax.get_legend_handles_labels()
+    #handles1 = [mlines.Line2D((), (), linewidth=1.5, 
+    #                          linestyle='solid',
+    #                          label='FIRE',
+    #                          color='black')]
+    #handles = _handles #+ handles1
+    ax.legend(fontsize=fontsize - 1, handlelength=1.5)
     
     outdir = '/projects/b1026/nastasha/imgs/datacomp/'
     obss = '_'.join(obsdata)

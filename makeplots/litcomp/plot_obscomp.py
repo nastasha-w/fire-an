@@ -23,7 +23,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
         physmodels = ['noBH', 'AGN-noCR', 'AGN-CR']
 
     # get obs. data
-    mass_minmax, z_minmax = ods.plotMz_obs_fire(obsdata=(obssample,))
+    mass_minmax, z_minmax = ods.get_M_z_boxes_fire()
     if obssample == 'B+19':
         obsdata = bva.readdata_b19(nsigmas=(1, 2))
         mh_obs = obsdata['logmvir_msun_bestest'].copy()
@@ -159,3 +159,4 @@ def runplots_obscomp():
     plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-1.0')
     plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-0.7')
     plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-0.7')
+    ods.plotMz_obs_fire_2panel() # make sure mass selection is consisent

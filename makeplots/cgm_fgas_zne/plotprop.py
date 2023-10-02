@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import fire_an.makeplots.cgm_fgas_zne.readprop as rpr
+import fire_an.makeplots.plot_utils as pu
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
@@ -263,6 +264,7 @@ def plotpanels_main(massset='m12'):
     
     kwa_phys = {key: {'color': val, 'linewidth': 1.5}
                 for key, val in sl.physcolors.items()}
+    kwa_phys['FIRE-2'].update({'path_effects': pu.getoutline(1.7)})
     
     for axi, (ax, panel, xlab) in enumerate(zip(axes, panels, xlabels)):
         doleft = axi % ncols == 0
@@ -301,7 +303,8 @@ def plotpanels_main(massset='m12'):
             ax.hist(np.log10(dat.loc[filter, panel]), 
                     bins=bins + binoffset,
                     **(kwa_phys[physmodel]),
-                    histtype='step', density=True)
+                    histtype='step', density=True,
+                    label=sl.plotlabel_from_physlabel[physmodel])
             
     xlims = [ax.get_xlim() for ax in axes]
     xranges = [xl[1] - xl[0] for xl in xlims]
@@ -309,13 +312,20 @@ def plotpanels_main(massset='m12'):
     ylims = [ax.get_ylim() for ax in axes]
     ymin = min([yl[0] for yl in ylims])
     ymax = max([yl[1] for yl in ylims])
-    for ax in axes:
+    for axi, ax in enumerate(axes):
         ax.set_ylim((ymin, ymax))
         xlim = ax.get_xlim()
         xr = xlim[1] - xlim[0]
         if xr < xrmax:
             xmin = xlim[0] - 0.5 * (xrmax - xr)
             xmax = xlim[1] + 0.5 * (xrmax - xr)
+            # avoid tick label overlap
+            if axi == 3 and massset == 'm12': 
+                xmin -= 0.2
+                xmax -= 0.2
+            #elif axi == 2 and massset == 'm12':
+            #    xmin += 0.1
+            #    xmax += 0.1
             ax.set_xlim((xmin, xmax))
     
     #handles = [mlines.Line2D((), (), label=sl.plotlabel_from_physlabel[key],
@@ -323,7 +333,6 @@ def plotpanels_main(massset='m12'):
     #           for key, val in kwa_phys.items()]
     axes[0].legend(fontsize=fontsize - 2,
                    handlelength=1.)
-
     outname = (f'cgmprophist_{massset}_0p1_to_1p0_gasNe_geq_5p0_logK_allNe8'
                '_') + '_'.join(panels)
     outname = outname.replace('.', 'p')

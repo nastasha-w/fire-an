@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import fire_an.makeplots.litcomp.b19_vs_analytical as bva
-import fire_an.makeplots.litcomp.cubs7_qu_etal_dataread as cubsdr
+import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
@@ -80,7 +80,7 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
                                'isul': isul_bur,
                                'noul': noul_bur}
     if 'Q+23' in obsdata:
-        data_qu = cubsdr.getplotdata_cubs()
+        data_qu = odr.getplotdata_cubs()
         z_qu = data_qu['z_gal']
         m_qu = data_qu['logmvir_msun_bestest']
         m_qu_err = np.array([data_qu['logmvir_msun_bestest'] 
@@ -361,7 +361,7 @@ def addfire_panel(ax, firesimnames, firemasses, fireredshifts,
             ax.plot(line0, line1, linestyle=ls, color='gray',
                     linewidth=2, alpha=0.5)
             
-def plotMz_obs_fire_2panel():
+def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     '''
     All halo masses calculated using the UM methods, always halo mass
     selection, boundaries from all non-bug ICs, but only plot one 
@@ -381,13 +381,15 @@ def plotMz_obs_fire_2panel():
                                  - data_bur['logmvir_msun_bestest']])
         isul_bur = data_bur['log_N_Ne8_isUL']
         noul_bur = np.logical_not(isul_bur)
-        plotdata_obs['B+19'] = {'z': z_bur,
-                                'mh': m_bur,
-                                'mherr': m_bur_err,
-                                'isul': isul_bur,
-                                'noul': noul_bur}
+        ri_bur = data_bur['impact_parameter_kpc']
+        f1 = ri_bur <= ricut_pkpc
+        plotdata_obs['B+19'] = {'z': z_bur[f1],
+                                'mh': m_bur[f1],
+                                'mherr': m_bur_err[:, f1],
+                                'isul': isul_bur[f1],
+                                'noul': noul_bur[f1]}
     if 'Q+23' in obsdata:
-        data_qu = cubsdr.getplotdata_cubs()
+        data_qu = odr.getplotdata_cubs()
         z_qu = data_qu['z_gal']
         m_qu = data_qu['logmvir_msun_bestest']
         m_qu_err = np.array([data_qu['logmvir_msun_bestest'] 
@@ -396,8 +398,10 @@ def plotMz_obs_fire_2panel():
                                  - data_qu['logmvir_msun_bestest']])
         isul_qu = data_qu['isul_ne8']
         noul_qu = np.logical_not(isul_qu)
+        ri_qu = data_qu['impactpar_kpc']
         # can't compare to missing data
         f1 = np.logical_not(np.isnan(m_qu))
+        f1 &= ri_qu <= ricut_pkpc
         plotdata_obs['Q+23'] = {'z': z_qu[f1],
                                 'mh': m_qu[f1],
                                 'mherr': m_qu_err[:, f1],

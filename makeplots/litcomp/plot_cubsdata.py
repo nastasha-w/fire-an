@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import fire_an.makeplots.litcomp.cubs7_qu_etal_dataread as cubsdr
+import makeplots.litcomp.obsdataread as cubsdr
 
 def plot_msmh_cubs7():
     outname = ('/projects/b1026/nastasha/imgs/datacomp/smhm/'

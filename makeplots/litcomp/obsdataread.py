@@ -1,5 +1,6 @@
 import astropy.io.fits as apfits
 import numpy as np
+import pandas as pd
 import scipy.special as sps
 
 import fire_an.mstar_mhalo.analytical as msmhan
@@ -42,6 +43,9 @@ import fire_an.utils.math_utils as mu
 #cubsdf = ('/Users/nastasha/ciera/projects_lead/fire3_ionabs/'
 cubsdf = ('/projects/b1026/nastasha/extdata/'
           'CUBSVII_qu_etal_2022_draft_table2.fits')
+oddir = '/projects/b1026/nastasha/extdata/'
+ofilen = oddir + 'data_burchett_etal_2019_table1.txt'
+
 def readin_cubsdata():
     with apfits.open(cubsdf, 'readonly') as hdul:
         data = hdul[1].data
@@ -160,6 +164,66 @@ def getplotdata_cubs():
     data.update(_data)
     return data
 
+def calcmhalodist_casbah(logmstar_msun, sigmalogmstar, redshift):
+    histobj = ldsmdpl.SMHMhists(np.array([redshift]), binsize=0.1)
+    msbins_hist = histobj.getbins(redshift, mode='ms')
+    _Pcbin_ms = msmhan.cumulgauss((msbins_hist - logmstar_msun) 
+                                  / sigmalogmstar)
+    _Pbin_ms = np.diff(_Pcbin_ms)
+    mhp, _mhbins = histobj.matrixconv(_Pbin_ms, redshift, 
+                                      mode='mstomh')    
+    return _mhbins, mhp
+
+def readdata_b19(nsigmas=(1, 2)):
+    if not hasattr(nsigmas, '__len__'):
+        nsigmas = np.array([nsigmas])
+    else:
+        nsigmas = np.array(nsigmas)
+    data_bur = pd.read_csv(ofilen, comment='#', sep='\t')
+    #cosmopars_bur = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
+    sig2t = msmhan.cumulgauss(nsigmas) - msmhan.cumulgauss(-nsigmas)
+    cumulP_lo = 0.5 - 0.5 * sig2t
+    cumulP_hi = 0.5 + 0.5 * sig2t
+
+    logmstars_msun = data_bur['log_Mstar_Msun']
+    sigmalogmstars = data_bur['log_Mstar_Msun_err']
+    #isul = data_bur['log_N_Ne8_isUL']
+    reshifts = data_bur['zgal']
+
+    logmvir_msun_bestest = []
+    logmvir_msun_lo = []
+    logmvir_msun_hi = []
+    logmvir_msun_loer = []
+    logmvir_msun_hier = []
+    for lgmstar_msun, slgmstar, _z in zip(logmstars_msun, sigmalogmstars,
+                                          reshifts):
+        mhbins, mhP = calcmhalodist_casbah(lgmstar_msun, slgmstar, _z)
+        mhpd = mhP / np.diff(mhbins)
+        mhcens = 0.5 * (mhbins[:-1] + mhbins[1:])
+        logmvir_msun_bestest.append(mhcens[np.argmax(mhpd)])
+        mlo = mu.linterpsolve(np.cumsum(mhP), mhbins[1:], cumulP_lo[0])
+        logmvir_msun_lo.append(mlo)
+        mhi = mu.linterpsolve(np.cumsum(mhP), mhbins[1:], cumulP_hi[0])
+        logmvir_msun_hi.append(mhi)
+        if len(nsigmas) > 1:
+            mloer = mu.linterpsolve(np.cumsum(mhP), mhbins[1:], cumulP_lo[1])
+            logmvir_msun_loer.append(mloer)
+            mhier = mu.linterpsolve(np.cumsum(mhP), mhbins[1:], cumulP_hi[1])
+            logmvir_msun_hier.append(mhier)
+    logmvir_msun_bestest = np.array(logmvir_msun_bestest)
+    logmvir_msun_lo = np.array(logmvir_msun_lo)
+    logmvir_msun_hi = np.array(logmvir_msun_hi)
+    if len(nsigmas) > 1:
+        logmvir_msun_loer = np.array(logmvir_msun_loer)
+        logmvir_msun_hier = np.array(logmvir_msun_hier)
+
+    data_bur = data_bur.assign(logmvir_msun_bestest=logmvir_msun_bestest,
+                               logmvir_msun_lo=logmvir_msun_lo,
+                               logmvir_msun_hi=logmvir_msun_hi)
+    if len(nsigmas) > 1:
+        data_bur = data_bur.assign(logmvir_msun_loer=logmvir_msun_loer,
+                                   logmvir_msun_hier=logmvir_msun_hier)
+    return data_bur
 
 
 

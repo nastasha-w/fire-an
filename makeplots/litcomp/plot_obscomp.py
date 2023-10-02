@@ -3,8 +3,7 @@ import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import fire_an.makeplots.litcomp.b19_vs_analytical as bva
-import fire_an.makeplots.litcomp.cubs7_qu_etal_dataread as cubsdr
+import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.litcomp.obs_datasel as ods
 import fire_an.simlists as sl
 
@@ -13,7 +12,8 @@ proffilen = ('/projects/b1026/nastasha/plotdata/'
              'coldens_radprof_Ne8_opt1.hdf5')
 mdir = '/projects/b1026/nastasha/imgs/datacomp/'
 
-def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
+def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=450.):
 
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
@@ -25,7 +25,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
     # get obs. data
     mass_minmax, z_minmax = ods.get_M_z_boxes_fire()
     if obssample == 'B+19':
-        obsdata = bva.readdata_b19(nsigmas=(1, 2))
+        obsdata = odr.readdata_b19(nsigmas=(1, 2))
         mh_obs = obsdata['logmvir_msun_bestest'].copy()
         isul_obs = obsdata['log_N_Ne8_isUL'].copy()
         ipar_obs = obsdata['impact_parameter_kpc'].copy() 
@@ -34,7 +34,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
         cderr_obs = np.array((obsdata['log_N_Ne8_pcm2_err'].copy(),
                               obsdata['log_N_Ne8_pcm2_err'].copy()))
     elif  obssample == 'Q+23':
-        obsdata = cubsdr.getplotdata_cubs()
+        obsdata = odr.getplotdata_cubs()
         cd_obs = obsdata['ne8col_logcm2'].copy()
         cdmeas = np.logical_not(np.isnan(cd_obs))
         cd_obs = cd_obs[cdmeas]
@@ -132,7 +132,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
     xlims = [ax.get_xlim() for ax in axes]
     xmin = min([xl[0] for xl in xlims])
     xmax = max([xl[1] for xl in xlims])
-    xmax = min(xmax, 450.)
+    xmax = min(xmax, ricut_pkpc)
     xmin = max(xmin, 0.)
     [ax.set_xlim((xmin, xmax)) for ax in axes]
     
@@ -153,10 +153,18 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0'):
     plt.savefig(outname, bbox_inches='tight')
 
 def runplots_obscomp():
-    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0')
-    plot_obscomp(massset='m13', obssample='B+19', zr='z0.5-1.0')
-    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0')
-    plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-1.0')
-    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-0.7')
-    plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-0.7')
-    ods.plotMz_obs_fire_2panel() # make sure mass selection is consisent
+    ricut_pkpc = 450.
+    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc)
+    plot_obscomp(massset='m13', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc)
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc)
+    plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc)
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-0.7',
+                 ricut_pkpc=ricut_pkpc)
+    plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-0.7',
+                 ricut_pkpc=ricut_pkpc)
+    # make sure mass selection is consisent
+    ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc) 

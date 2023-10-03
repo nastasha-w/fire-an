@@ -26,7 +26,7 @@ hsml_dir = pre + 'code/proj-an-c/HsmlAndProject_OMP/'
 emtab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1_lines.hdf5' 
 iontab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1.hdf5'
 simdir_fire3 = ''
-simdir_fire2_md = '/projects/b1026/snapshots/metal_diffusion/'
+simdir_fire2_md = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
 dir_halodata = stampede2_work + 'halodata/'
 filen_halocenrvir = dir_halodata + 'cen_rvir.hdf5'
 

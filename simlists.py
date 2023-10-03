@@ -91,6 +91,7 @@ m12_nobh_rest1 = [
     'm12w_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
     'm12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
 ]
+
 m12_agnnocr_rest1 = [
     'm12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp2e-4_gacc31_fa0.5',
     'm12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e-4_gacc31_fa0.5',
@@ -345,6 +346,19 @@ buglist1 = [
     'm12f_r7100',
 ]
 
+## update from Lindsey, 
+## and the m12_f2md sims for which a CR heating fix run is available
+# m12b noBH: suspected bug
+buglist2 = [
+    'm12b_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm12c_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e-4_gacc31_fa0.5',
+    'm12i_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm12m_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e10_gacc31_fa0.5',
+    'm12z_m4e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690_sdp1e-4_gacc31_fa0.5',
+    'm12i_r7100',
+    'm12f_r7100',
+]
 
 ## plotting sync/convenience
 _iccolors = tc.tol_cset('muted')

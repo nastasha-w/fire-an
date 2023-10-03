@@ -121,6 +121,11 @@ m12_f2md = ['m12z_r4200',
            'crheatfix_m12i_r7100',
            ] # len 10
 
+# m12g_r7100: re-running after snapshots at z > 0 corrupted 
+m12plus_f3nobh = ['fire3nobh_plus_m12j_r7100',
+                  'fire3nobh_plus_m12n_r7100',
+                  'fire3nobh_plus_m12x_r3500',
+                  ] # len 3
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
 # mass res is ~ m12-sr res for all; hr/sr is for snapshot cadence
@@ -313,8 +318,12 @@ snapmatch = {
     'm11_hr': set(m11_hr_set1),
     }
 
+# FIRE-3 higher-res and lower-res runs saved at these snapshots 
+# for z=1.0, 0.9, 0.8, 0.7, 0.6, 0.5
+snaps_z = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
 snaps_sr = [45, 46, 47, 48, 49, 50]
 snaps_hr = [186, 197, 210, 224, 240, 258]
+# FIRE-2 noBH snapshots for same z
 snaps_f2md = [277, 294, 312, 332, 356, 382]
 
 # m12q AGN-noCR: no snapshot 500 (z=0)
@@ -383,6 +392,7 @@ physlinestyles = {'AGN-CR': 'dotted',
 
 ## because the FIRE-2 directory = phys. model structure broke my
 # 'store by single directory level' setup
+# plus modifications for the new FIRE-3 noBH runs with higher Mvir
 def dirpath_from_simname(simname):
     if simname in m12_f2md:
         if simname.startswith('crheatfix'):
@@ -390,6 +400,9 @@ def dirpath_from_simname(simname):
             dirpath = ol.simdir_fire2_md + 'cr_heating_fix/' + '_'.join(_sn)
         else:
             dirpath = ol.simdir_fire2_md + simname
+    elif simname in m12plus_f3nobh:
+        _sn = simname.split('_')[2:]
+        dirpath = ol.simdir_fire3_m12plus + '_'.join(_sn)
     else:
         dp2 = '_'.join(simname.split('_')[:2])
         if dp2.startswith('m13h02_'):
@@ -409,6 +422,8 @@ def simname_from_dirpath(dirpath):
         simparts = dirpath.split('/')
     if simparts[-2] == 'cr_heating_fix':
         simname = 'crheatfix_' + simparts[-1] 
+    elif simparts[-2] in ['m12_new', 'fire3_m12_new']:
+        simname = 'fire3nobh_plus_' + simparts[-1]
     elif simparts[-1].startswith('m1'):
         simname = simparts[-1]
     else:
@@ -419,6 +434,8 @@ def ic_from_simname(simname):
     simparts = simname.split('_')
     if simparts[0] in ['crheatfix']:
         ic = simparts[1]
+    elif simparts.startswith('fire3nobh_plus_'):
+        ic = simparts[2]
     else:
         ic = simparts[0]
     return ic
@@ -428,6 +445,8 @@ def physlabel_from_simname(simname):
         physlabel = 'FIRE-2'
     elif len(simname.split('_')) == 2:
         physlabel = 'FIRE-2'
+    elif simname.startswith('fire3nobh_plus_'):
+        physlabel = 'noBH'
     elif '_sdp1e10_' in simname:
         physlabel = 'noBH'
     elif '_MHDCRspec1_' in simname:

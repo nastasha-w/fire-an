@@ -320,6 +320,7 @@ snapmatch = {
 
 # FIRE-3 higher-res and lower-res runs saved at these snapshots 
 # for z=1.0, 0.9, 0.8, 0.7, 0.6, 0.5
+# fire3 noBH extra runs r7100 also use the snaps_hr values
 snaps_z = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
 snaps_sr = [45, 46, 47, 48, 49, 50]
 snaps_hr = [186, 197, 210, 224, 240, 258]

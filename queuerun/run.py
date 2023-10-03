@@ -325,6 +325,8 @@ def fromcommandline(index):
         # m12_hr_all2: 44902 - 45009 (108 indices)
         # m13_sr_all2: 45010 - 45099 ( 90 indices)
         # m13_hr_all2: 45100 - 45111 ( 12 indices)
+    elif index > 45112 and index < 45130:
+        rhp.run_haloprop_fire3_m12new(index - 45112)
 
     else:
         raise ValueError('Nothing specified for index {}'.format(index))

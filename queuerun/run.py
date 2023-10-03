@@ -331,6 +331,8 @@ def fromcommandline(index):
         rim.run_vdoplosmaps_m12new(opt=index - 45130)
     elif index >= 45238 and index < 45454:
         rhs.run_hist_rad_vrad_weighted_m12new(index - 45238)
+    elif index >= 45454 and index < 45526:
+        rcn.run_clumpiness(opt=index - 45454 + 1176)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

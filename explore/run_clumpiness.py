@@ -6,6 +6,7 @@ import fire_an.simlists as sl
 import fire_an.utils.opts_locs as ol
 
 def run_clumpiness(opt):
+    outdir = ol.pre + 'output/clumps/'
     if opt >= 0 and opt < 360:
         # 360 indices
         ind = opt
@@ -31,6 +32,12 @@ def run_clumpiness(opt):
         ind = opt - 936
         simnames = sl.m12_f2md # len 10
         snapnums = sl.snaps_f2md
+    elif opt >= 1176 and opt < 1248:
+        outdir = ol.pre + 'clumps/'
+        # 72 indices
+        ind = opt - 1176
+        simnames = sl.m12plus_f3nobh # len 3 (no m12g)
+        snapnums = sl.snaps_hr 
     mts = ['Ne8num_Ne8dens', 'Vol_Ne8dens', 'Mass_dens', '']
     #['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 
@@ -44,7 +51,6 @@ def run_clumpiness(opt):
     dirpath = sl.dirpath_from_simname(simname)
     parttype = 0
     rbins = np.arange(0., 1.32, 0.05)
-    outdir = ol.pre + 'output/clumps/'
     outname = f'clumpines_measure_v1_{mt}_{simname}_{snapnum}'
     outname = outdir + outname + '.hdf5'
     

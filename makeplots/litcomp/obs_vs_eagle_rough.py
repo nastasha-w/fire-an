@@ -12,8 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as so
 
-import fire_an.makeplots.litcomp.b19_vs_analytical as bva
-import fire_an.makeplots.litcomp.cubs7_qu_etal_dataread as cubsdr
+import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.math_utils as mu
@@ -133,7 +132,7 @@ def plot_radprof_eagle_b19_comp():
                 ' for each M200c range, given meas. pkpc')
     
     eagledat = readin_eagledata()
-    data_bur = bva.readdata_b19(nsigmas=(1, 2))
+    data_bur = odr.readdata_b19(nsigmas=(1, 2))
     # define used mass ranges
     deltaM200c = 0.5
     massbins_m200c_eagle = list(eagledat.keys())
@@ -311,7 +310,7 @@ def plot_radprof_eagle_q23_comp():
                 ' for each M200c range, given meas. pkpc')
     
     eagledat = readin_eagledata()
-    data_cubs = cubsdr.getplotdata_cubs()
+    data_cubs = odr.getplotdata_cubs()
     # define used mass ranges
     deltaM200c = 0.5
     massbins_m200c_eagle = list(eagledat.keys())

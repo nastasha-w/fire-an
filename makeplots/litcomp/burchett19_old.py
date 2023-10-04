@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 import fire_an.makeplots.get_2dprof as gpr
 import makeplots.litcomp.b19_datasel_old as bds 
-import fire_an.makeplots.litcomp.b19_vs_analytical as bva
+import makeplots.litcomp.b19_vs_analytical_old as bva
 import fire_an.makeplots.tol_colors as tc
 import fire_an.makeplots.plot_utils as pu
 import fire_an.simlists as sl

@@ -20,8 +20,6 @@ import fire_an.utils.math_utils as mu
 
 outdir = '/projects/b1026/nastasha/imgs/analytical/'
 
-
-
 def plot_plmodel_datacomp():
     ion = 'Ne8'
     redshift_model = 0.75

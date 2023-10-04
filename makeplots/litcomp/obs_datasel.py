@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import fire_an.makeplots.litcomp.b19_vs_analytical as bva
+import makeplots.litcomp.b19_vs_analytical_old as bva
 import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl

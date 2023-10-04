@@ -17,7 +17,7 @@ import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.opts_locs as ol
-import fire_an.makeplots.litcomp.b19_vs_analytical as bva
+import makeplots.litcomp.obsdataread as odr
 
 def readin_halodata(simnames, meandef='200m', zmin=0.45, zmax=1.05):
     firedataf = ol.filen_halocenrvir
@@ -106,7 +106,7 @@ def plotMz_burchett_etal_2019(hset='clean', masscomp='halo_recalc'):
             return mv / c.solar_mass
         data_bur = data_bur.assign(Mvir_Msun=lambda x: hmfunc(x))
     elif masscomp in ['halo_recalc']:
-        data_bur = bva.readdata_b19(nsigmas=1)
+        data_bur = odr.readdata_b19(nsigmas=1)
     
     ## FIRE data
     m13_nobh = sl.m13_nobh_clean2 + sl.m13_nobh_rest2

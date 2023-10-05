@@ -17,6 +17,7 @@ import fire_an.utils.constants_and_units as c
 ############################
 pre_home = '/home/naw0231/'
 pre_data = '/projects/b1026/nastasha/'
+pre = pre_data
 
 c_interpfile  = pre_home + 'code/proj-an-c/interp2d/interp.so'
 c_gridcoarser = '' #'/home/wijers/gridcoarser/gridcoarser.so'

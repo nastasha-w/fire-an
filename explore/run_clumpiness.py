@@ -38,8 +38,8 @@ def run_clumpiness(opt):
         ind = opt - 1176
         simnames = sl.m12plus_f3nobh # len 3 (no m12g)
         snapnums = sl.snaps_hr 
-    mts = ['Ne8num_Ne8dens', 'Vol_Ne8dens', 'Mass_dens', '']
-    #['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
+    #mts = ['Ne8num_Ne8dens', 'Vol_Ne8dens', 'Mass_dens', '']
+    mts = ['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 
     simi = ind // (len(snapnums) * len(mts))
     snapi = (ind % (len(snapnums) * len(mts))) // len(mts)

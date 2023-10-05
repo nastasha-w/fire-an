@@ -1471,7 +1471,7 @@ def run_vdoplosmaps_m12new(opt=0):
     _outfilen = ('vdoplos_by_coldens_{qt}_{sc}_snap{sn}_shrink-sph-cen_BN98'
                  '_depth_{llos:.1f}rvir{depl}_{los}-proj_v3.hdf5')
     _dirpath = ol.simdir_fire3_m12plus
-    outdir = ' /projects/b1026/nastasha/maps/vdopmaps_all2/'
+    outdir = '/projects/b1026/nastasha/maps/vdopmaps_all2/'
     checkfileflag = True
     # 6 maps per halo/snap
     ions = ['Ne8']

@@ -326,12 +326,16 @@ def fromcommandline(index):
         # m13_sr_all2: 45010 - 45099 ( 90 indices)
         # m13_hr_all2: 45100 - 45111 ( 12 indices)
     elif index >= 45112 and index < 45130:
+        # 18 indices
         rhp.run_haloprop_fire3_m12new(index - 45112)
     elif index >= 45130 and index < 45238:
+        # 108 indices
         rim.run_vdoplosmaps_m12new(opt=index - 45130)
     elif index >= 45238 and index < 45454:
+        # 216 indices
         rhs.run_hist_rad_vrad_weighted_m12new(index - 45238)
     elif index >= 45454 and index < 45526:
+        # 72 indices
         rcn.run_clumpiness(opt=index - 45454 + 1176)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))

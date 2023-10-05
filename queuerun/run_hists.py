@@ -1102,7 +1102,7 @@ def run_hist_rad_vrad_weighted_m12new(opt):
     atplusbins = [[0.1], [0.1], [0.1]]
     logaxes = [False, True]
     atlabels = ['temperature', 'density', 'NeonAbundance']
-    outdir = '/scratch/08466/tg877653/output/hists/r_vr_wtd/'
+    outdir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     
     # 18 haloes, 216 indices (12 hists per halo)
     ind = opt - 0

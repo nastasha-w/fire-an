@@ -337,6 +337,9 @@ def fromcommandline(index):
     elif index >= 45454 and index < 45526:
         # 72 indices
         rcn.run_clumpiness(opt=index - 45454 + 1176)
+    elif index >= 45526 and index < 45544:
+        # 18 indices
+        rhs.run_hist_Zprof(index - 45526 + 294)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

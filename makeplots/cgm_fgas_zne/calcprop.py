@@ -37,10 +37,12 @@ filetemp_rcen_Ztot = ('hist_rcen_Metallicity_Temperature_by_gasmass_'
 simnames_sr = sl.m12_sr_all2 + sl.m13_sr_all2
 simnames_hr = sl.m12_hr_all2 + sl.m13_hr_all2
 simnames_f2 = sl.m12_f2md
+simnames_m12plus = sl.m12plus_f3nobh
 snaps_sr = sl.snaps_sr
 snaps_hr = sl.snaps_hr
 snaps_f2 = sl.snaps_f2md
-simnames_all = simnames_sr + simnames_hr + simnames_f2
+snaps_m12plus = snaps_hr
+simnames_all = simnames_sr + simnames_hr + simnames_f2 + simnames_m12plus
 
 tranges_logk = [(-np.inf, np.inf), (5., np.inf), (5.5, np.inf)]
 rsels_cat = [(0.1, 1.0), (0.0, 1.0), (0.0, 0.1)]
@@ -53,6 +55,8 @@ def getsnaps(simname):
         return snaps_hr
     elif simname in simnames_f2:
         return snaps_f2
+    elif simname in simnames_m12plus:
+        return snaps_m12plus
     else:
         raise ValueError(f'No snapshots lsited for {simname}') 
 

@@ -7,6 +7,7 @@ import numpy as np
 
 import fire_an.makeplots.cgm_fgas_zne.readprop as rpr
 import fire_an.makeplots.plot_utils as pu
+import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
@@ -14,7 +15,7 @@ mdir = '/projects/b1026/nastasha/imgs/cgmprop/'
 
 #copied from PS20 tables
 solarmassfrac_Ne = 10**-2.9008431 
-solarmassfrac_Ztot = 0.013371374
+solarmassfrac_Ztot = 0.01337137
 
 def checkfracs_T_ne8():
     '''
@@ -140,7 +141,7 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
 def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
                        trange_logk=(5.0, np.inf),
                        panels=('fgas', 'ZNe', 'Ne8frac'),
-                       xlabels=None):
+                       xlabels=None, inclm12plus=False):
     fontsize = 12
     npanels = len(panels)
     ncols = min(npanels, 2)
@@ -162,9 +163,12 @@ def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
             for i in range(npanels)]
     
     df = rpr.readin_all_data(massset=massset, rrange_rvir=rrange_rvir,
-                             trange_logk=trange_logk)
+                             trange_logk=trange_logk, 
+                             inclm12plus=inclm12plus)
     kwa_phys = {key: {'color': val, 'linewidth': 1.5}
                 for key, val in sl.physcolors.items()}
+    kwa_phys['noBH-m12+'] = kwa_phys['noBH'].copy()
+    kwa_phys['noBH-m12+']['linestyle'] = 'dashed'
 
     for axi, (ax, panel) in enumerate(zip(axes, panels)):
         doleft = axi % ncols == 0
@@ -199,10 +203,11 @@ def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
                for key, val in kwa_phys.items()]
     axes[0].legend(handles=handles, fontsize=fontsize - 2,
                    handlelength=1.)
-
+    
+    m12plusstr = '_inclm12plus' if inclm12plus else ''
     outname = (f'cgmprophist_{massset}_{rrange_rvir[0]:.2f}_to_'
                f'{rrange_rvir[1]:.2f}_gas_ge_{trange_logk[0]:.1f}_logK'
-               '_') + '_'.join(panels)
+               '_') + m12plusstr + '_'.join(panels)
     outname = outname.replace('.', 'p')
     outname = outname.replace('-', 'm')
     outname = mdir + outname + '.pdf'

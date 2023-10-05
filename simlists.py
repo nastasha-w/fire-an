@@ -435,7 +435,7 @@ def ic_from_simname(simname):
     simparts = simname.split('_')
     if simparts[0] in ['crheatfix']:
         ic = simparts[1]
-    elif simparts.startswith('fire3nobh_plus_'):
+    elif simname.startswith('fire3nobh_plus_'):
         ic = simparts[2]
     else:
         ic = simparts[0]
@@ -447,7 +447,7 @@ def physlabel_from_simname(simname):
     elif len(simname.split('_')) == 2:
         physlabel = 'FIRE-2'
     elif simname.startswith('fire3nobh_plus_'):
-        physlabel = 'noBH'
+        physlabel = 'noBH-m12+'
     elif '_sdp1e10_' in simname:
         physlabel = 'noBH'
     elif '_MHDCRspec1_' in simname:
@@ -461,6 +461,7 @@ plotlabel_from_physlabel_short = {
     'noBH': 'F3 noBH',
     'AGN-noCR': 'F3 AGN-noCR',
     'AGN-CR': 'F3 AGN-CR',
+    'noBH-m12+': 'F3 noBH m12+',
 }
 
 plotlabel_from_physlabel = {
@@ -468,6 +469,7 @@ plotlabel_from_physlabel = {
     'noBH': 'FIRE-3 noBH',
     'AGN-noCR': 'FIRE-3 AGN-noCR',
     'AGN-CR': 'FIRE-3 AGN-CR',
+    'noBH-m12+': 'FIRE-3 noBH m12+',
 }
 
 

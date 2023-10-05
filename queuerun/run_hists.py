@@ -1063,6 +1063,12 @@ def run_hist_mstellar_Zstellar(opt):
         ind = opt - 282
         simnames = sl.m13_hr_all2 # len 2
         snaps = sl.snaps_hr # len 6
+    elif opt >= 294 and opt < 312:
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
+        # 18 indices
+        ind = opt - 294
+        simnames = sl.m12plus_f3nobh
+        snaps = sl.snaps_hr
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps))

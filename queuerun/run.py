@@ -340,6 +340,8 @@ def fromcommandline(index):
     elif index >= 45526 and index < 45544:
         # 18 indices
         rhs.run_hist_Zprof(index - 45526 + 294)
+    elif index >= 45544 and index < 45562:
+        rhs.run_hist_mstellar_Zstellar(index - 45544 + 294)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

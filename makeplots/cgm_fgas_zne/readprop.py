@@ -52,7 +52,6 @@ def getbasedata(massset, inclm12plus=False):
                 for simname in data['simname']]
     _dcts = np.array([cgp.getcengalcen(_simp, _snap)[2]
                       for _simp, _snap in zip(simpaths, data['snapnum'])])
-    print(_dcts)
     data['Mstarcen_g'] = np.array([_dct['mstar_gal_g'] for _dct in _dcts])
     data['Mvir_g'] = np.array([_dct['halodata']['Mvir_g'] for _dct in _dcts])
     data['Rvir_cm'] = np.array([_dct['halodata']['Rvir_cm']

@@ -50,6 +50,7 @@ def checkfracs_T_ne8():
 def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
                   xlabel=None):
     physmodels = list(np.unique(df['physmodel']))
+    print(physmodels)
     if panel == 'fgas':
         _xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\mathrm{gas}} \\,/\\, '
                   '(\\Omega_{\\mathrm{b}} '
@@ -95,6 +96,11 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
                   ' \\; [\\mathrm{M}_{\\odot}]$')
         df['Mvir_Msun'] = df['Mvir_g'] / c.solar_mass
         datakey = 'Mvir_Msun'
+    elif panel == 'Mstarcen':
+        _xlabel = ('$\\log_{10} \\, \\mathrm{M}_{\\star, \\mathrm{cen}}'
+                   ' \\; [\\mathrm{M}_{\\odot}]$')
+        df['Mstarcen'] = df['Mstarcen_g'] / c.solar_mass
+        datakey = 'Mstarcen'
     elif panel == 'Ne8':
         _xlabel = ('$\\log_{10} \\, \\mathrm{M}(\\mathrm{Ne\\,VIII})'
                   ' \\; [\\mathrm{M}_{\\odot}]$')
@@ -126,8 +132,11 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
 
     sortorder = {'FIRE-2': 0,
                  'noBH': 1,
-                 'AGN-noCR': 2,
-                 'AGN-CR': 3}
+                 'noBH-m12+': 2,
+                 'AGN-noCR': 3,
+                 'AGN-CR': 4}
+    print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mvir_g'] / c.solar_mass)
+    print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mstarcen_g'] / c.solar_mass)
     physmodels.sort(key=sortorder.__getitem__)
     for pi, physmodel in enumerate(physmodels):
         binoffset = delta * (pi + 0.5 - 0.5 * numphys)
@@ -169,6 +178,7 @@ def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
                 for key, val in sl.physcolors.items()}
     kwa_phys['noBH-m12+'] = kwa_phys['noBH'].copy()
     kwa_phys['noBH-m12+']['linestyle'] = 'dashed'
+    kwa_phys['noBH-m12+']['color'] = 'black'
 
     for axi, (ax, panel) in enumerate(zip(axes, panels)):
         doleft = axi % ncols == 0

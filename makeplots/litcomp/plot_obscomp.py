@@ -9,7 +9,7 @@ import fire_an.simlists as sl
 
 
 proffilen = ('/projects/b1026/nastasha/plotdata/'
-             'coldens_radprof_Ne8_opt1.hdf5')
+             'coldens_radprof_Ne8_opt2.hdf5')
 mdir = '/projects/b1026/nastasha/imgs/datacomp/'
 
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
@@ -18,7 +18,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
     if massset == 'm12':
-        physmodels = ['FIRE-2', 'noBH', 'AGN-noCR', 'AGN-CR']
+        physmodels = ['FIRE-2', 'noBH', 'noBH-m12+', 'AGN-noCR', 'AGN-CR']
     elif massset == 'm13':
         physmodels = ['noBH', 'AGN-noCR', 'AGN-CR']
 
@@ -149,7 +149,8 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                    borderaxespad=0.2)
     axes[0].add_artist(leg0)
 
-    outname = mdir + f'coldenscomp_Ne8_{obssample}_vs_{massset}_at_{zr}.pdf'
+    outname = mdir + (f'coldenscomp_Ne8_{obssample}_vs_{massset}_at_{zr}'
+                      '_opt2_inclm12plus.pdf')
     plt.savefig(outname, bbox_inches='tight')
 
 def runplots_obscomp():

@@ -12,7 +12,9 @@ import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.opts_locs as ol
 
 savedir = '/projects/b1026/nastasha/plotdata/'
-filen_save = savedir + 'coldens_radprof_Ne8_opt1.hdf5'
+filen_save = savedir + 'coldens_radprof_Ne8_opt2.hdf5'
+# opt1: buglist1, no m12plus haloes
+# opt2: buglist2, hi, lo-res m12plus combined
 
 
 def saveprof_single(h5grp, simnames, snapnums):
@@ -57,6 +59,7 @@ def calcsave_coldensprof():
     # (same snaps categories)
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+    sims_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
     sims_f2md = sl.m12_f2md
     snaps_sr = sl.snaps_sr
     snaps_hr = sl.snaps_hr
@@ -64,10 +67,10 @@ def calcsave_coldensprof():
 
     snapsels = {'z0.5-0.7': slice(3, 6, None),
                 'z0.5-1.0': slice(None, None, None)}
-    sims_all = sims_sr + sims_hr + sims_f2md
+    sims_all = sims_sr + sims_hr + sims_f2md + sims_m12plus
     simcats = {}
     for simn in sims_all:
-        if simn in sl.buglist1:
+        if simn in sl.buglist2:
             continue
         ic = sl.ic_from_simname(simn)
         masscat = ic[:3] # m12 or m13
@@ -83,6 +86,7 @@ def calcsave_coldensprof():
             snaps = (snaps_hr if sim in sims_hr
                     else snaps_sr if sim in sims_sr
                     else snaps_f2md if sim in sims_f2md
+                    else snaps_hr if sim in sims_m12plus
                     else None) 
             for snap in snaps:
                 grpname = f'{sim}_snap{snap}'
@@ -102,6 +106,7 @@ def calcsave_coldensprof():
                 snaps = [(snaps_hr[snapsel] if sim in sims_hr
                           else snaps_sr[snapsel] if sim in sims_sr
                           else snaps_f2md[snapsel] if sim in sims_f2md
+                          else snaps_hr[snapsel] if sim in sims_m12plus
                           else None)
                           for sim in sims]
                 sims_in = [sim for _snaps, sim in zip(snaps, sims) 

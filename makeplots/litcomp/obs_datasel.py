@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import makeplots.litcomp.b19_vs_analytical_old as bva
 import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
@@ -65,7 +64,7 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     elif len(obsdata) == 1:
         obscolors = ['gray']
     if 'B+19' in obsdata:
-        data_bur = bva.readdata_b19(nsigmas=1)
+        data_bur = odr.readdata_b19(nsigmas=1)
         z_bur = data_bur['zgal']
         m_bur = data_bur['logmvir_msun_bestest']
         m_bur_err = np.array([data_bur['logmvir_msun_bestest'] 
@@ -241,7 +240,7 @@ def get_M_z_boxes_fire():
     ## FIRE data
     simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
                + sl.m13_hr_all2 + sl.m13_sr_all2 
-    for sn in sl.buglist1:
+    for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
     meandef = 'BN98'
@@ -372,7 +371,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     _colors = tc.tol_cset('high-contrast')
     obscolors = [_colors.blue, _colors.red]
     if 'B+19' in obsdata:
-        data_bur = bva.readdata_b19(nsigmas=1)
+        data_bur = odr.readdata_b19(nsigmas=1)
         z_bur = data_bur['zgal']
         m_bur = data_bur['logmvir_msun_bestest']
         m_bur_err = np.array([data_bur['logmvir_msun_bestest'] 
@@ -411,7 +410,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     ## FIRE data
     simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
                + sl.m13_hr_all2 + sl.m13_sr_all2 
-    for sn in sl.buglist1:
+    for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
     meandef = 'BN98'

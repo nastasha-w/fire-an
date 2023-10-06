@@ -38,12 +38,12 @@ def run_clumpiness(opt):
         ind = opt - 1176
         simnames = sl.m12plus_f3nobh # len 3 (no m12g)
         snapnums = sl.snaps_hr 
-    elif opt > 1248 and opt < 1464:
+    elif opt >= 1248 and opt < 1464:
         outdir = ol.pre + 'clumps/'
         # 216 indices
         ind = opt - 1248
         simnames = sl.m12plus_f3nobh_lores # len 9
-        snapnums = sl.snaps_hr 
+        snapnums = sl.snaps_hr # len 6
     #mts = ['Ne8num_Ne8dens', 'Vol_Ne8dens', 'Mass_dens', '']
     mts = ['Ne8num_Vol', 'Ne8num_dens', 'Vol_dens', 'Ne8dens_Ne8dens']
 

@@ -354,7 +354,7 @@ def fromcommandline(index):
         # 54 indices
         rhs.run_hist_mstellar_Zstellar(index - 46318 + 312)
     elif index >= 46372 and index < 46858:
-        # 486 indices
+        # 486 indices (was actually 324. Whoops...)
         rim.run_vdoplosmaps_m12new(opt=index - 46372 + 108)
     elif index >= 46858 and index < 47074:
         # 216 indices

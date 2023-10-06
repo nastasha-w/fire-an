@@ -1487,7 +1487,7 @@ def run_vdoplosmaps_m12new(opt=0):
         simnames = sl.m12plus_f3nobh # len 3
         snaps = sl.snaps_hr # len 6
     elif opt >= 108 and opt < 594:
-        # 54 haloes, 486 indices
+        # 54 haloes, 324 indices
         ind = opt - 108
         simnames = sl.m12plus_f3nobh_lores # len 9
         snaps = sl.snaps_hr # len 6

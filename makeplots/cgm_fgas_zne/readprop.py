@@ -24,7 +24,7 @@ def getbasedata(massset, inclm12plus=False):
     sims_f2 = sl.m12_f2md
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
-    sims_m12plus = sl.m12plus_f3nobh
+    sims_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
 
     simnames_all = sims_f2 + sims_sr + sims_hr 
     if inclm12plus:

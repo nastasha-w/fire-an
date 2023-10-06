@@ -126,6 +126,17 @@ m12plus_f3nobh = ['fire3nobh_plus_m12j_r7100',
                   'fire3nobh_plus_m12n_r7100',
                   'fire3nobh_plus_m12x_r3500',
                   ] # len 3
+# lower-res sims, but hr snapshots
+m12plus_f3nobh_lores = ['fire3nobh_plus_m12a_r57000',
+                     'fire3nobh_plus_m12d_r57000',
+                     'fire3nobh_plus_m12e_r57000',
+                     'fire3nobh_plus_m12g_r57000',
+                     'fire3nobh_plus_m12j_r57000',
+                     'fire3nobh_plus_m12k_r57000',
+                     'fire3nobh_plus_m12n_r57000',
+                     'fire3nobh_plus_m12u_r28000',
+                     'fire3nobh_plus_m12x_r28000',
+                     ] # len 9
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
 # mass res is ~ m12-sr res for all; hr/sr is for snapshot cadence
@@ -401,7 +412,7 @@ def dirpath_from_simname(simname):
             dirpath = ol.simdir_fire2_md + 'cr_heating_fix/' + '_'.join(_sn)
         else:
             dirpath = ol.simdir_fire2_md + simname
-    elif simname in m12plus_f3nobh:
+    elif simname in m12plus_f3nobh + m12plus_f3nobh_lores:
         _sn = simname.split('_')[2:]
         dirpath = ol.simdir_fire3_m12plus + '_'.join(_sn)
     else:

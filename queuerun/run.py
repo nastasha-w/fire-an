@@ -342,6 +342,23 @@ def fromcommandline(index):
         rhs.run_hist_Zprof(index - 45526 + 294)
     elif index >= 45544 and index < 45562:
         rhs.run_hist_mstellar_Zstellar(index - 45544 + 294)
+    elif index >= 45562 and index < 45616:
+        rhp.run_haloprop_fire3_m12new(index - 45562 + 18)
+    elif index >= 45616 and index < 46264:
+        # 648 indices
+        rhs.run_hist_rad_vrad_weighted_m12new(index - 45616 + 216)
+    elif index >= 46264 and index < 46318:
+        # 54 indices
+        rhs.run_hist_Zprof(index - 46264 + 312)
+    elif index >= 46318 and index < 46372:
+        # 54 indices
+        rhs.run_hist_mstellar_Zstellar(index - 46318 + 312)
+    elif index >= 46372 and index < 46858:
+        # 486 indices
+        rim.run_vdoplosmaps_m12new(opt=index - 46372 + 108)
+    elif index >= 46858 and index < 47074:
+        # 216 indices
+        rcn.run_clumpiness(opt=index - 46858 + 1248)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

@@ -1480,11 +1480,17 @@ def run_vdoplosmaps_m12new(opt=0):
     wtdtype = 'coords'
     wtdtype_args = {'vel': 'doplos'}
     
-    # 18 haloes 
-    # m12g not included in the first run
-    ind = opt - 0
-    simnames = sl.m12plus_f3nobh # len 3
-    snaps = sl.snaps_hr # len 6
+    if opt >=0 and opt < 108:
+        # 18 haloes 
+        # m12g not included in the first run
+        ind = opt - 0
+        simnames = sl.m12plus_f3nobh # len 3
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 108 and opt < 594:
+        # 54 haloes, 486 indices
+        ind = opt - 108
+        simnames = sl.m12plus_f3nobh_lores # len 9
+        snaps = sl.snaps_hr # len 6
         
     simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
     snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \

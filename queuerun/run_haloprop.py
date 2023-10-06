@@ -300,11 +300,15 @@ def run_haloprop_fire3_m12new(opt):
     _dirpath = ol.simdir_fire3_m12plus
     meandef = 'BN98'
 
-    # 48 indices (1st run)
-    # + 12 indices, 2nd run with crheatfix added
-    ind = opt - 0
-    simnames = sl.m12plus_f3nobh # 3
-    snaps = sl.snaps_hr # 6
+    if opt >= 0 and opt < 18:
+        ind = opt - 0
+        simnames = sl.m12plus_f3nobh # 3
+        snaps = sl.snaps_hr # 6
+    elif opt >= 18 and opt < 72:
+        # 54 indices
+        ind = opt - 18
+        simnames = sl.m12plus_f3nobh_lores # 9
+        snaps = sl.snaps_hr # 6
 
     simi = ind // len(snaps)
     snapi = ind % len(snaps)

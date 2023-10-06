@@ -997,7 +997,12 @@ def run_hist_Zprof(opt):
         ind = opt - 294
         simnames = sl.m12plus_f3nobh
         snaps = sl.snaps_hr
-
+    elif opt >= 312 and opt < 366:
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
+        # 54 indices
+        ind = opt - 312
+        simnames = sl.m12plus_f3nobh_lores
+        snaps = sl.snaps_hr
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps))
@@ -1069,6 +1074,12 @@ def run_hist_mstellar_Zstellar(opt):
         ind = opt - 294
         simnames = sl.m12plus_f3nobh
         snaps = sl.snaps_hr
+    elif opt >= 312 and opt < 366:
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
+        # 54 indices
+        ind = opt - 312
+        simnames = sl.m12plus_f3nobh_lores
+        snaps = sl.snaps_hr
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps))
@@ -1118,9 +1129,15 @@ def run_hist_rad_vrad_weighted_m12new(opt):
     outdir = '/projects/b1026/nastasha/hists/r_vr_all2/'
     
     # 18 haloes, 216 indices (12 hists per halo)
-    ind = opt - 0
-    simnames = sl.m12plus_f3nobh # len 3 (no m12g)
-    snaps = sl.snaps_hr # len 6
+    if opt >= 0 and opt < 216:
+        ind = opt - 0
+        simnames = sl.m12plus_f3nobh # len 3 (no m12g)
+        snaps = sl.snaps_hr # len 6
+    elif opt >= 216 and opt < 864:
+        # 648 indices 
+        ind = opt - 216
+        simnames = sl.m12plus_f3nobh_lores # len 9
+        snaps = sl.snaps_hr # len 6
 
     wts = ['Mass', 'Volume', 'Metal'] + ['ion'] 
     wtargs = [{}, {}, 

@@ -314,18 +314,18 @@ def run_haloprop_fire3_m12new(opt):
     #dirpath = '/'.join([_dirpath, simname]) 
     dirpath = sl.dirpath_from_simname(simname)
 
-    #print(f'Whole halo center, {simname}, snap {snapnum}')
-    #hp.gethalodata_shrinkingsphere(dirpath, snapnum, 
-    #                               meandef=('BN98', '200c', '200m'))
+    print(f'Whole halo center, {simname}, snap {snapnum}')
+    hp.gethalodata_shrinkingsphere(dirpath, snapnum, 
+                                   meandef=('BN98', '200c', '200m'))
 
-    print(f'Whole halo Vcom, {simname}, snap {snapnum}')
-    hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=meandef,
-                parttypes='all')
-    print('\n\n')
-    print(f'Galaxy Vcom, {simname}, snap {snapnum}')
-    hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
-                parttypes=(4,)) 
-    print('\n\n')
-    print(f'Galaxy re-centering, {simname}, snap {snapnum}')
-    cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
-                     vcenrad_rvir=0.05, mstarrad_rvir=0.1)
+    #print(f'Whole halo Vcom, {simname}, snap {snapnum}')
+    #hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=meandef,
+    #            parttypes='all')
+    #print('\n\n')
+    #print(f'Galaxy Vcom, {simname}, snap {snapnum}')
+    #hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
+    #            parttypes=(4,)) 
+    #print('\n\n')
+    #print(f'Galaxy re-centering, {simname}, snap {snapnum}')
+    #cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
+    #                 vcenrad_rvir=0.05, mstarrad_rvir=0.1)

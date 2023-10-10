@@ -17,6 +17,12 @@ imgdir = '/projects/b1026/nastasha/imgs/datacomp/smhm/'
 def gethist_mhalo_mstarcen(x, binsize=3):
     return None
 
+## copied from astropy.cosmology Planck15, 
+## because that's what the Prochaska et al. (2019) CASBaH galaxy survey
+## paper references.
+cosmopars_p19 = {'omegam': 0.307, 'omegalambda': 1. - 0.307,
+                 'omegab': 0.0486, 'h': 0.677}
+
 # kinda random from Burchett et al. (2019)
 # (from the top of table 1, just got three values across 
 # the stellar mass range)
@@ -212,15 +218,17 @@ def plot_mstar_mh(zs_target, variation='main'):
     binsize = 0.1
     # 1, 2 sigma
     sig1 = an.cumulgauss(1.) - an.cumulgauss(-1.)
-    sig2 = an.cumulgauss(2.) - an.cumulgauss(-2.)
-    percvals = np.array([0.5 - 0.5 * sig2, 0.5 - 0.5 * sig1, 0.5,
-                         0.5 + 0.5 * sig1, 0.5 + 0.5 * sig2])
+    #sig2 = an.cumulgauss(2.) - an.cumulgauss(-2.)
+    #percvals = np.array([0.5 - 0.5 * sig2, 0.5 - 0.5 * sig1, 0.5,
+    #                     0.5 + 0.5 * sig1, 0.5 + 0.5 * sig2])
+    percvals = np.array([0.5 - 0.5 * sig1, 0.5, 0.5 + 0.5 * sig1])
     _colors = tc.tol_cset('vibrant')
     color_mhtoms = _colors[1]
     color_mstomh = _colors[2]
     #color_moster13 = _colors[2]
     color_burchett19 = _colors[3]
-    linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
+    #linestyles = ['dotted', 'dashed', 'solid', 'dashed', 'dotted']
+    linestyles = ['dashed', 'solid', 'dashed']
     _cmap = mpl.cm.get_cmap('gist_yarg')
     cmap = pu.truncate_colormap(_cmap, minval=0., maxval=0.7)
     linewidth = 1.5
@@ -301,9 +309,20 @@ def plot_mstar_mh(zs_target, variation='main'):
         #ax.plot(xv_moster13, mhbins_hist, color=color_moster13, linewidth=linewidth,
         #        linestyle='dashdot', path_effects=path_effects)
         if variation == 'main':
+            logm200c = mhbins_hist
+            cosmopars = cosmopars_p19.copy()
+            cosmopars.update({'z': z_used, 'a': 1. / (1. + z_used)})
+            c200_b19 = an.concentration_mass_m200c_dm14(10**logm200c, 
+                                                        cosmopars)
+            mh_b19 = np.array([an.m200c_to_mvir(m200c_msun, cosmopars, c200)
+                               for m200c_msun, c200 in zip(10**logm200c,
+                                                           c200_b19)])
+            print(z_used, ':')
+            print(logm200c)
+            print(np.log10(mh_b19))
             ms_burchett19 = np.log10(an.mstar_burchett_etal_2019
-                                     (10**mhbins_hist, z_used))
-            ax.plot(ms_burchett19, mhbins_hist, color=color_burchett19, 
+                                     (10**logm200c, z_used))
+            ax.plot(ms_burchett19, np.log10(mh_b19), color=color_burchett19, 
                     linewidth=linewidth,
                     linestyle='dashdot', path_effects=path_effects)
     xlims = [ax.get_xlim() for ax in axes]

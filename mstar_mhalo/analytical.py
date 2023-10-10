@@ -4,8 +4,11 @@ various analytical Mstar-Mhalo relations
 
 import numpy as np
 import scipy.special as sps
+import scipy.interpolate as spi
 
 import fire_an.utils.math_utils as mu
+import fire_an.utils.cosmo_utils as cu
+import fire_an.utils.constants_and_units as c
 
 def mstar_moster_etal_2013(mvir_msun, redshift):
     # uses M200c for the Mvir definition
@@ -174,3 +177,41 @@ def calcdist(monorel_x, monorel_y, xbins, xprob,
                       for xp in xbins])
     yprob = xprob / np.diff(ybins)
     return ybins, yprob
+
+def concentration_mass_m200c_dm14(hm_msun, cosmopars):
+    '''
+    Dutton and Maccio (2014) relation
+    from their Table 3; listed overdensities there are relative 
+    to critical. concentrations are r_{-2} / R_{Delta crit};
+    classic R_s = r_{-2} (by my math at least)
+    '''
+    zvals = [0., 0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
+    avals_z = [0.905, 0.814, 0.728, 0.612, 0.557, 0.528, 0.539]
+    bvals_z = [-0.101, -0.086, -0.073, -0.050, -0.021, 0.000, 0.027]
+    afunc = spi.interp1d(zvals, avals_z, kind='linear')
+    bfunc = spi.interp1d(zvals, bvals_z, kind='linear')
+    aval = afunc(cosmopars['z'])
+    bval = bfunc(cosmopars['z'])
+    c200 = 10**(aval + bval * np.log10(hm_msun * cosmopars['h']/ 1e12))
+    return c200
+
+
+# convert M200c to Mvir (Bryan and Norman):
+def m200c_to_mvir(m200c_msun, cosmopars, c200):
+    meandens_bn98 = cu.getmeandensity('BN98', cosmopars)
+    meandens_200c = cu.getmeandensity('200c', cosmopars)
+    m200c_g = m200c_msun * c.solar_mass
+    r200c_cgs = (m200c_g / meandens_200c * 3. / (4. * np.pi))**(1./3.)
+    
+    rbins = np.linspace(0., 5. * r200c_cgs, 5000)
+    rcens = 0.5 * (rbins[:-1] + rbins[1:])
+    dr = np.average(np.diff(rbins))
+    rhovals = cu.rho_NFW(rcens, m200c_g, delta=200, ref='rhocrit', 
+                         z=cosmopars['z'],
+                         cosmopars=cosmopars, c=c200)
+    menc = np.cumsum(4. * np.pi * rhovals * rcens**2 * dr)
+    rhomean = menc / (4. * np.pi / 3. * rbins[1:]**3)
+    rbn98_cgs = mu.linterpsolve(rhomean, rbins[1:], meandens_bn98)
+    mbn98_g = 4. * np.pi / 3. * meandens_bn98 * rbn98_cgs**3
+    mbn98_msun = mbn98_g / c.solar_mass
+    return mbn98_msun 

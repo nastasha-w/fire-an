@@ -68,7 +68,7 @@ def mvir_to_m200c(mvir_msun):
         rhovals = cu.rho_NFW(rcens, M200c, delta=200, ref='rhocrit', 
                              z=cosmopars_ea_23['z'], 
                              cosmopars=cosmopars_ea_23, c='Schaller15')
-        menc = np.cumsum(4. * np.pi / 3. * rhovals * rcens**2 * dr)
+        menc = np.cumsum(4. * np.pi * rhovals * rcens**2 * dr)
         rhomean = menc / (4. * np.pi / 3. * rbins[1:]**3)
         rhomean_rbn98 = mu.linterpsolve(rbins[1:], rhomean, rbn98_cgs)
         cost = np.abs(np.log10(rhomean_rbn98) - np.log10(meandens_bn98))
@@ -93,7 +93,7 @@ def m200c_to_mvir(m200c_msun):
     rhovals = cu.rho_NFW(rcens, m200c_g, delta=200, ref='rhocrit', 
                          z=cosmopars_ea_23['z'],
                          cosmopars=cosmopars_ea_23, c='Schaller15')
-    menc = np.cumsum(4. * np.pi / 3. * rhovals * rcens**2 * dr)
+    menc = np.cumsum(4. * np.pi  * rhovals * rcens**2 * dr)
     rhomean = menc / (4. * np.pi / 3. * rbins[1:]**3)
     rbn98_cgs = mu.linterpsolve(rhomean, rbins[1:], meandens_bn98)
     mbn98_g = 4. * np.pi / 3. * meandens_bn98 * rbn98_cgs**3
@@ -210,8 +210,8 @@ def plot_radprof_eagle_b19_comp():
         for dbi in range(len(data_bur)):
             cloer = data_bur['logmvir_msun_loer'][dbi]
             chier = data_bur['logmvir_msun_hier'][dbi]
-            print(mminbn98, mmaxbn98)
-            print(cloer, chier)
+            #print(mminbn98, mmaxbn98)
+            #print(cloer, chier)
             if cloer > mmaxbn98 or chier < mminbn98:
                 continue
 
@@ -226,7 +226,7 @@ def plot_radprof_eagle_b19_comp():
             #cbest = data_bur['logmvir_msun_bestest'][dbi]
             clo = data_bur['logmvir_msun_lo'][dbi]
             chi = data_bur['logmvir_msun_hi'][dbi]
-            print(clo, chi)
+            #print(clo, chi)
             
             issig0 = not (clo > mmaxbn98 or chi < mminbn98)
             _label = None
@@ -389,8 +389,8 @@ def plot_radprof_eagle_q23_comp():
         for dbi in range(len(data_cubs['ne8col_logcm2'])):
             cloer = data_cubs['logmvir_msun_loer'][dbi]
             chier = data_cubs['logmvir_msun_hier'][dbi]
-            print(mminbn98, mmaxbn98)
-            print(cloer, chier)
+            #print(mminbn98, mmaxbn98)
+            #print(cloer, chier)
             if cloer > mmaxbn98 or chier < mminbn98:
                 continue
 
@@ -407,7 +407,7 @@ def plot_radprof_eagle_q23_comp():
             #cbest = data_bur['logmvir_msun_bestest'][dbi]
             clo = data_cubs['logmvir_msun_lo'][dbi]
             chi = data_cubs['logmvir_msun_hi'][dbi]
-            print(clo, chi)
+            #print(clo, chi)
             
             issig0 = not (clo > mmaxbn98 or chi < mminbn98)
             _label = None

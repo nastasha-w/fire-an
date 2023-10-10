@@ -57,7 +57,9 @@ def get_histdata(filen):
     return out
 
 def calc_3dprof(simname, snapnum, yqty, weight, percvals=(0.1, 0.5, 0.9)):
-    if yqty == 'hdens' and 'crheatfix' in simname:
+    if yqty == 'hdens' and ('crheatfix' in simname 
+                            or simname in sl.m12plus_f3nobh \
+                                + sl.m12plus_f3nobh_lores):
         # renaming issue; both files store H density
         _yqty = 'density'
     else:
@@ -70,17 +72,18 @@ def calc_3dprof(simname, snapnum, yqty, weight, percvals=(0.1, 0.5, 0.9)):
     return histdata, yvals, filen
     
 def save_3dprofs():
-    outfile = savedir + 'radprof3d_nH_T_ZNe_by_vol_Ne8_opt1.hdf5'
+    outfile = savedir + 'radprof3d_nH_T_ZNe_by_vol_Ne8_opt2.hdf5'
     weights = ['Ne8', 'gasvol']
     yqtys = ['temperature', 'hdens', 'NeonAbundance']
     percvals = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.98, 0.99]
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
     sims_f2md = sl.m12_f2md
+    sims_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
     snaps_sr = sl.snaps_sr
     snaps_hr = sl.snaps_hr
     snaps_f2md = sl.snaps_f2md
-    sims_all = sims_sr + sims_hr + sims_f2md
+    sims_all = sims_sr + sims_hr + sims_f2md + sims_m12plus
     
     with h5py.File(outfile, 'a') as fo:
         for simn in sims_all:
@@ -88,6 +91,7 @@ def save_3dprofs():
             snaps = (snaps_sr if simn in sims_sr 
                      else snaps_hr if simn in sims_hr
                      else snaps_f2md if simn in sims_f2md
+                     else snaps_hr if simn in sims_m12plus
                      else None)
             for snap in snaps:
                 g2 = g1.create_group(f'snap_{snap}')

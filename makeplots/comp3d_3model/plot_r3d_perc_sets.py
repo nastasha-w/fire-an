@@ -12,14 +12,17 @@ profdatafn = ('/projects/b1026/nastasha/plotdata/'
               'radprof3d_nH_T_ZNe_by_vol_Ne8_opt2.hdf5')
 mdir = '/projects/b1026/nastasha/imgs/3dprof/'
 
-def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
-                 outname=None, legpanel=None):
+def plot_profset(simnames, snapnums, yranges={}, axsettitles=None,
+                 outname=None):
+    '''
+    simnames, snapnums: matching lists of lists; inner lists are combined
+    '''
     weights = ['gasvol', 'Ne8']
     wlabels = {'gasvol': 'V-wtd',
                'Ne8': 'Ne8-wtd'}
     cset = tc.tol_cset('vibrant')
     wcolors = {'gasvol': cset.black,
-               'Ne8': cset.blue}
+               'Ne8': cset.magenta}
     yqtys = ['temperature', 'hdens', 'NeonAbundance']
     ylabels = {'temperature': ('$\\log_{10} \\, \\mathrm{T}'
                                '\\; [\\mathrm{K}]$'),
@@ -35,7 +38,12 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
     percvals = [0.1, 0.5, 0.9]
 
     npsets = len(simnames)
-    ncols = min(npsets, 4)
+    if npsets <= 6:
+        ncols = npsets
+    else:
+        # even things out a bit if more rows are needed
+        nrows = (npsets - 1) // 6 + 1
+        ncols = (npsets - 1) // nrows + 1
     nrows = len(yqtys) * ((npsets - 1) // ncols + 1)
     panelsize = 2.5
     fontsize = 12
@@ -43,10 +51,11 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
     fig = plt.figure(figsize=(panelsize * ncols, panelsize * nrows))
     grid = gsp.GridSpec(ncols=ncols, nrows=nrows, hspace=0.0,
                         wspace=0.0)
-    axsets = [[fig.add_subplot(grid[i // ncols + j, i % ncols]) 
+    axsets = [[fig.add_subplot(grid[(i // ncols) * len(yqtys) + j, i % ncols])
                for j in range(len(yqtys))] for i in range(npsets)] 
     yminmax = {yqty: (np.inf, -np.inf) for yqty in yqtys}
-    for seti, (axset, simn, snap) in enumerate(zip(axsets, simnames, snapnums)):
+    for seti, (axset, simsub, snapsub) in enumerate(zip(axsets, simnames, 
+                                                        snapnums)):
         for yi, (ax, yqty) in enumerate(zip(axset, yqtys)):
             doleft = seti % ncols == 0
             dobottom = (yi == len(yqtys) - 1) and (seti >= npsets - ncols)
@@ -62,31 +71,54 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
                               fontsize=fontsize)
             ynorm = ynorms[yqty]
             for wi, weight in enumerate(weights):
-                with h5py.File(profdatafn, 'r') as f:
-                    grp = f[f'{simn}/snap_{snap}/{weight}_weighted/{yqty}']
-                    rbins = grp['rbins'][:]
-                    ylo = grp[f'perc_{percvals[0]:.2f}'][:]
-                    ymid = grp[f'perc_{percvals[1]:.2f}'][:]
-                    yhi = grp[f'perc_{percvals[2]:.2f}'][:]
-                rcens = 0.5 * (rbins[:-1] + rbins[1:])
-                
+                rbins = None
+                ylo = []
+                ymid = []
+                yhi = []
+                for simn, snap in zip(simsub, snapsub):
+                    with h5py.File(profdatafn, 'r') as f:
+                        grp = f[f'{simn}/snap_{snap}/{weight}_weighted/{yqty}']
+                        _rbins = grp['rbins'][:]
+                        if rbins is None:
+                            rbins = _rbins
+                        else:
+                            if not np.allclose(rbins, _rbins):
+                                raise RuntimeError('rbins mismatch within'
+                                                   'panel set: '
+                                                   f'{simsub}, {snapsub}')
+                        ylo.append(grp[f'perc_{percvals[0]:.2f}'][:])
+                        ymid.append(grp[f'perc_{percvals[1]:.2f}'][:])
+                        yhi.append(grp[f'perc_{percvals[2]:.2f}'][:])
+                    rcens = 0.5 * (rbins[:-1] + rbins[1:])
+                ylom = np.median(np.array(ylo), axis=0)
+                yhim = np.median(np.array(yhi), axis=0)
+                ymidm = np.median(np.array(ymid), axis=0)
+                yerr_lo = ymidm - np.min(np.array(ymid), axis=0)
+                yerr_hi = np.max(np.array(ymid), axis=0) - ymidm
                 _label = wlabels[weight] + ', med.'
-                ax.plot(rcens, ymid - ynorm, color=wcolors[weight], 
-                        linestyle='solid', linewidth=2., label=_label)
+                # errorevery needs a newer matplotlib version, I guess
+                errsel = slice(wi, None, len(weights))
+                ax.errorbar(rcens, ymidm - ynorm, yerr=np.zeros(len(rcens)),
+                            color=wcolors[weight],
+                            linestyle='solid', linewidth=2., label=_label)
+                ax.errorbar(rcens[errsel], (ymidm - ynorm)[errsel], 
+                            yerr=(yerr_lo[errsel], yerr_hi[errsel]),
+                            color=wcolors[weight], linestyle='none', 
+                            linewidth=2.)
                 if wi == 0:
                     _label = wlabels[weight] + (f'; ${100 * percvals[0]:.0f}'
                                                 ' \\endash'
                                                 f'{100 * percvals[2]:.0f}$%')
-                    ax.fill_between(rcens, ylo - ynorm, yhi - ynorm, 
+                    ax.fill_between(rcens, ylom - ynorm, yhim - ynorm, 
                                     color=wcolors[weight], alpha=0.3,
                                     label=_label)
                 else:
                     _label = wlabels[weight] + (f'; ${100 * percvals[0]:.0f}'
                                                 ', '
                                                 f'{100 * percvals[2]:.0f}$%')
-                    ax.plot(rcens, ylo - ynorm, color=wcolors[weight], 
+                    ax.plot(rcens, ylom - ynorm, color=wcolors[weight], 
                             linestyle='dashed', linewidth=1.5, label=_label)
-                    ax.plot(rcens, yhi - ynorm, color=wcolors[weight], 
+                    ax.plot(rcens, yhim - ynorm, color=wcolors[weight], 
                             linestyle='dashed', linewidth=1.5)
             if yqty == 'temperature':
                 tcies = gcie.cieranges1['Ne8']
@@ -107,79 +139,49 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
             else:
                 yr = yminmax[yqty]
             ax.set_ylim(yr)
-    if legpanel is None:
-        legpanel = (0, 1)
-    axsets[legpanel[0]][legpanel[1]].legend(fontsize=fontsize - 2., 
-                                            loc='upper right',
-                                            handlelength=1.5,
-                                            handletextpad=0.6,
-                                            labelspacing=0.3,
-                                            handleheight=0.5)
+            ax.grid(True)
+    axsets[0][1].legend(fontsize=fontsize - 2., loc='upper right',
+                        handlelength=1.5)
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
-    
-def plotsets_fewprof():
+
+def plotsets_physmodel():
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
     sims_f2md = sl.m12_f2md
+    sims_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
     snaps_sr = sl.snaps_sr
     snaps_hr = sl.snaps_hr
     snaps_f2md = sl.snaps_f2md
 
-    sims_all = sims_sr + sims_hr + sims_f2md
-    ics_run = ['m12f', 'm13h113', 'm13h206'] # clean sample
-    
-    sortorder = {'FIRE-2': 0,
-                 'noBH': 1,
-                 'AGN-noCR': 2,
-                 'AGN-CR': 3}
-    def sortkey(simname):
-        pl = sl.physlabel_from_simname(simname)
-        return sortorder[pl]
-    yranges = {}
-    # 'temperature', 'hdens', 'NeonAbundance'
-    for ic in ics_run:
-        sims_use = [simn for simn in sims_all if simn.startswith(ic)]
-        sims_use.sort(key=sortkey)
-        physlabels = [sl.plotlabel_from_physlabel[
-                          sl.physlabel_from_simname(simn)]
-                      for simn in sims_use]
+    sims_all = sims_sr + sims_hr + sims_f2md + sims_m12plus
+    sims_all = [sn for sn in sims_all if sn not in sl.buglist2]
+    physlabels = [sl.physlabel_from_simname(sn) for sn in sims_all]
+    ics = [sl.ic_from_simname(sn) for sn in sims_all]
+    simsets = {}
+    for sn, ic, pm in zip(sims_all, ics, physlabels):
+        catlabel = ic[:3] + '_' + pm
+        if catlabel in simsets:
+            simsets[catlabel].append(sn)
+        else:
+            simsets[catlabel] = [sn]
+    print(simsets)
+
+    yranges = {'NeonAbundance': (-3.0, 0.5),
+               'hdens': (-5.5, -0.5),
+               'temperature': (5., 7.2)}
+    for catlabel in simsets:
+        simnames = simsets[catlabel]
         snaps = [(snaps_sr if simn in sims_sr 
                   else snaps_hr if simn in sims_hr
                   else snaps_f2md if simn in sims_f2md
+                  else snaps_hr if simn in sims_m12plus
                   else None)
-                 for simn in sims_use]
-        snaps = [[snaps[j][i] for j in range(len(sims_use))]
-                  for i in range(6)]
-        for zi, z in enumerate(np.arange(1.0, 0.45, -0.1)):
-            _snaps = snaps[zi]
-            outname = (f'rprof3d_T_nH_ZNe_by_Ne8_Vol_{ic}_z{z:.1f}')
-            outname = mdir + outname.replace('.', 'p') + '.pdf'
-            plot_fewprof(sims_use, _snaps, yranges={}, 
-                         axsettitles=physlabels, outname=outname)
-
-# 2 haloes to highlight m12/m13 profiles
-def plotmain():
-    # m12f, m13h113 FIRE-3 noBH, z=1.0
-    sims = [('m12f_m7e3_MHD_fire3_fireBH_Sep182021_hr_crdiffc690'
-             '_sdp1e10_gacc31_fa0.5'),
-            ('m13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
-             '_sdp1e10_gacc31_fa0.5'),
-            ]
-    titles = ['m12f FIRE-3 noBH\n$z=1$',
-              'm13h113 FIRE-3 noBH\n$z=1$']
-    snaps = [sl.snaps_hr[0], sl.snaps_sr[0]]
-    yranges = {'NeonAbundance': (-3.0, 0.5),
-               'hdens': (-5.2, -0.5),
-               'temperature': (5., 7.0)}
-    outname = (f'rprof3d_T_nH_ZNe_by_Ne8_Vol_mainexamples')
-    outname = mdir + outname.replace('.', 'p') + '.pdf'
-    plot_fewprof(sims, snaps, yranges=yranges, 
-                 axsettitles=titles, outname=outname,
-                 legpanel=(0, 1))
-            
-    
-
-
-
-    
+                 for simn in simnames]
+        sims_use = [[sn] * 6 for sn in simnames]
+        ics = [sl.ic_from_simname(sn) for sn in simnames]
+        outname = (f'rprof3dset_T_nH_ZNe_by_Ne8_Vol_z0p5_to_1p0_{catlabel}')
+        outname = mdir + outname.replace('.', 'p') + '.pdf'
+        plot_profset(sims_use, snaps, yranges=yranges, axsettitles=ics,
+                     outname=outname)
+        

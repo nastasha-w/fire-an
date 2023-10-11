@@ -165,7 +165,7 @@ def plotsets_physmodel():
             simsets[catlabel].append(sn)
         else:
             simsets[catlabel] = [sn]
-    print(simsets)
+    #print(simsets)
 
     yranges = {'NeonAbundance': (-3.0, 0.5),
                'hdens': (-5.5, -0.5),

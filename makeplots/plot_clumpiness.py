@@ -71,16 +71,16 @@ def plot_clumpiness_prof(target='Ne8'):
     colors.update(sl.m13_iccolors)
     color_default = 'gray'
 
-    axphys = [[('m12', 'FIRE-2'), ('m12', 'noBH')], 
-              [('m12', 'AGN-noCR'), ('m12', 'AGN-CR')],
-              [None, ('m13', 'noBH')],
-              [('m13', 'AGN-noCR'), ('m13', 'AGN-CR')],
+    axphys = [[('m12', 'FIRE-2'), None], 
+              [('m12', 'noBH'), ('m13', 'noBH')],
+              [('m12', 'AGN-noCR'), ('m13', 'AGN-noCR')],
+              [('m12', 'AGN-CR'), ('m13', 'AGN-CR')],
                ]
     _simnames = sl.m12_hr_all2 +  sl.m12_sr_all2 + sl.m12_f2md \
                 + sl.m13_hr_all2 + sl.m13_sr_all2
     simnames = _simnames.copy()
     for sn in _simnames:
-        if sn in sl.buglist1:
+        if sn in sl.buglist2:
             simnames.remove(sn)
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
@@ -105,13 +105,13 @@ def plot_clumpiness_prof(target='Ne8'):
     if target == 'Ne8':
         #ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
         #          '(\mathrm{n}_{\\mathrm{Ne\\,VIII}})$')
-        ylabel = 'smoothness'
+        ylabel = '$f_{\\mathrm{fill}}(\\mathrm{Ne\\,VIII})$'
         cprof_func = get_cprof_voltwtne8clumpfact
         ymax = 0.55
     elif target == 'rho':
         #ylabel = ('$1 \\,/\\, f_{\\mathrm{c, V}}'
         #          '(\\rho)$')
-        ylabel = 'smoothness'
+        ylabel = 'gas fill. frac.'
         cprof_func = get_cprof_voltwtdensclumpfact
         ymax = 1.15
 
@@ -128,7 +128,7 @@ def plot_clumpiness_prof(target='Ne8'):
             ax = fig.add_subplot(grid[ri, ci])
             axes.append(ax)
             dobottom = (ri, ci) in [(3, 0), (3, 1)]
-            doleft = (ri, ci) in [(0, 0), (1, 0), (2, 1), (3, 0)]
+            doleft = (ri, ci) in [(0, 0), (1, 0), (2, 0), (3, 0)]
             ax.tick_params(which='both', direction='in',
                            labelsize=fontsize -1, top=True, right=True,
                            labelbottom=dobottom, labelleft=doleft)
@@ -153,16 +153,15 @@ def plot_clumpiness_prof(target='Ne8'):
                          else snaps_f2md if sn in sims_f2md
                          else None)
                 ic = sl.ic_from_simname(sn)
-                if ic in showcolor_ics:
-                    color = colors[ic]
-                    lw = 1.5
-                    alpha = 1.
-                    zo = 3
-                else:
-                    color = color_default
-                    lw = 1.
-                    alpha = 0.5
-                    zo = 2
+                #if ic in showcolor_ics:
+                #    color = colors[ic]
+                #    lw = 1.5
+                #    alpha = 1.
+                #    zo = 3
+                color = color_default
+                lw = 1.
+                alpha = 0.5
+                zo = 2
                 for snap in snaps:
                     rbins, cf = cprof_func(sn, snap)
                     rcens = 0.5 * (rbins[:-1] + rbins[1:])
@@ -184,7 +183,7 @@ def plot_clumpiness_prof(target='Ne8'):
     [ax.set_ylim(0., ymax) for ax in axes]
     [ax.set_xlim(0.1, 1.05) for ax in axes]
 
-    lax = fig.add_subplot(grid[2, 0])
+    lax = fig.add_subplot(grid[0, 1])
     lax.axis('off')
     #ics_highlight = set(showcolor_ics)
     #ics_highlight = ics_highlight | set(ic for ic, _ in icsnap_emph)
@@ -202,7 +201,7 @@ def plot_clumpiness_prof(target='Ne8'):
                                        label='other',
                                        linestyle='solid')]
     lax.legend(handles=handles, loc='center left', fontsize=fontsize - 1,
-               bbox_to_anchor=(-0.02, 0.5), handlelength=1.5)
+               bbox_to_anchor=(0.0, 0.5), handlelength=1.5)
 
     outname = outdir + f'volwtd_clumpfactor_prof_{target}.pdf'
     plt.savefig(outname, bbox_inches='tight')                    

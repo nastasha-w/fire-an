@@ -14,6 +14,8 @@ resolutions = {'m3e5': 3e5,
                'r7100': 7.1e3,
                'r3500': 3.5e3,
                'r4200': 4.2e3,
+               'r28000': 3e4,
+               'r57000': 6e4,
                }
 
 # more sig. digits are listed for the FIRE-2 haloes
@@ -26,6 +28,8 @@ def get_resolution(simname):
             respart = simname.split('_')[2]
         else:
             respart = simname.split('_')[1]
+    elif pt == 'noBH-m12+':
+        respart = simname.split('_')[3]
     else:
         respart = simname.split('_')[1]
     res = resolutions[respart]
@@ -43,12 +47,15 @@ def maketable_main(simset='all'):
     elif simset == 'all':
         simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md + \
                    sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'm12plus':
+        simnames = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
 
-    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2 \
+              + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_f2md = sl.m12_f2md
     simnames.sort()
-    for sn in sl.buglist1:
+    for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
     ics = [sl.ic_from_simname(sn) for sn in simnames]
@@ -229,7 +236,7 @@ def maketable_appendix(simset='all'):
                    sl.m13_hr_all2 + sl.m13_sr_all2
 
     simnames.sort()
-    for sn in sl.buglist1:
+    for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
     ics = [sl.ic_from_simname(sn) for sn in simnames]

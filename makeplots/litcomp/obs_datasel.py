@@ -99,7 +99,7 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     ## FIRE data
     simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
                + sl.m13_hr_all2 + sl.m13_sr_all2 
-    for sn in sl.buglist1:
+    for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
     meandef = 'BN98'

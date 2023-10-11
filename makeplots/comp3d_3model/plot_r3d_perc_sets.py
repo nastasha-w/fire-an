@@ -31,7 +31,7 @@ def plot_profset(simnames, snapnums, yranges={}, axsettitles=None,
                'NeonAbundance': ('$\\log_{10} \\, \\mathrm{Z}_{\\mathrm{Ne}}'
                                  '\\; [\\mathrm{Z}_{\\mathrm{Ne}, \\odot}]$')
                }   
-    ynorms = {'NeonAbundance': np.log10(ol.solar_abunds_ea['neon']),
+    ynorms = {'NeonAbundance': -2.9008431  ,
               'temperature': 0.,
               'hdens': 0.,
               }

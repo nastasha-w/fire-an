@@ -13,12 +13,21 @@ proffilen = ('/projects/b1026/nastasha/plotdata/'
 mdir = '/projects/b1026/nastasha/imgs/datacomp/'
 
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=450.):
+                 ricut_pkpc=450., sample='main'):
 
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
+    samplestr = ''
     if massset == 'm12':
-        physmodels = ['FIRE-2', 'noBH', 'noBH-m12+', 'AGN-noCR', 'AGN-CR']
+        if sample == 'main':
+            samplestr = '_main'
+            physmodels = ['FIRE-2', 'noBH', 'AGN-noCR', 'AGN-CR']
+        elif sample == 'inclm12plus':
+            samplestr =  '_inclm12plus'
+            physmodels = ['FIRE-2', 'noBH', 'noBH-m12+', 'AGN-noCR', 'AGN-CR']
+        elif sample == 'm12_f3nobh_comp':
+            samplestr =  '_m12_f3nobh_comp'
+            physmodels = ['noBH', 'noBH-m12+']
     elif massset == 'm13':
         physmodels = ['noBH', 'AGN-noCR', 'AGN-CR']
 
@@ -150,22 +159,31 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     axes[0].add_artist(leg0)
 
     outname = mdir + (f'coldenscomp_Ne8_{obssample}_vs_{massset}_at_{zr}'
-                      '_opt2_inclm12plus.pdf')
+                      f'_opt2{samplestr}.pdf')
     plt.savefig(outname, bbox_inches='tight')
 
 def runplots_obscomp():
     ricut_pkpc = 450.
     plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     plot_obscomp(massset='m13', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-1.0',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-0.7',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     plot_obscomp(massset='m13', obssample='Q+23', zr='z0.5-0.7',
-                 ricut_pkpc=ricut_pkpc)
+                 ricut_pkpc=ricut_pkpc, sample='main')
     # make sure mass selection is consisent
-    ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc) 
+    ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc, sample='main') 
+
+def runplots_appendix():
+    ricut_pkpc = 450.
+    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc, sample='m12_f3nobh_comp')
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=ricut_pkpc, sample='m12_f3nobh_comp')
+    ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc, 
+                               sample='m12_f3nobh_comp') 

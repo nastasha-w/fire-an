@@ -179,6 +179,8 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     print(z_minmax)
     for mi, ls in enumerate(['solid']): # only plot one box
         for key in mass_minmax[mi]:
+            if not np.isfinite(mass_minmax[mi][key][0]):
+                continue
             line1 = [mass_minmax[mi][key][0], mass_minmax[mi][key][1], 
                      mass_minmax[mi][key][1], mass_minmax[mi][key][0], 
                      mass_minmax[mi][key][0]]
@@ -232,14 +234,18 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
     plt.savefig(outfilen, bbox_inches='tight')
     return mass_minmax, z_minmax
 
-def get_M_z_boxes_fire():
+def get_M_z_boxes_fire(sample='main'):
     '''
     All halo masses calculated using the UM methods, always halo mass
     selection, boundaries from all non-bug ICs
     '''
     ## FIRE data
-    simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
-               + sl.m13_hr_all2 + sl.m13_sr_all2 
+    if sample == 'main':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
+                   + sl.m13_hr_all2 + sl.m13_sr_all2 
+    elif sample == 'm12_f3nobh_comp':
+        simnames = sl.m12_nobh_clean2 + sl.m12_nobh_rest2 \
+                   + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
     for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
@@ -338,6 +344,8 @@ def addfire_panel(ax, firesimnames, firemasses, fireredshifts,
 
     for mi, ls in enumerate(['solid']): # only plot one box
         for key in mass_minmax[mi]:
+            if not np.isfinite(mass_minmax[mi][key][0]):
+                continue
             if xcrop is None:
                 line1 = [mass_minmax[mi][key][0], mass_minmax[mi][key][1], 
                          mass_minmax[mi][key][1], mass_minmax[mi][key][0], 
@@ -360,7 +368,7 @@ def addfire_panel(ax, firesimnames, firemasses, fireredshifts,
             ax.plot(line0, line1, linestyle=ls, color='gray',
                     linewidth=2, alpha=0.5)
             
-def plotMz_obs_fire_2panel(ricut_pkpc=450.):
+def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
     '''
     All halo masses calculated using the UM methods, always halo mass
     selection, boundaries from all non-bug ICs, but only plot one 
@@ -408,8 +416,12 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
                                 'noul': noul_qu[f1]}
 
     ## FIRE data
-    simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
-               + sl.m13_hr_all2 + sl.m13_sr_all2 
+    if sample == 'main':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md \
+                   + sl.m13_hr_all2 + sl.m13_sr_all2     
+    elif sample == 'm12_f3nobh_comp':
+        simnames = sl.m12_nobh_clean2 + sl.m12_nobh_rest2 \
+                   + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores 
     for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
@@ -433,7 +445,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     
     # don't really need to replot, but keeps consistency with the
     # data plot selections
-    mass_minmax, z_minmax = get_M_z_boxes_fire()
+    mass_minmax, z_minmax = get_M_z_boxes_fire(sample=sample)
     addfire_panel(axes[0], firesimnames, firemasses, fireredshifts,
                   mass_minmax, z_minmax, xcrop=None, xcropb=None)
     addfire_panel(axes[1], firesimnames, firemasses, fireredshifts,
@@ -455,18 +467,20 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     ymax = max([yl[1] for yl in ylims])
     [ax.set_ylim((ymin, ymax)) for ax in axes]
     
-    axes[0].text(0.95, mass_minmax[0]['m13'][1],
-                 'm13', fontsize=fontsize, color='gray',
-                 horizontalalignment='center',
-                 verticalalignment='bottom')
+    if np.isfinite(mass_minmax[0]['m13'][1]):
+        axes[0].text(0.95, mass_minmax[0]['m13'][1],
+                    'm13', fontsize=fontsize, color='gray',
+                    horizontalalignment='center',
+                    verticalalignment='bottom')
     axes[0].text(0.95, mass_minmax[0]['m12'][0] - 0.07,
                  'm12', fontsize=fontsize, color='gray',
                  horizontalalignment='center',
                  verticalalignment='top')
-    axes[1].text(0.78, mass_minmax[0]['m13'][1],
-                 'm13', fontsize=fontsize, color='gray',
-                 horizontalalignment='center',
-                 verticalalignment='bottom')
+    if np.isfinite(mass_minmax[0]['m13'][0]):
+        axes[1].text(0.78, mass_minmax[0]['m13'][1],
+                    'm13', fontsize=fontsize, color='gray',
+                    horizontalalignment='center',
+                    verticalalignment='bottom')
     axes[1].text(0.78, mass_minmax[0]['m12'][0] - 0.07,
                  'm12', fontsize=fontsize, color='gray',
                  horizontalalignment='center',
@@ -489,6 +503,6 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450.):
     outdir = '/projects/b1026/nastasha/imgs/datacomp/'
     obss = '_'.join(obsdata)
     outfilen = outdir + ('recalc_halomass_z_selection_all2_simplified'
-                         f'_{obss}_2panel.pdf')
+                         f'_{obss}_2panel_{sample}.pdf')
     plt.savefig(outfilen, bbox_inches='tight')
     return mass_minmax, z_minmax

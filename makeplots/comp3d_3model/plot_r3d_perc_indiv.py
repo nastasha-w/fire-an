@@ -54,8 +54,8 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
                            top=True, right=True, labelbottom=dobottom,
                            labelleft=doleft)
             if dobottom:
-                ax.set_xlabel('$\\mathrm{r}_{\\mathrm{cen}} \\,/\\,'
-                              '\\mathrm{R}_{\\mathrm{vir}}$', 
+                ax.set_xlabel('$\\mathrm{r}_{\\mathrm{3D}} \\;'
+                              '[\\mathrm{R}_{\\mathrm{vir}}]$', 
                               fontsize=fontsize)
             if doleft:
                 ax.set_ylabel(ylabels[yqty], 

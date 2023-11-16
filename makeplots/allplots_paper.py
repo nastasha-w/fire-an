@@ -7,7 +7,7 @@ import numpy as np
 import fire_an.makeplots.litcomp.plot_obscomp as poc
 import fire_an.makeplots.plotmaps_overview as pmo
 import fire_an.makeplots.plot_clumpiness as pcl
-import fire_an.makeplots.comp3d_3model as c3d
+import fire_an.makeplots.comp3d_3model.plot_r3d_perc_indiv as pri
 import fire_an.makeplots.cgm_fgas_zne.plotprop as pcp
 import fire_an.makeplots.litcomp.obs_vs_analytical as ova
 import fire_an.mstar_mhalo.plot_mstar_mh as psh
@@ -32,7 +32,7 @@ def runplots():
     ## output: /projects/b1026/nastasha/imgs/summary_plots/ne8_thumbnails/
     # figs. 1, 2
     # m12f, m13h113 at z=1.0 actually used in the paper
-    pmo.plotoverview_ne8(['m12f', 'm13h113', 'm12h206'], [0, 5])
+    pmo.plotoverview_ne8(['m12f', 'm13h113', 'm13h206'], [0, 5])
 
     ## clumpiness plot
     ## output: /projects/b1026/nastasha/imgs/clumpiness/
@@ -42,7 +42,7 @@ def runplots():
     ## radial profiles nH/T/Z
     ## output: /projects/b1026/nastasha/imgs/3dprof/
     # fig. 4
-    c3d.plotmain()
+    pri.plotmain()
 
     ## cgm property hists
     ## output: /projects/b1026/nastasha/imgs/cgmprop/
@@ -88,13 +88,10 @@ def runplots():
 
     ## tables 1, 2
     ## output: printed to screen
+    print('\n' * 6)
     mst.maketable_main(simset='all')
     print('\n' * 6)
     mst.maketable_main(simset='m12plus')
-
-
-
-
 
 if __name__ == '__main__':
     runplots()

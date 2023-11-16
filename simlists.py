@@ -468,19 +468,19 @@ def physlabel_from_simname(simname):
     return physlabel
 
 plotlabel_from_physlabel_short = {
-    'FIRE-2': 'F2 noBH',
-    'noBH': 'F3 noBH',
-    'AGN-noCR': 'F3 AGN-noCR',
-    'AGN-CR': 'F3 AGN-CR',
-    'noBH-m12+': 'F3 noBH m12+',
+    'FIRE-2': 'F2 NoBH',
+    'noBH': 'F3 NoBH',
+    'AGN-noCR': 'F3 BH',
+    'AGN-CR': 'F3 BH+CR',
+    'noBH-m12+': 'F3 NoBH m12+',
 }
 
 plotlabel_from_physlabel = {
-    'FIRE-2': 'FIRE-2 noBH',
-    'noBH': 'FIRE-3 noBH',
-    'AGN-noCR': 'FIRE-3 AGN-noCR',
-    'AGN-CR': 'FIRE-3 AGN-CR',
-    'noBH-m12+': 'FIRE-3 noBH m12+',
+    'FIRE-2': 'FIRE-2 NoBH',
+    'noBH': 'FIRE-3 NoBH',
+    'AGN-noCR': 'FIRE-3 BH',
+    'AGN-CR': 'FIRE-3 BH+CR',
+    'noBH-m12+': 'FIRE-3 NoBH m12+',
 }
 
 

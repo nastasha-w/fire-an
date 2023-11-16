@@ -166,8 +166,8 @@ def plotmain():
             ('m13h113_m3e5_MHD_fire3_fireBH_Sep182021_crdiffc690'
              '_sdp1e10_gacc31_fa0.5'),
             ]
-    titles = ['m12f FIRE-3 noBH\n$z=1$',
-              'm13h113 FIRE-3 noBH\n$z=1$']
+    titles = ['m12f FIRE-3 NoBH\n$z=1$',
+              'm13h113 FIRE-3 NoBH\n$z=1$']
     snaps = [sl.snaps_hr[0], sl.snaps_sr[0]]
     yranges = {'NeonAbundance': (-3.0, 0.5),
                'hdens': (-5.2, -0.5),

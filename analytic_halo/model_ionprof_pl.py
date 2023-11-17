@@ -69,8 +69,8 @@ class PLmodel:
                         / (2. * c.boltzmann)
         # eq 20
         self.nH_rvir_cgs = (3. + 3. * self.pli_vc - 1.5 * self.pli_entropy) \
-                             * self.cgmmass_cgs \
-                           / (self.mu * c.atomw_H * c.u \
+                             * self.cgmmass_cgs * self.hmassfrac \
+                           / (c.atomw_H * c.u \
                               * 4. * np.pi * self.rvir_cgs**3)
         self.pli_nH = -1.5 * self.pli_entropy + 3. * self.pli_vc
         

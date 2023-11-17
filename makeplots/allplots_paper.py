@@ -75,7 +75,7 @@ def runplots():
     ## data and analytical models
     ## output: /projects/b1026/nastasha/imgs/analytical/
     # figs 9, 10
-    ova.plot_plmodel_datacomp_Kvar(obsdata=('B+19', 'Q+23'))
+    ova.plot_plmodel_datacomp_Kvar(obsdata=('Q+23', 'B+19'))
     ova.plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19'))
 
     ## halo mass calc. appendix

@@ -109,7 +109,12 @@ def plot_fewprof(simnames, snapnums, yranges={}, axsettitles=None,
             ax.set_ylim(yr)
     if legpanel is None:
         legpanel = (0, 1)
-    axsets[legpanel[0]][legpanel[1]].legend(fontsize=fontsize - 2., 
+    # re-order legend entries
+    # (based on the order matplotlib seems to settle on)
+    handles, _ = axsets[legpanel[0]][legpanel[1]].get_legend_handles_labels()
+    handles = handles[:1] + [handles[3]] + handles[1:3] + handles[4:]
+    axsets[legpanel[0]][legpanel[1]].legend(handles=handles,
+                                            fontsize=fontsize - 2., 
                                             loc='upper right',
                                             handlelength=1.5,
                                             handletextpad=0.6,

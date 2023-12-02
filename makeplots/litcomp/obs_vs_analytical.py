@@ -17,12 +17,15 @@ import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.math_utils as mu
 
 outdir = '/projects/b1026/nastasha/imgs/analytical/'
+oddir = '/projects/b1026/nastasha/extdata/'
+q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
+b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 
 def get_obsdata(obsdata=('B+19', 'Q+23')):
     nsigmas = (1, 2)
     odata = {}
     if 'B+19' in obsdata:
-        data_bur = odr.readdata_b19(nsigmas=nsigmas)
+        data_bur = pd.read_csv(b19filen, sep='\t')
         cloer = data_bur['logmvir_msun_loer']
         chier = data_bur['logmvir_msun_hier']
         rp = data_bur['impact_parameter_kpc']
@@ -32,9 +35,11 @@ def get_obsdata(obsdata=('B+19', 'Q+23')):
                          data_bur['log_N_Ne8_pcm2_err']))
         clo = data_bur['logmvir_msun_lo']
         chi = data_bur['logmvir_msun_hi']
+        flag = data_bur['flagged_by_qu23']
         odata['B+19'] = {'cloer': cloer, 'chier': chier,
                          'clo': clo, 'chi': chi, 'isul': isul,
-                         'rp': rp, 'col': col, 'yerr': yerr}
+                         'rp': rp, 'col': col, 'yerr': yerr,
+                         'flag': flag}
     if 'Q+23' in obsdata:
         data_qu = odr.getplotdata_cubs()
         cloer = data_qu['logmvir_msun_loer']
@@ -46,9 +51,11 @@ def get_obsdata(obsdata=('B+19', 'Q+23')):
                          data_qu['ne8col_2s_loerr_dex']))
         clo = data_qu['logmvir_msun_lo']
         chi = data_qu['logmvir_msun_hi']
+        flag = np.zeros(rp.shape, dtype=bool)
         odata['Q+23'] = {'cloer': cloer, 'chier': chier,
                          'clo': clo, 'chi': chi, 'isul': isul,
-                         'rp': rp, 'col': col, 'yerr': yerr}
+                         'rp': rp, 'col': col, 'yerr': yerr,
+                         'flag': flag}
     return odata
 
 def addobsdata_panel(ax, odata, mvir, colors):
@@ -64,6 +71,7 @@ def addobsdata_panel(ax, odata, mvir, colors):
         rp = _odata['rp']
         col = _odata['col']
         yerr = _odata['yerr']
+        flag = _odata['flag']
 
         f1 = np.logical_and(cloer <= mvir, chier >= mvir)
         issig0 = np.logical_and(clo <= mvir, chi >= mvir)
@@ -71,10 +79,16 @@ def addobsdata_panel(ax, odata, mvir, colors):
         ul_sig0 &= issig0
         ul_sig1 = np.logical_and(isul, f1)
         ul_sig1 &= np.logical_not(issig0)
-        ms_sig0 = np.logical_and(np.logical_not(isul), f1)
-        ms_sig0 &= issig0
-        ms_sig1 = np.logical_and(np.logical_not(isul), f1)
-        ms_sig1 &= np.logical_not(issig0)
+        msm = np.logical_and(np.logical_not(isul), np.logical_not(flag))
+        msf = np.logical_and(np.logical_not(isul), flag)
+        msm_sig0 = np.logical_and(msm, f1)
+        msm_sig0 &= issig0
+        msm_sig1 = np.logical_and(msm, f1)
+        msm_sig1 &= np.logical_not(issig0)
+        msf_sig0 = np.logical_and(msf, f1)
+        msf_sig0 &= issig0
+        msf_sig1 = np.logical_and(msf, f1)
+        msf_sig1 &= np.logical_not(issig0)
         
         markersize = 5
         ax.errorbar(rp[ul_sig0], col[ul_sig0], None, 
@@ -93,7 +107,7 @@ def addobsdata_panel(ax, odata, mvir, colors):
                         markeredgecolor='black', markeredgewidth=1.0,
                         label=('UL, $\\Delta\\mathrm{M}'
                             f' < {nsigmas[1]}\\sigma$'))
-        ax.errorbar(rp[ms_sig0], col[ms_sig0], yerr=yerr[:, ms_sig0], 
+        ax.errorbar(rp[msm_sig0], col[msm_sig0], yerr=yerr[:, msm_sig0], 
                         linestyle='none', elinewidth=1.5,
                         color=_colors['1s'], capsize=3,
                         zorder=5.,
@@ -101,7 +115,7 @@ def addobsdata_panel(ax, odata, mvir, colors):
                         markeredgecolor='black', markeredgewidth=1.0,
                         label=('det., $\\Delta\\mathrm{M}'
                             f' < {nsigmas[0]}\\sigma$'))
-        ax.errorbar(rp[ms_sig1], col[ms_sig1], yerr=yerr[:, ms_sig1], 
+        ax.errorbar(rp[msm_sig1], col[msm_sig1], yerr=yerr[:, msm_sig1],
                         linestyle='none', elinewidth=1.5,
                         color=_colors['2s'], capsize=3,
                         zorder=5.,
@@ -109,6 +123,22 @@ def addobsdata_panel(ax, odata, mvir, colors):
                         markeredgecolor='black', markeredgewidth=1.0,
                         label=('det., $\\Delta\\mathrm{M}'
                             f' < {nsigmas[1]}\\sigma$'))
+        ax.errorbar(rp[msf_sig0], col[msf_sig0], yerr=yerr[:, msf_sig0], 
+                        linestyle='none', elinewidth=1.5,
+                        color=_colors['1s'], capsize=3,
+                        zorder=5.,
+                        marker='o', markersize=markersize,
+                        markeredgecolor=_colors['1s'], markeredgewidth=1.5,
+                        markerfacecolor='none',
+                        label=None)
+        ax.errorbar(rp[msf_sig1], col[msf_sig1], yerr=yerr[:, msf_sig1],
+                        linestyle='none', elinewidth=1.5,
+                        color=_colors['2s'], capsize=3,
+                        zorder=5.,
+                        marker='o', markersize=markersize,
+                        markeredgecolor=_colors['2s'], markeredgewidth=1.5,
+                        markerfacecolor='none',
+                        label=None)
 
 
 
@@ -222,6 +252,12 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                                 markeredgecolor='black',
                                 c=colors[oset]['1s'])
                     for oset in obsdata]
+        if 'B+19' in obsdata:
+            handles2 += [mlines.Line2D((), (), linestyle='none', marker='s',
+                         markersize=5, label='B+19 (!)', 
+                         markeredgecolor=colors['B+19']['1s'],
+                         markeredgewidth=2.0, markerfacecolor='none',
+                         c=colors['B+19']['1s'])]
         axes[-3].legend(handles=handles2,
                         fontsize=fontsize - 2,
                         loc='upper right', bbox_to_anchor=(1.0, 0.86),

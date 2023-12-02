@@ -10,6 +10,7 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.optimize as so
 
 import fire_an.makeplots.litcomp.obsdataread as odr
@@ -19,6 +20,10 @@ import fire_an.utils.math_utils as mu
 
 mdir = '/projects/b1026/nastasha/imgs/datacomp/eagle/'
 eagledatadir = '/projects/b1026/nastasha/extdata/eaglepaper2/'
+oddir = '/projects/b1026/nastasha/extdata/'
+q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
+b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
+
 
 cosmopars_ea_23 = {'a': 0.6652884960735025,
                    'boxsize': 67.77,
@@ -132,7 +137,7 @@ def plot_radprof_eagle_b19_comp():
                 ' for each M200c range, given meas. pkpc')
     
     eagledat = readin_eagledata()
-    data_bur = odr.readdata_b19(nsigmas=(1, 2))
+    data_bur = pd.read_csv(b19filen, sep='\t')
     # define used mass ranges
     deltaM200c = 0.5
     massbins_m200c_eagle = list(eagledat.keys())
@@ -203,8 +208,10 @@ def plot_radprof_eagle_b19_comp():
         ax.fill_between(cens, plo, phi, **kwa_pfills)
         ax.plot(cens, med, **kwa_med)
         
-        detsig1done = False
-        detsig0done = False
+        detmsig1done = False
+        detmsig0done = False
+        detfsig1done = False
+        detfsig0done = False
         ulsig1done = False
         ulsig0done = False
         for dbi in range(len(data_bur)):
@@ -226,6 +233,7 @@ def plot_radprof_eagle_b19_comp():
             #cbest = data_bur['logmvir_msun_bestest'][dbi]
             clo = data_bur['logmvir_msun_lo'][dbi]
             chi = data_bur['logmvir_msun_hi'][dbi]
+            flag = data_bur['flagged_by_qu23'][dbi]
             #print(clo, chi)
             
             issig0 = not (clo > mmaxbn98 or chi < mminbn98)
@@ -236,21 +244,31 @@ def plot_radprof_eagle_b19_comp():
                     _label = ('UL, $\\Delta\\mathrm{M}'
                               f' < {nsigmas[0]}\\sigma$')
                     ulsig0done = True
-                elif not isul and not detsig0done:
+                elif (not isul and not flag) and not detmsig0done:
                     _label = ('det., $\\Delta\\mathrm{M}'
                               f' < {nsigmas[0]}\\sigma$')
-                    detsig0done = True
+                    detmsig0done = True
+                elif (not isul and flag) and not detfsig0done:
+                    _label = ('det., !, $\\Delta\\mathrm{M}'
+                              f' < {nsigmas[0]}\\sigma$')
+                    detfsig0done = True
             else:
                 _color = 'gray'
                 if isul and not ulsig1done:
                     _label = ('UL, $\\Delta\\mathrm{M}'
                               f' < {nsigmas[1]}\\sigma$')
                     ulsig1done = True
-                elif not isul and not detsig1done:
+                elif (not isul and not flag) and not detmsig1done:
                     _label = ('det., $\\Delta\\mathrm{M}'
                               f' < {nsigmas[1]}\\sigma$')
-                    detsig1done = True
+                    detmsig1done = True
+                elif (not isul and flag) and not detfsig1done:
+                    _label = ('det., !, $\\Delta\\mathrm{M}'
+                              f' < {nsigmas[1]}\\sigma$')
+                    detfsig1done = True
             marker = 'v' if isul else 'o'
+            markeredgecolor = _color if flag else 'black'
+            markerfacecolor = 'none' if flag else _color
             markersize = 5
             zobase = 5. - 1. * isul
 
@@ -259,9 +277,12 @@ def plot_radprof_eagle_b19_comp():
                         color=_color, capsize=3,
                         zorder=zobase,
                         marker=marker, markersize=markersize,
-                        markeredgecolor='black', markeredgewidth=1.0,
+                        markeredgecolor=markeredgecolor, 
+                        markerfacecolor=markerfacecolor,
+                        markeredgewidth=1.0,
                         label=_label)
-        if detsig1done and detsig0done and ulsig1done and ulsig0done:
+        if detmsig1done and detmsig0done and ulsig1done and ulsig0done \
+                and detfsig1done and detfsig0done:
             getlegax = axi
     
     [ax.set_ylim(ylim) for ax in axes]
@@ -310,7 +331,7 @@ def plot_radprof_eagle_q23_comp():
                 ' for each M200c range, given meas. pkpc')
     
     eagledat = readin_eagledata()
-    data_cubs = odr.getplotdata_cubs()
+    data_cubs = pd.read_csv(q23filen, sep='\t')
     # define used mass ranges
     deltaM200c = 0.5
     massbins_m200c_eagle = list(eagledat.keys())

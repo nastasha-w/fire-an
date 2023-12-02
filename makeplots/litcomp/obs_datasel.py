@@ -10,6 +10,10 @@ import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.opts_locs as ol
 
+oddir = '/projects/b1026/nastasha/extdata/'
+q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
+b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
+
 def readin_halodata(simnames, meandef='200m', zmin=0.45, zmax=1.05):
     firedataf = ol.filen_halocenrvir
     firemasses = []
@@ -290,15 +294,29 @@ def get_M_z_boxes_fire(sample='main'):
 def addobs_panel(ax, plotdata, obslabel, color, vlabel=True):
     _data = plotdata
     space = '\n' if vlabel else ' '
-    noul_label = obslabel + space + '(det.)'
+    noul_mainlabel = obslabel + space + '(det.)'
     ul_label = obslabel + space + '(UL)'   
     noul = _data['noul']
     isul = _data['isul']
-    ax.errorbar(_data['z'][noul], _data['mh'][noul],
-                yerr=_data['mherr'][:, noul], 
+    flag = _data['flag']
+    noul_main = np.logical_and(noul, np.logical_not(flag))
+    noul_flag = np.logical_and(noul, flag)
+    if sum(noul_flag) > 0:
+        noul_flaglabel = obslabel + space + '(det., !)'
+    else:
+        noul_flaglabel = None
+    ax.errorbar(_data['z'][noul_main], _data['mh'][noul_main],
+                yerr=_data['mherr'][:, noul_main], 
                 linestyle='None', elinewidth=1.5, marker='o', 
                 markersize=7, color=color, capsize=3,
-                zorder=5, label=noul_label, alpha=1.)
+                zorder=5, label=noul_mainlabel, alpha=1.)
+    ax.errorbar(_data['z'][noul_flag], _data['mh'][noul_flag], 
+                yerr=_data['mherr'][:, noul_flag], 
+                color=color,
+                linestyle='None', elinewidth=1.5, marker='o', 
+                markersize=7, markeredgecolor=color, capsize=3,
+                markerfacecolor='none', zorder=5, label=noul_flaglabel,
+                alpha=1.)
     ax.errorbar(_data['z'][isul], _data['mh'][isul], 
                 yerr=_data['mherr'][:, isul], 
                 color=color,
@@ -379,7 +397,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
     _colors = tc.tol_cset('high-contrast')
     obscolors = [_colors.blue, _colors.red]
     if 'B+19' in obsdata:
-        data_bur = odr.readdata_b19(nsigmas=1)
+        data_bur = pd.read_csv(b19filen, sep='\t')
         z_bur = data_bur['zgal']
         m_bur = data_bur['logmvir_msun_bestest']
         m_bur_err = np.array([data_bur['logmvir_msun_bestest'] 
@@ -390,13 +408,15 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
         noul_bur = np.logical_not(isul_bur)
         ri_bur = data_bur['impact_parameter_kpc']
         f1 = ri_bur <= ricut_pkpc
+        flagged = data_bur['flagged_by_qu23']
         plotdata_obs['B+19'] = {'z': z_bur[f1],
                                 'mh': m_bur[f1],
                                 'mherr': m_bur_err[:, f1],
                                 'isul': isul_bur[f1],
-                                'noul': noul_bur[f1]}
+                                'noul': noul_bur[f1],
+                                'flag': flagged[f1]}
     if 'Q+23' in obsdata:
-        data_qu = odr.getplotdata_cubs()
+        data_qu = pd.read_csv(q23filen, sep='\t')
         z_qu = data_qu['z_gal']
         m_qu = data_qu['logmvir_msun_bestest']
         m_qu_err = np.array([data_qu['logmvir_msun_bestest'] 
@@ -406,6 +426,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
         isul_qu = data_qu['isul_ne8']
         noul_qu = np.logical_not(isul_qu)
         ri_qu = data_qu['impactpar_kpc']
+        flagged = np.zeros(ri_qu.shape, dtype=bool)
         # can't compare to missing data
         f1 = np.logical_not(np.isnan(m_qu))
         f1 &= ri_qu <= ricut_pkpc
@@ -413,7 +434,8 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
                                 'mh': m_qu[f1],
                                 'mherr': m_qu_err[:, f1],
                                 'isul': isul_qu[f1],
-                                'noul': noul_qu[f1]}
+                                'noul': noul_qu[f1],
+                                'flag': flagged[f1]}
 
     ## FIRE data
     if sample == 'main':

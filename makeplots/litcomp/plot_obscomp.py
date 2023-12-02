@@ -2,6 +2,7 @@ import h5py
 import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.litcomp.obs_datasel as ods
@@ -11,6 +12,9 @@ import fire_an.simlists as sl
 proffilen = ('/projects/b1026/nastasha/plotdata/'
              'coldens_radprof_Ne8_opt2.hdf5')
 mdir = '/projects/b1026/nastasha/imgs/datacomp/'
+oddir = '/projects/b1026/nastasha/extdata/'
+q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
+b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                  ricut_pkpc=450., sample='main'):
@@ -34,7 +38,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     # get obs. data
     mass_minmax, z_minmax = ods.get_M_z_boxes_fire()
     if obssample == 'B+19':
-        obsdata = odr.readdata_b19(nsigmas=(1, 2))
+        obsdata = pd.read_csv(b19filen, sep='\t')
         mh_obs = obsdata['logmvir_msun_bestest'].copy()
         isul_obs = obsdata['log_N_Ne8_isUL'].copy()
         ipar_obs = obsdata['impact_parameter_kpc'].copy() 
@@ -42,8 +46,9 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
         z_obs = obsdata['zgal'].copy()
         cderr_obs = np.array((obsdata['log_N_Ne8_pcm2_err'].copy(),
                               obsdata['log_N_Ne8_pcm2_err'].copy()))
+        flagged = obsdata['flagged_by_qu23'].copy()
     elif  obssample == 'Q+23':
-        obsdata = odr.getplotdata_cubs()
+        obsdata = pd.read_csv(q23filen, sep='\t')
         cd_obs = obsdata['ne8col_logcm2'].copy()
         cdmeas = np.logical_not(np.isnan(cd_obs))
         cd_obs = cd_obs[cdmeas]
@@ -53,6 +58,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
         z_obs = obsdata['z_gal'].copy()[cdmeas]
         cderr_obs = np.array((obsdata['ne8col_2s_loerr_dex'].copy()[cdmeas],
                               obsdata['ne8col_2s_hierr_dex'].copy()[cdmeas]))
+        flagged = np.zeros(isul_obs.shape, dtype=bool)
     mainsel = np.logical_and(mh_obs >= mass_minmax[0][massset][0],
                              mh_obs <= mass_minmax[0][massset][1])
     mainsel &= np.logical_and(z_obs >= z_minmax[0][massset][0],
@@ -116,16 +122,32 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                                            color_rest)]:
             if not labelsdone:
                 ullabel = obssample + ' UL'
-                noullabel = obssample
+                noul_mainlabel = obssample
+                if sum(flagged) > 0:
+                    noul_flaggedlabel = obssample + ' (!)'
+                else:
+                    noul_flaggedlabel = None
             else:
                 ullabel = None
-                noullabel = None
-            ax.errorbar(ipar_obs[dsel_noul], cd_obs[dsel_noul],
-                        yerr=cderr_obs[:, dsel_noul], 
+                noul_mainlabel = None
+                noul_flaggedlabel = None
+            dsel_noul_main = np.logical_and(dsel_noul, 
+                                            np.logical_not(flagged))
+            dsel_noul_flag = np.logical_and(dsel_noul, flagged)
+            ax.errorbar(ipar_obs[dsel_noul_main], cd_obs[dsel_noul_main],
+                        yerr=cderr_obs[:, dsel_noul_main], 
                         linestyle='None', elinewidth=2., marker='o', 
                         markersize=7, color=color, capsize=3,
-                        label=noullabel, zorder=5,
+                        label=noul_mainlabel, zorder=5,
                         markeredgecolor='black', ecolor='black')
+            ax.errorbar(ipar_obs[dsel_noul_flag], cd_obs[dsel_noul_flag],
+                        yerr=cderr_obs[:, dsel_noul_flag], 
+                        linestyle='None', elinewidth=2., marker='o', 
+                        markersize=7, markerfacecolor='none', 
+                        markeredgecolor=color,
+                        capsize=3, markeredgewidth=1.5,
+                        label=noul_flaggedlabel, zorder=5,
+                        ecolor='black')
             ax.scatter(ipar_obs[dsel_ul], cd_obs[dsel_ul],
                         linestyle='None', marker='v', 
                         s=30, facecolors='none', edgecolors=color, 

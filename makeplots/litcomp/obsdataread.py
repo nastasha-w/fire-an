@@ -45,7 +45,7 @@ cubsdf = ('/projects/b1026/nastasha/extdata/'
           'CUBSVII_qu_etal_2022_draft_table2.fits')
 oddir = '/projects/b1026/nastasha/extdata/'
 ofilen = oddir + 'data_burchett_etal_2019_table1.txt'
-notefilen = oddir + '~/nonflagged_burchett_etal_2019_meas_by_qu_etal_2023.txt'
+notefilen = oddir + 'nonflagged_burchett_etal_2019_meas_by_qu_etal_2023.txt'
 
 def readin_cubsdata():
     with apfits.open(cubsdf, 'readonly') as hdul:
@@ -164,7 +164,8 @@ def getplotdata_cubs():
     data = readin_cubsdata()
     _data = calchalomassdist_cubs(data)
     data.update(_data)
-    data.to_csv(path_or_buf=savefilen, sep='\t')
+    __data = pd.DataFrame.from_dict(data)
+    __data.to_csv(path_or_buf=savefilen, sep='\t')
     return data
 
 def calcmhalodist_casbah(logmstar_msun, sigmalogmstar, redshift):
@@ -179,7 +180,7 @@ def calcmhalodist_casbah(logmstar_msun, sigmalogmstar, redshift):
 
 def readdata_b19(nsigmas=(1, 2)):
     savefilen = oddir + 'plotdata_b19_nsigmas_' \
-                + '_'.join([ns for ns in nsigmas]) + '.dat'
+                + '_'.join([str(ns) for ns in nsigmas]) + '.dat'
     if not hasattr(nsigmas, '__len__'):
         nsigmas = np.array([nsigmas])
     else:
@@ -231,15 +232,23 @@ def readdata_b19(nsigmas=(1, 2)):
     # flagnotes lists non-upper-limits that are not flagged
     flagnotes = pd.read_csv(notefilen, comment='#', sep='\t')
     flagged_by_qu23 = np.logical_not(data_bur['log_N_Ne8_isUL'])
-    data_bur.assign(flagged_by_qu23=flagged_by_qu23)
-    for ind in flagnotes:
+    data_bur = data_bur.assign(flagged_by_qu23=flagged_by_qu23)
+    print(data_bur['flagged_by_qu23'])
+    for ind in flagnotes.index: 
         cgmsys_end = flagnotes.at[ind, 'CGM_System_lastpart']
         sightline = flagnotes.at[ind, 'Sightline']
         ismatch = data_bur['CGM_System'].str.endswith(cgmsys_end)
         ismatch &= data_bur['Sightline'] == sightline
-        data_bur[ismatch, 'flagged_by_qu23'] = False 
+        # one unique match for each system and sightline
+        print(np.where(ismatch)[0][0])
+        data_bur.at[np.where(ismatch)[0][0], 'flagged_by_qu23'] = False
+    print(data_bur['flagged_by_qu23'])
     data_bur.to_csv(path_or_buf=savefilen, sep='\t')
     return data_bur
+
+def runtosavedata():
+    readdata_b19(nsigmas=(1, 2))
+    getplotdata_cubs()
 
 
 

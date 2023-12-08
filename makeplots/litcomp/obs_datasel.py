@@ -250,6 +250,8 @@ def get_M_z_boxes_fire(sample='main'):
     elif sample == 'm12_f3nobh_comp':
         simnames = sl.m12_nobh_clean2 + sl.m12_nobh_rest2 \
                    + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+    elif sample == 'fire2':
+        simnames = sl.m12_f2md
     for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
@@ -444,6 +446,8 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
     elif sample == 'm12_f3nobh_comp':
         simnames = sl.m12_nobh_clean2 + sl.m12_nobh_rest2 \
                    + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores 
+    elif sample == 'fire2':
+        simnames = sl.m12_f2md
     for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)

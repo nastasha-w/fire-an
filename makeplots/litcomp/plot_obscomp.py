@@ -22,6 +22,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
     samplestr = ''
+    sample_ds = sample
     if massset == 'm12':
         if sample == 'main':
             samplestr = '_main'
@@ -29,14 +30,19 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
         elif sample == 'inclm12plus':
             samplestr =  '_inclm12plus'
             physmodels = ['FIRE-2', 'noBH', 'noBH-m12+', 'AGN-noCR', 'AGN-CR']
+            sample_ds = 'main'
         elif sample == 'm12_f3nobh_comp':
             samplestr =  '_m12_f3nobh_comp'
             physmodels = ['noBH', 'noBH-m12+']
+            sample_ds = 'm12_f3nobh_comp'
+        elif sample == 'fire2':
+            samplestr = '_fire2'
+            physmodels = ['FIRE-2']
     elif massset == 'm13':
         physmodels = ['noBH', 'AGN-noCR', 'AGN-CR']
 
     # get obs. data
-    mass_minmax, z_minmax = ods.get_M_z_boxes_fire()
+    mass_minmax, z_minmax = ods.get_M_z_boxes_fire(sample=sample_ds)
     if obssample == 'B+19':
         obsdata = pd.read_csv(b19filen, sep='\t')
         mh_obs = obsdata['logmvir_msun_bestest'].copy()

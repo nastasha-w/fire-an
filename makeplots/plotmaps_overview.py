@@ -229,5 +229,53 @@ def plotoverview_ne8_prop(ics, zis):
                      axtitles=axtitles, outname=outname,
                      vmin=11., vmax=14.5)
 
-
+def plotoverview_ne8_fire2(ics, zis):
+    '''
+    talk version: just the FIRE-2 plot
+    '''
+    clabel = ('$\\log_{10} \\, \\mathrm{N}(\\mathrm{Ne\\,VIII})'
+              '\\; [\\mathrm{cm}^{-2}]$')
+    ddir = '/projects/b1026/nastasha/maps/vdopmaps_all2/'
+    filen_temp = ('vdoplos_by_coldens_Ne8_{simname}_snap{snapnum}'
+                  '_shrink-sph-cen_BN98_depth_2.0rvir_{pax}-proj_v3.hdf5')
+    outdir = '/projects/b1026/nastasha/imgs/summary_plots/ne8_thumbnails/'
+    simnames_all = sl.m12_f2md
+    simnames_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+    simnames_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+    simnames_f2md = sl.m12_f2md
+    zs_approx = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    pax = 'z'
+    for ic in ics:
+        simnames = []
+        for sn in simnames_all:
+            if sl.ic_from_simname(sn) == ic and sn not in sl.buglist1:
+                simnames.append(sn)
+        if len(simnames) == 0:
+            print(f'Found no (non-bug) simulations for IC {ic}')
+            continue
+        axtitles = [sl.plotlabel_from_physlabel[sl.physlabel_from_simname(sn)]
+                    for sn in simnames]
+        for zi in zis:
+            z_approx = zs_approx[zi]
+            snaps = [sl.snaps_hr[zi] if sn in simnames_hr 
+                     else sl.snaps_sr[zi] if sn in simnames_sr
+                     else sl.snaps_f2md[zi] if sn in simnames_f2md
+                     else None
+                     for sn in simnames]
+            filens = [ddir + filen_temp.format(simname=simname, snapnum=snap, 
+                                               pax=pax)
+                      for simname, snap in zip(simnames, snaps)]
+            if ic.startswith('m12'):
+                sizeindic_pkpc = 50.
+            else:
+                sizeindic_pkpc = 100.
+            outname = f'coldens_ne8_images_{ic}_z{z_approx:.1f}_fire2'
+            outname = outname.replace('.', 'p')
+            outname = outdir + outname + '.pdf'
+            
+            plotmaps(filens, clabel, ctrans=13.3, 
+                     sizeindic_pkpc=sizeindic_pkpc, 
+                     weightmap=True,
+                     axtitles=axtitles, outname=outname,
+                     vmin=11., vmax=15.)
     

@@ -395,6 +395,7 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
     phys. model for each IC for legibility.
     '''
     obsdata = ('B+19', 'Q+23')
+    plabels = ('CASBaH', 'CUBS')
     plotdata_obs = {}
     _colors = tc.tol_cset('high-contrast')
     obscolors = [_colors.blue, _colors.red]
@@ -465,9 +466,10 @@ def plotMz_obs_fire_2panel(ricut_pkpc=450., sample='main'):
     lax.axis('off')
     fontsize = 12
    
-    for ax, obslabel, color in zip(axes, obsdata, obscolors):     
+    for ax, obslabel, color, plabel in zip(axes, obsdata, obscolors, plabels):     
         addobs_panel(ax, plotdata_obs[obslabel], obslabel, color,
                      vlabel=False) #obslabel=='B+19'
+        ax.set_title(plabel, fontsize=fontsize)
     
     # don't really need to replot, but keeps consistency with the
     # data plot selections

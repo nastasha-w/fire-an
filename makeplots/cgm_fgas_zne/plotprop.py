@@ -264,7 +264,7 @@ def plotpanels_main(massset='m12'):
     panelsize = 2.5
     width_ratios = [panelsize] * ncols
     height_ratios = [panelsize] * nrows
-    wspace = 0.0
+    wspace = 0.25
     hspace = 0.25
     width = sum(width_ratios) * (1. + (ncols - 1.) / ncols * wspace)
     height = sum(height_ratios) * (1. + (nrows - 1.) / ncols * hspace)
@@ -282,7 +282,7 @@ def plotpanels_main(massset='m12'):
     kwa_phys['FIRE-2'].update({'path_effects': pu.getoutline(1.7)})
     
     for axi, (ax, panel, xlab) in enumerate(zip(axes, panels, xlabels)):
-        doleft = axi % ncols == 0
+        doleft = True #axi % ncols == 0
         ax.tick_params(which='both', direction='in',
                        labelsize=fontsize - 1,
                        right=True, top=True, labelbottom=True, 
@@ -324,11 +324,13 @@ def plotpanels_main(massset='m12'):
     xlims = [ax.get_xlim() for ax in axes]
     xranges = [xl[1] - xl[0] for xl in xlims]
     xrmax = max(xranges)
-    ylims = [ax.get_ylim() for ax in axes]
-    ymin = min([yl[0] for yl in ylims])
-    ymax = max([yl[1] for yl in ylims])
+    #ylims = [ax.get_ylim() for ax in axes]
+    #ymin = min([yl[0] for yl in ylims])
+    #ymax = max([yl[1] for yl in ylims])
+    ylim0 = axes[0].get_ylim()
+    axes[0].set_ylim((ylim0[0], 2.0 * ylim0[1])) # add space for legend
     for axi, ax in enumerate(axes):
-        ax.set_ylim((ymin, ymax))
+        #ax.set_ylim((ymin, ymax))
         xlim = ax.get_xlim()
         xr = xlim[1] - xlim[0]
         if xr < xrmax:

@@ -15,6 +15,7 @@ import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 import fire_an.utils.math_utils as mu
 import fire_an.utils.opts_locs as ol
+import fire_an.utils.h5utils as h5u
 import fire_an.mstar_mhalo.loader_smdpl_sfr as lds
 
 sys.path.insert(1, ol.path_jscoolingflow)
@@ -89,6 +90,202 @@ def solutionset(logmvirs_msun, redshift, mdotperc=(0.16, 0.5, 0.84),
                 pr=True, return_all_results=False)
             solutions[lmv][mdot] = solution
     return solutions
+
+def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
+                             mdot_reltol=1e-2,
+                             zsol=0.3, plind=-0.1, R_sonic0_kpc=10.,
+                             filen_out=None, grpn_out=None,
+                             ion='Ne8', pmdot=None):
+    '''
+    ion: str
+        col. dens. profile calculated for this based on the solution
+    pmdot: float
+        not actually used to calculate anything, just for storing the
+        value
+    '''
+    if filen_out is not None:
+        with h5py.File(filen_out) as fo:
+            if grpn_out in fo:
+                raise RuntimeError(f'target grpn_out {grpn_out} already'
+                                   f'exists in filen_out {filen_out}')
+    mvir_msun = 10**logmvir_msun
+    cosmopars = cosmo_base.copy()
+    cosmopars['z'] = redshift
+    cosmopars['a'] = 1. / (1. + redshift)
+    rvir_cm = cu.rvir_from_mvir(mvir_msun * c.solar_mass,
+                                cosmopars, meandef='BN98')
+    rvir_kpc = rvir_cm / (c.cm_per_mpc * 1e-3)
+    vc_cmps = np.sqrt(c.gravity * mvir_msun * c.solar_mass / rvir_cm)
+
+    potential = halopot.PowerLaw(plind, vc_cmps * cf.un.cm / cf.un.s, 
+                                 rvir_kpc * cf.un.kpc)
+    cooling = wcool.Wiersma_Cooling(zsol, redshift)
+    max_step = 0.1 #lowest resolution of solution in ln(r)
+    #inner radius of supersonic part of solution
+    R_min    = min(0.1 * cf.un.kpc, 1e-5 * potential.Rvir) 
+    # outer radius of subsonic region
+    R_max    = 10. * potential.Rvir
+    todoc = {'max_step': max_step,
+             'R_min_kpc': R_min.to('kpc'),
+             'R_max_kpc': R_max.to('kpc'),
+             'target_mdot_msunperyr': mdot_tar_msunpyr,
+             'mdot_reltol': mdot_reltol,
+             'logMvir_Msun_BN98': logmvir_msun,
+             'Z_solar': zsol,
+             'plind_vc': plind,
+             'cosmopars': cosmopars,
+             'ion': ion,
+             'mdot_percentile_at_Mvir': pmdot}
+    kwa_rsonshoot = {'tol': 1e-6,
+                     'epsilon': 1e-3,
+                     'dlnMdlnRInit': -1,
+                     'return_all_results': False,
+                     'terminalUnbound': True,
+                     'pr': False,
+                     'calcInwardSolution':True,
+                     'minT': 2e4,
+                     'x_low': 1e-5,
+                     'x_high': 1.}
+    Rs_max = 0.7 * R_max
+    Rs_min = 1.3 * R_min
+    Rs_mid = R_sonic0_kpc * cf.un.kpc
+    mdot_tar = mdot_tar_msunpyr * cf.un.Msun / cf.un.yr
+    # search strategy based on Imran's 
+    # (not copied because I'm not trying to match any FIRE sims here)
+
+    ## gauge initial solutions: Mdot increases/decreases with R_sonic
+    # raises error if not clearly monotonic
+    sol_mid = cf.shoot_from_sonic_point(potential, cooling, Rs_mid,
+                                        R_max,R_min, max_step=max_step,
+                                        **kwa_rsonshoot)
+    sol_max = cf.shoot_from_sonic_point(potential, cooling, Rs_max,
+                                        R_max,R_min, max_step=max_step,
+                                        **kwa_rsonshoot)
+    sol_min = cf.shoot_from_sonic_point(potential, cooling, Rs_min,
+                                        R_max,R_min, max_step=max_step,
+                                        **kwa_rsonshoot)
+    mdot_rsmid = sol_mid.Mdot
+    mdot_rsmax = sol_max.Mdot
+    mdot_rsmin = sol_min.Mdot
+    if mdot_rsmin < mdot_rsmid and mdot_rsmax > mdot_rsmid:
+        mdotincrwithrs = True
+        if not (mdot_tar <= mdot_rsmax and mdot_tar >= mdot_rsmin):
+            msg = (f'for target Mdot {mdot_tar_msunpyr} Msun/yr, '
+                   f'log halo mass {logmvir_msun} Msun, '
+                   f'Rs_min = R_min = {R_min.to("kpc")}, ',
+                   f'Rs_max = R_max = {R_max.to("kpc")}, '
+                   f'the Mdot range {mdot_rsmin} -- {mdot_rsmax}'
+                   ' does not contain the desired value')
+            raise RuntimeError(msg)
+    elif mdot_rsmax < mdot_rsmid and mdot_rsmin > mdot_rsmid:
+        mdotincrwithrs = False
+        if not (mdot_tar >= mdot_rsmax and mdot_tar <= mdot_rsmin):
+            msg = (f'for target Mdot {mdot_tar_msunpyr} Msun/yr, '
+                   f'log halo mass {logmvir_msun} Msun, '
+                   f'Rs_max = R_max = {Rs_max.to("kpc")}, '
+                   f'Rs_min = R_min = {Rs_min.to("kpc")}, '
+                   f'the Mdot range {mdot_rsmax} -- {mdot_rsmin}'
+                   ' does not contain the desired value')
+            raise RuntimeError(msg)
+    else:
+        msg = (f'for target Mdot {mdot_tar_msunpyr} Msun/yr, '
+               f'log halo mass {logmvir_msun} Msun, '
+               f'Rs_min = {Rs_min.to("kpc")} '
+               f'Mdot = {mdot_rsmin},\n'
+               f'Rs_mid = {Rs_mid.to("kpc")} '
+               f'Mdot = {mdot_rsmid},\n'
+               f'Rs_max = {Rs_max.to("kpc")} gives '
+               f'Mdot = {mdot_rsmax}:\n'
+               'Mdot does not appear to be monotonic in R_sonic')
+        raise RuntimeError(msg)
+    
+    maxIter = 200
+    for i in range(maxIter):
+        if ((mdot_tar * (1 - mdot_reltol) < mdot_rsmid) 
+                and (mdot_tar * (1 + mdot_reltol) > mdot_rsmid)):
+            # solution found!
+            break
+        sol_rsmid = cf.shoot_from_sonic_point(potential, cooling, Rs_mid,
+                                              R_max, R_min, max_step=max_step,
+                                              **kwa_rsonshoot)
+        if ((sol_mid.Mdot <= mdot_tar and mdotincrwithrs)
+                or (sol_mid.Mdot > mdot_tar and not mdotincrwithrs)):
+            Rs_max = Rs_mid
+        elif ((sol_mid.Mdot > mdot_tar and mdotincrwithrs)
+              or (sol_mid.Mdot <= mdot_tar and not mdotincrwithrs)):
+            Rs_min = Rs_mid
+        Rs_mid = (Rs_min * Rs_max)**0.5 # log average Rs
+    if i == maxIter - 1:
+        print(f'No solution found in {maxIter} iterations for '
+              f'logmvir {logmvir_msun}, '
+              f'fmdot_tar_msunperyr {mdot_tar_msunpyr}. '
+              f'The last iteration had Mdot = {sol_rsmid.Mdot}')
+        return None
+    solution = sol_rsmid
+    
+    fcgm = calc_cgmfrac(solution, 10**logmvir_msun)
+    rvir_cm = solution.potential.Rvir.to('cm').value
+    truncate_inner_cm = 0.09 * rvir_cm
+    impactpars_cm = np.arange(0.1, 2.02, 0.05) * rvir_cm
+    lossample_cm = np.arange(-2., 2.002, 0.005) * rvir_cm
+    coldens_cm2 = calcionprof(solution, ion, redshift, zsol,
+                              impactpars_cm, lossample_cm, 
+                              truncate_inner_cm)
+    with h5py.File(filen_out, 'a') as f:
+        grp = f.create_group(grpn_out)
+        grp.attrs.create('mdot_MsunperYr', solution.Mdot)
+        grp.attrs.create('mdot_percentile_at_Mvir', pmdot)
+        grp.attrs.create('failed', False)
+        h5u.savedict_hdf5(grp, todoc)
+        sgrp = grp.create_group('kwargs_shoot_from_sonic_point')
+        h5u.savedict_hdf5(sgrp, kwa_rsonshoot)
+
+        grp.create_dataset('R_kpc', data=solution.Rs().to('kpc').value)
+        grp.create_dataset('T_K', data=solution.Ts().to('K').value)
+        grp.create_dataset('nH_cm3', data=solution.nHs().to('cm**-3').value)
+        
+        grp.attrs.create('fCGM', fcgm)
+        grp.attrs.create('Rvir_cm', rvir_cm)
+        sgrp = grp.create_group(f'coldens_{ion}')
+        sgrp.create_dataset('impactpar_cm', data=impactpars_cm)
+        sgrp.create_dataset('coldens_cm2', data=coldens_cm2)
+    return solution, sol_rsmid.to('kpc'), todoc    
+
+def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
+                              zsols=(0.3,), plinds=(-0.1,),
+                              filen_out=None):
+    '''
+    Use Jonathan Stern's shoot_from_rsonic method to find a cooling
+    flow model that yields a given inflow rate Mdot.
+    Iterates over logmvirs_msun, mdots_msunperyr pairs, assuming the
+    last pair's sonic radius is a good starting point for the next 
+    one.
+    '''
+
+    mh_sfr = get_sfrs_mh(logmvirs_msun, z=redshift, percentiles=pmdots)
+    print(logmvirs_msun)
+    print(mh_sfr)
+    if filen_out is not None:
+        filen_out = outdir_profiles + filen_out
+    
+    _rs0_kpc = 1.1
+    for zsol in zsols:
+        for plind in plinds:
+            for sfri, pmdot in enumerate(pmdots):
+                rs0_kpc = _rs0_kpc # reset for new Mvir loop
+                for mvi, mvir in enumerate(logmvirs_msun):
+                    sfr = 10**mh_sfr[mvi, sfri]
+                    grpn_out = (f'z{redshift:.2f}_Zsolar{zsol:.2e}'
+                                f'_vcplind{plind:.2f}_mdotperc{pmdot:.3f}'
+                                f'_logmvirMsun{mvir:.2f}')
+                    print(grpn_out) # progess note
+                    solution, rs_sol, todoc = findsolution_mdot_rsonic(
+                        mvir, sfr, redshift, mdot_reltol=1e-2, zsol=zsol, 
+                        plind=plind, R_sonic0_kpc=rs0_kpc, 
+                        filen_out=filen_out, grpn_out=grpn_out,
+                        ion='Ne8', pmdot=pmdot)
+                    # for small Mvir increments, should be a good start
+                    rs0_kpc = rs_sol 
 
 def calc_cgmfrac(solution, mvir_msun):
     '''
@@ -233,4 +430,26 @@ def runsolsgrid(outfilen='set1_jsmodel.hdf5'):
                                 plind, sfsol, pmdot, mhsol,
                                 outdir_profiles + outfilen)
 
+def main(i):
+    if i == 0:
+        # solutions don't seem to want to get Mdot as low as perc. 16
+        # in an 11.0 halo
+        filen_out = 'test5_jsmodel.hdf5'
+        redshift = 0.75
+        logmvirs_msun = np.arange(11., 13.6, 0.5)
+        pmdots = (0.16, 0.5, 0.84)
+        findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
+                                  zsols=(0.3,), plinds=(-0.1,),
+                                  filen_out=filen_out)
+    print(f'Done running solution-finding loop {i}')
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        arg = int(sys.argv[1])
+        main(arg)
+        sys.exit(0)
+    else:
+        print('Please specify an integer index argument')
+        sys.exit(1)
+    
 

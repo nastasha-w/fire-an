@@ -40,59 +40,60 @@ def get_sfrs_mh(logmhs_msun, z=0.75, percentiles=(0.16, 0.5, 0.84)):
            for mh_this in logmhs_msun]
     return np.array(out)
 
-def solutionset(logmvirs_msun, redshift, mdotperc=(0.16, 0.5, 0.84), 
-                zsol=0.3, plind=-0.1):
-    '''
-    get density/temperature solutions for a given halo mass set (BN98
-    halo masses), mass flow rate (mdot), metallicity (zsol), 
-    v_circ slope (plind)
+## works for some halo masses, but not others, especially <~ 10^12 Msun
+# def solutionset(logmvirs_msun, redshift, mdotperc=(0.16, 0.5, 0.84), 
+#                 zsol=0.3, plind=-0.1):
+#     '''
+#     get density/temperature solutions for a given halo mass set (BN98
+#     halo masses), mass flow rate (mdot), metallicity (zsol), 
+#     v_circ slope (plind)
 
-    plind: float
-        power law index for the v_c profile
-    zsol: float
-        metallicity [solar units]
-    '''
-    mvirs_msun = 10**logmvirs_msun
-    cosmopars = cosmo_base.copy()
-    cosmopars['z'] = redshift
-    cosmopars['a'] = 1. / (1. + redshift)
-    rvirs_cm = cu.rvir_from_mvir(mvirs_msun * c.solar_mass,
-                                  cosmopars, meandef='BN98')
-    rvirs_kpc = rvirs_cm / (c.cm_per_mpc * 1e-3)
-    vcs_cmps = np.sqrt(c.gravity * mvirs_msun * c.solar_mass / rvirs_cm)
+#     plind: float
+#         power law index for the v_c profile
+#     zsol: float
+#         metallicity [solar units]
+#     '''
+#     mvirs_msun = 10**logmvirs_msun
+#     cosmopars = cosmo_base.copy()
+#     cosmopars['z'] = redshift
+#     cosmopars['a'] = 1. / (1. + redshift)
+#     rvirs_cm = cu.rvir_from_mvir(mvirs_msun * c.solar_mass,
+#                                   cosmopars, meandef='BN98')
+#     rvirs_kpc = rvirs_cm / (c.cm_per_mpc * 1e-3)
+#     vcs_cmps = np.sqrt(c.gravity * mvirs_msun * c.solar_mass / rvirs_cm)
     
-    mdots = 10**get_sfrs_mh(logmvirs_msun, z=redshift, percentiles=mdotperc)
+#     mdots = 10**get_sfrs_mh(logmvirs_msun, z=redshift, percentiles=mdotperc)
 
-    potentials = [halopot.PowerLaw(plind, vc_cmps * cf.un.cm / cf.un.s, 
-                                   rvir_kpc * cf.un.kpc)
-                  for vc_cmps, rvir_kpc in zip(vcs_cmps, rvirs_kpc)]
-    cooling = wcool.Wiersma_Cooling(zsol, redshift)
-    # want to shoot from Rcirc, since the halos considered here will
-    # generally be fully virialized. (The simulated ones sure seem to
-    # be.)
-    solutions = {}
-    for lmv, potential, mdotsub in zip(logmvirs_msun, potentials, mdots):
-        print(lmv)
-        rcirc = 0.02 * potential.Rvir # inner stalled radius
-        # allow +-2 Rvir los integration of ion density profiles
-        # to impact parameter 2 Rvir from center
-        rmax = 10. * potential.Rvir # np.sqrt(2) * 2.
-        solutions[lmv] = {}
-        for mdot in mdotsub:
-            #print(rcirc, rmax)
-            #print(potential.vc(rcirc))
-            #print(potential.vc(rmax))
-            solution = cf.shoot_from_R_circ(potential, cooling, 
-                rcirc, mdot * cf.un.Msun / cf.un.yr, rmax, 
-                v0=1. * cf.un.km / cf.un.s, max_step=0.1, 
-                T_low=1e4 * cf.un.K, T_high=3e7 * cf.un.K,
-                tol=1e-6, epsilon=0.1, terminalUnbound=True,
-                pr=True, return_all_results=False)
-            solutions[lmv][mdot] = solution
-    return solutions
+#     potentials = [halopot.PowerLaw(plind, vc_cmps * cf.un.cm / cf.un.s, 
+#                                    rvir_kpc * cf.un.kpc)
+#                   for vc_cmps, rvir_kpc in zip(vcs_cmps, rvirs_kpc)]
+#     cooling = wcool.Wiersma_Cooling(zsol, redshift)
+#     # want to shoot from Rcirc, since the halos considered here will
+#     # generally be fully virialized. (The simulated ones sure seem to
+#     # be.)
+#     solutions = {}
+#     for lmv, potential, mdotsub in zip(logmvirs_msun, potentials, mdots):
+#         print(lmv)
+#         rcirc = 0.02 * potential.Rvir # inner stalled radius
+#         # allow +-2 Rvir los integration of ion density profiles
+#         # to impact parameter 2 Rvir from center
+#         rmax = 10. * potential.Rvir # np.sqrt(2) * 2.
+#         solutions[lmv] = {}
+#         for mdot in mdotsub:
+#             #print(rcirc, rmax)
+#             #print(potential.vc(rcirc))
+#             #print(potential.vc(rmax))
+#             solution = cf.shoot_from_R_circ(potential, cooling, 
+#                 rcirc, mdot * cf.un.Msun / cf.un.yr, rmax, 
+#                 v0=1. * cf.un.km / cf.un.s, max_step=0.1, 
+#                 T_low=1e4 * cf.un.K, T_high=3e7 * cf.un.K,
+#                 tol=1e-6, epsilon=0.1, terminalUnbound=True,
+#                 pr=True, return_all_results=False)
+#             solutions[lmv][mdot] = solution
+#     return solutions
 
 def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
-                             mdot_reltol=1e-2,
+                             mdot_reltol=1e-3,
                              zsol=0.3, plind=-0.1, R_sonic0_kpc=10.,
                              filen_out=None, grpn_out=None,
                              ion='Ne8', pmdot=None):
@@ -106,8 +107,9 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
     if filen_out is not None:
         with h5py.File(filen_out) as fo:
             if grpn_out in fo:
-                raise RuntimeError(f'target grpn_out {grpn_out} already'
-                                   f'exists in filen_out {filen_out}')
+                print(f'Target grpn_out {grpn_out} already'
+                      f'exists in filen_out {filen_out}. Skipping.')
+                return None
     mvir_msun = 10**logmvir_msun
     cosmopars = cosmo_base.copy()
     cosmopars['z'] = redshift
@@ -116,13 +118,13 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
                                 cosmopars, meandef='BN98')
     rvir_kpc = rvir_cm / (c.cm_per_mpc * 1e-3)
     vc_cmps = np.sqrt(c.gravity * mvir_msun * c.solar_mass / rvir_cm)
-
+    
     potential = halopot.PowerLaw(plind, vc_cmps * cf.un.cm / cf.un.s, 
                                  rvir_kpc * cf.un.kpc)
     cooling = wcool.Wiersma_Cooling(zsol, redshift)
     max_step = 0.1 #lowest resolution of solution in ln(r)
     #inner radius of supersonic part of solution
-    R_min    = min(0.1 * cf.un.kpc, 1e-5 * potential.Rvir) 
+    R_min    = min(0.1 * cf.un.kpc, 2e-5 * potential.Rvir) 
     # outer radius of subsonic region
     R_max    = 10. * potential.Rvir
     todoc = {'max_step': max_step,
@@ -155,16 +157,16 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
 
     ## gauge initial solutions: Mdot increases/decreases with R_sonic
     # raises error if not clearly monotonic
-    sol_mid = cf.shoot_from_sonic_point(potential, cooling, Rs_mid,
-                                        R_max,R_min, max_step=max_step,
-                                        **kwa_rsonshoot)
+    sol_rsmid = cf.shoot_from_sonic_point(potential, cooling, Rs_mid,
+                                          R_max,R_min, max_step=max_step,
+                                          **kwa_rsonshoot)
     sol_max = cf.shoot_from_sonic_point(potential, cooling, Rs_max,
                                         R_max,R_min, max_step=max_step,
                                         **kwa_rsonshoot)
     sol_min = cf.shoot_from_sonic_point(potential, cooling, Rs_min,
                                         R_max,R_min, max_step=max_step,
                                         **kwa_rsonshoot)
-    mdot_rsmid = sol_mid.Mdot
+    mdot_rsmid = sol_rsmid.Mdot
     mdot_rsmax = sol_max.Mdot
     mdot_rsmin = sol_min.Mdot
     if mdot_rsmin < mdot_rsmid and mdot_rsmax > mdot_rsmid:
@@ -199,27 +201,39 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
                'Mdot does not appear to be monotonic in R_sonic')
         raise RuntimeError(msg)
     
-    maxIter = 200
+    maxIter = 30
+    print(f'Target Mdot: {mdot_tar}')
+    print('Starting with (Rsonic, Mdot) min/mid/max:\n'
+          f'{Rs_min}, {mdot_rsmin}\n'
+          f'{Rs_mid}, {mdot_rsmid}\n'
+          f'{Rs_max}, {mdot_rsmax}\n')
     for i in range(maxIter):
-        if ((mdot_tar * (1 - mdot_reltol) < mdot_rsmid) 
-                and (mdot_tar * (1 + mdot_reltol) > mdot_rsmid)):
-            # solution found!
+        if ((mdot_tar * (1 - mdot_reltol) < sol_rsmid.Mdot) 
+                and (mdot_tar * (1 + mdot_reltol) > sol_rsmid.Mdot)):
+            print('Solution Found!')
             break
         sol_rsmid = cf.shoot_from_sonic_point(potential, cooling, Rs_mid,
                                               R_max, R_min, max_step=max_step,
                                               **kwa_rsonshoot)
-        if ((sol_mid.Mdot <= mdot_tar and mdotincrwithrs)
-                or (sol_mid.Mdot > mdot_tar and not mdotincrwithrs)):
-            Rs_max = Rs_mid
-        elif ((sol_mid.Mdot > mdot_tar and mdotincrwithrs)
-              or (sol_mid.Mdot <= mdot_tar and not mdotincrwithrs)):
+        print(f'found (Rs, Mdot): {Rs_mid:.4e}, {sol_rsmid.Mdot:.4e}.'
+              f' target Mdot: {mdot_tar:.4e}')
+        #print(mdotincrwithrs)
+        if ((sol_rsmid.Mdot <= mdot_tar and mdotincrwithrs)
+                or (sol_rsmid.Mdot > mdot_tar and (not mdotincrwithrs))):
+            #print('Rs is too low')
             Rs_min = Rs_mid
-        Rs_mid = (Rs_min * Rs_max)**0.5 # log average Rs
+        elif ((sol_rsmid.Mdot > mdot_tar and mdotincrwithrs)
+              or (sol_rsmid.Mdot <= mdot_tar and (not mdotincrwithrs))):
+            Rs_max = Rs_mid
+            #print('Rs is too high')
+        #print(Rs_min, Rs_max)
+        Rs_mid = 0.5 * (Rs_min + Rs_max) # average Rs
     if i == maxIter - 1:
         print(f'No solution found in {maxIter} iterations for '
               f'logmvir {logmvir_msun}, '
-              f'fmdot_tar_msunperyr {mdot_tar_msunpyr}. '
-              f'The last iteration had Mdot = {sol_rsmid.Mdot}')
+              f'mdot_tar_msunperyr {mdot_tar_msunpyr}. '
+              f'The last iteration had Mdot = {sol_rsmid.Mdot}, '
+              f'R_sonic {Rs_min}, {Rs_mid}, {Rs_max}')
         return None
     solution = sol_rsmid
     
@@ -249,7 +263,7 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
         sgrp = grp.create_group(f'coldens_{ion}')
         sgrp.create_dataset('impactpar_cm', data=impactpars_cm)
         sgrp.create_dataset('coldens_cm2', data=coldens_cm2)
-    return solution, sol_rsmid.to('kpc'), todoc    
+    return solution, Rs_mid.to('kpc').value, todoc    
 
 def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
                               zsols=(0.3,), plinds=(-0.1,),
@@ -268,7 +282,7 @@ def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
     if filen_out is not None:
         filen_out = outdir_profiles + filen_out
     
-    _rs0_kpc = 1.1
+    _rs0_kpc = 0.11
     for zsol in zsols:
         for plind in plinds:
             for sfri, pmdot in enumerate(pmdots):
@@ -279,13 +293,15 @@ def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
                                 f'_vcplind{plind:.2f}_mdotperc{pmdot:.3f}'
                                 f'_logmvirMsun{mvir:.2f}')
                     print(grpn_out) # progess note
-                    solution, rs_sol, todoc = findsolution_mdot_rsonic(
-                        mvir, sfr, redshift, mdot_reltol=1e-2, zsol=zsol, 
+                    out = findsolution_mdot_rsonic(
+                        mvir, sfr, redshift, mdot_reltol=1e-3, zsol=zsol, 
                         plind=plind, R_sonic0_kpc=rs0_kpc, 
                         filen_out=filen_out, grpn_out=grpn_out,
                         ion='Ne8', pmdot=pmdot)
+                    if out is not None:
+                        solution, rs_sol, todoc = out
                     # for small Mvir increments, should be a good start
-                    rs0_kpc = rs_sol 
+                        rs0_kpc = rs_sol 
 
 def calc_cgmfrac(solution, mvir_msun):
     '''
@@ -350,48 +366,48 @@ def calcionprof(solution, ion, redshift, zsol,
     #print('coldens: ', coldens)
     return coldens
 
-def savesol(solution, ion, redshift, zsol, plind, mdot, pmdot, 
-            logmvir_msun, outfilen):
-    grpn = (f'z{redshift:.2f}_Zsolar{zsol:.2e}_vcplind{plind:.2f}'
-            f'_mdotperc{pmdot:.3f}_logmvirMsun{logmvir_msun:.2f}')
-    if solution is None:
-        with h5py.File(outfilen, 'a') as f:
-            if grpn in f:
-                raise RuntimeError(f'group already stored in {outfilen}:'
-                                   f' {grpn}')            
-            grp = f.create_group(grpn)
-            grp.attrs.create('failed', True)
-        return None
+# def savesol(solution, ion, redshift, zsol, plind, mdot, pmdot, 
+#             logmvir_msun, outfilen):
+#     grpn = (f'z{redshift:.2f}_Zsolar{zsol:.2e}_vcplind{plind:.2f}'
+#             f'_mdotperc{pmdot:.3f}_logmvirMsun{logmvir_msun:.2f}')
+#     if solution is None:
+#         with h5py.File(outfilen, 'a') as f:
+#             if grpn in f:
+#                 raise RuntimeError(f'group already stored in {outfilen}:'
+#                                    f' {grpn}')            
+#             grp = f.create_group(grpn)
+#             grp.attrs.create('failed', True)
+#         return None
 
-    fcgm = calc_cgmfrac(solution, 10**logmvir_msun)
-    rvir_cm = solution.potential.Rvir.to('cm').value
-    truncate_inner_cm = 0.09 * rvir_cm
-    impactpars_cm = np.arange(0.1, 2.02, 0.05) * rvir_cm
-    lossample_cm = np.arange(-2., 2.002, 0.005) * rvir_cm
-    coldens_cm2 = calcionprof(solution, ion, redshift, zsol,
-                              impactpars_cm, lossample_cm, 
-                              truncate_inner_cm)
-    with h5py.File(outfilen, 'a') as f:
-        if grpn in f:
-            raise RuntimeError(f'group already stored in {outfilen}: {grpn}')
-        grp = f.create_group(grpn)
-        grp.attrs.create('redshift', redshift)
-        grp.attrs.create('Z_solar', zsol)
-        grp.attrs.create('vcplind', plind)
-        grp.attrs.create('mdot_MsunperYr', mdot)
-        grp.attrs.create('mdot_percentile_at_Mvir', pmdot)
-        grp.attrs.create('failed', False)
-        grp.attrs.create('logMvir_Msun_BN98', logmvir_msun)
-        grp.create_dataset('R_kpc', data=solution.Rs().to('kpc').value)
-        grp.create_dataset('T_K', data=solution.Ts().to('K').value)
-        grp.create_dataset('nH_cm3', data=solution.nHs().to('cm**-3').value)
+#     fcgm = calc_cgmfrac(solution, 10**logmvir_msun)
+#     rvir_cm = solution.potential.Rvir.to('cm').value
+#     truncate_inner_cm = 0.09 * rvir_cm
+#     impactpars_cm = np.arange(0.1, 2.02, 0.05) * rvir_cm
+#     lossample_cm = np.arange(-2., 2.002, 0.005) * rvir_cm
+#     coldens_cm2 = calcionprof(solution, ion, redshift, zsol,
+#                               impactpars_cm, lossample_cm, 
+#                               truncate_inner_cm)
+#     with h5py.File(outfilen, 'a') as f:
+#         if grpn in f:
+#             raise RuntimeError(f'group already stored in {outfilen}: {grpn}')
+#         grp = f.create_group(grpn)
+#         grp.attrs.create('redshift', redshift)
+#         grp.attrs.create('Z_solar', zsol)
+#         grp.attrs.create('vcplind', plind)
+#         grp.attrs.create('mdot_MsunperYr', mdot)
+#         grp.attrs.create('mdot_percentile_at_Mvir', pmdot)
+#         grp.attrs.create('failed', False)
+#         grp.attrs.create('logMvir_Msun_BN98', logmvir_msun)
+#         grp.create_dataset('R_kpc', data=solution.Rs().to('kpc').value)
+#         grp.create_dataset('T_K', data=solution.Ts().to('K').value)
+#         grp.create_dataset('nH_cm3', data=solution.nHs().to('cm**-3').value)
         
-        grp.attrs.create('fCGM', fcgm)
-        grp.attrs.create('Rvir_cm', rvir_cm)
-        sgrp = grp.create_group(f'coldens_{ion}')
-        sgrp.create_dataset('impactpar_cm', data=impactpars_cm)
-        sgrp.create_dataset('coldens_cm2', data=coldens_cm2)
-    return None
+#         grp.attrs.create('fCGM', fcgm)
+#         grp.attrs.create('Rvir_cm', rvir_cm)
+#         sgrp = grp.create_group(f'coldens_{ion}')
+#         sgrp.create_dataset('impactpar_cm', data=impactpars_cm)
+#         sgrp.create_dataset('coldens_cm2', data=coldens_cm2)
+#     return None
 
 # test1: col. dens. values are negative and of unreasonably 
 #        large magnitude. R_kpc, T_K, nH_cm3 look ok.
@@ -432,9 +448,18 @@ def runsolsgrid(outfilen='set1_jsmodel.hdf5'):
 
 def main(i):
     if i == 0:
-        # solutions don't seem to want to get Mdot as low as perc. 16
-        # in an 11.0 halo
+        # solver seems to work now, but Rmin -- Rmax range
+        # doesn't allow an R_sonic solution for mvir 12.5
         filen_out = 'test5_jsmodel.hdf5'
+        redshift = 0.75
+        logmvirs_msun = np.arange(11., 13.6, 0.5)
+        pmdots = (0.5,)
+        findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
+                                  zsols=(0.3,), plinds=(-0.1,),
+                                  filen_out=filen_out)
+    elif i == 1:
+        # trying a wider range of Rmin -- Rmax
+        filen_out = 'test6_jsmodel.hdf5'
         redshift = 0.75
         logmvirs_msun = np.arange(11., 13.6, 0.5)
         pmdots = (0.16, 0.5, 0.84)

@@ -68,12 +68,27 @@ class PLmodel:
         self.tvir_cgs = self.mu * c.u * c.atomw_H * self.vc_rvir_cgs**2 \
                         / (2. * c.boltzmann)
         # eq 20
-        self.nH_rvir_cgs = (3. + 3. * self.pli_vc - 1.5 * self.pli_entropy) \
-                             * self.cgmmass_cgs * self.hmassfrac \
-                           / (c.atomw_H * c.u \
-                              * 4. * np.pi * self.rvir_cgs**3)
         self.pli_nH = -1.5 * self.pli_entropy + 3. * self.pli_vc
-        
+        self._rnorm0 = 0.1 * self.rvir_cgs
+        self._rnorm1 = self.rvir_cgs
+        if self.pli_nH == -3.:
+            self._norm = np.log(self._rnorm1 / self._rnorm0)
+        else:
+            self._norm = (self._rnorm1**(3. + self.pli_nH) 
+                          - self._rnorm0**(3. + self.pli_nH)) \
+                         / (3. + self.pli_nH) 
+        self.nH_rvir_cgs = self.cgmmass_cgs * self.hmassfrac \
+                           / (c.atomw_H * c.u) \
+                           * self.rvir_cgs**self.pli_nH \
+                           / (4. * np.pi * self._norm)
+        ## old version: normalize fCGM at 0.0 -- 1.0 Rvir
+        #self.nH_rvir_cgs = (3. + 3. * self.pli_vc - 1.5 * self.pli_entropy) \
+        #                     * self.cgmmass_cgs * self.hmassfrac \
+        #                   / (c.atomw_H * c.u \
+        #                      * 4. * np.pi * self.rvir_cgs**3)
+        #
+        ## new version: normalize between 0.1 and 1 Rvir
+
     def vc_cmps(self, r3d_cm):
         # eq 19
         return self.vc_rvir_cgs * (r3d_cm / self.rvir_cgs)**self.pli_vc

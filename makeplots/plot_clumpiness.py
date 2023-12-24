@@ -69,6 +69,8 @@ def plot_clumpiness_prof(target='Ne8'):
     #print(icsnap_emph)
     colors = sl.m12_iccolors.copy() 
     colors.update(sl.m13_iccolors)
+    ## more clearly distinct dolors
+    colors = {color: 'black' for color in colors}
     color_default = 'gray'
 
     axphys = [[('m12', 'FIRE-2'), None], 

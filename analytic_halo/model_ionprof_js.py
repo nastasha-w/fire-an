@@ -96,7 +96,8 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
                              mdot_reltol=1e-3,
                              zsol=0.3, plind=-0.1, R_sonic0_kpc=10.,
                              filen_out=None, grpn_out=None,
-                             ion='Ne8', pmdot=None):
+                             ion='Ne8', pmdot=None,
+                             R_min_rvir=3e-5, R_max_rvir=10.):
     '''
     ion: str
         col. dens. profile calculated for this based on the solution
@@ -124,9 +125,9 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
     cooling = wcool.Wiersma_Cooling(zsol, redshift)
     max_step = 0.1 #lowest resolution of solution in ln(r)
     #inner radius of supersonic part of solution
-    R_min    = min(0.1 * cf.un.kpc, 2e-5 * potential.Rvir) 
+    R_min = R_min_rvir * potential.Rvir
     # outer radius of subsonic region
-    R_max    = 10. * potential.Rvir
+    R_max = R_max_rvir * potential.Rvir
     todoc = {'max_step': max_step,
              'R_min_kpc': R_min.to('kpc'),
              'R_max_kpc': R_max.to('kpc'),
@@ -149,7 +150,7 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
                      'x_low': 1e-5,
                      'x_high': 1.}
     Rs_max = 0.7 * R_max
-    Rs_min = 1.3 * R_min
+    Rs_min = 1.01 * R_min
     Rs_mid = R_sonic0_kpc * cf.un.kpc
     mdot_tar = mdot_tar_msunpyr * cf.un.Msun / cf.un.yr
     # search strategy based on Imran's 
@@ -267,7 +268,9 @@ def findsolution_mdot_rsonic(logmvir_msun, mdot_tar_msunpyr, redshift,
 
 def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
                               zsols=(0.3,), plinds=(-0.1,),
-                              filen_out=None):
+                              filen_out=None,
+                              R_min_rvir=3e-5, R_max_rvir=10.,
+                              _rs0_kpc=0.11):
     '''
     Use Jonathan Stern's shoot_from_rsonic method to find a cooling
     flow model that yields a given inflow rate Mdot.
@@ -282,7 +285,6 @@ def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
     if filen_out is not None:
         filen_out = outdir_profiles + filen_out
     
-    _rs0_kpc = 0.11
     for zsol in zsols:
         for plind in plinds:
             for sfri, pmdot in enumerate(pmdots):
@@ -297,7 +299,8 @@ def findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
                         mvir, sfr, redshift, mdot_reltol=1e-3, zsol=zsol, 
                         plind=plind, R_sonic0_kpc=rs0_kpc, 
                         filen_out=filen_out, grpn_out=grpn_out,
-                        ion='Ne8', pmdot=pmdot)
+                        ion='Ne8', pmdot=pmdot,
+                        R_min_rvir=R_min_rvir, R_max_rvir=R_max_rvir)
                     if out is not None:
                         solution, rs_sol, todoc = out
                     # for small Mvir increments, should be a good start
@@ -421,30 +424,30 @@ def calcionprof(solution, ion, redshift, zsol,
 #       tol=1e-6, epsilon=0.1, terminalUnbound=True,
 #       pr=True, return_all_results=False
 # set2: same as set1, but rmax = 10. * potential.Rvir 
-def runsolsgrid(outfilen='set1_jsmodel.hdf5'):
-    logmvirs_msun = np.arange(11.0, 13.65, 0.1)
-    #redshifts = np.arange(0.5, 1.05, 0.1)
-    redshifts = np.array([0.75])
-    #zs_sol = np.array([0.1, 0.2, 0.5, 1.])
-    zs_sol = np.array([0.1, 0.3, 1.])
-    #plinds = np.array([0., -0.1, -0.2, -0.5])
-    plinds = np.array([0., -0.1, -0.2])
-    #mdots = np.array([0.01, 0.03, 0.1, 0.3, 1., 3., 10., 30., 100.])
-    pmdots = np.array([0.16, 0.5, 0.84])
+# def runsolsgrid(outfilen='set1_jsmodel.hdf5'):
+#     logmvirs_msun = np.arange(11.0, 13.65, 0.1)
+#     #redshifts = np.arange(0.5, 1.05, 0.1)
+#     redshifts = np.array([0.75])
+#     #zs_sol = np.array([0.1, 0.2, 0.5, 1.])
+#     zs_sol = np.array([0.1, 0.3, 1.])
+#     #plinds = np.array([0., -0.1, -0.2, -0.5])
+#     plinds = np.array([0., -0.1, -0.2])
+#     #mdots = np.array([0.01, 0.03, 0.1, 0.3, 1., 3., 10., 30., 100.])
+#     pmdots = np.array([0.16, 0.5, 0.84])
     
-    for redshift in redshifts:
-        for zsol in zs_sol:
-            for plind in plinds:
-                sols = solutionset(logmvirs_msun, redshift, 
-                                    mdotperc=pmdots, 
-                                    zsol=zsol, plind=plind)
-                for mhsol in sols:
-                    sfsols = list(sols[mhsol].keys())
-                    sfsols.sort()
-                    for sfsol, pmdot in zip(sfsols, pmdots):
-                        savesol(sols[mhsol][sfsol], 'Ne8', redshift, zsol,
-                                plind, sfsol, pmdot, mhsol,
-                                outdir_profiles + outfilen)
+#     for redshift in redshifts:
+#         for zsol in zs_sol:
+#             for plind in plinds:
+#                 sols = solutionset(logmvirs_msun, redshift, 
+#                                     mdotperc=pmdots, 
+#                                     zsol=zsol, plind=plind)
+#                 for mhsol in sols:
+#                     sfsols = list(sols[mhsol].keys())
+#                     sfsols.sort()
+#                     for sfsol, pmdot in zip(sfsols, pmdots):
+#                         savesol(sols[mhsol][sfsol], 'Ne8', redshift, zsol,
+#                                 plind, sfsol, pmdot, mhsol,
+#                                 outdir_profiles + outfilen)
 
 def main(i):
     if i == 0:
@@ -459,13 +462,33 @@ def main(i):
                                   filen_out=filen_out)
     elif i == 1:
         # trying a wider range of Rmin -- Rmax
-        filen_out = 'test6_jsmodel.hdf5'
+        # .. ok, I give up. I'm just messing around with those values
+        # per run until something fails, then modifying it again.
+        # for ~m11: R_min_rvir=1e-4, 3e-5 values 
+        #           for mid mdot, zsol, plind values
+        # for ~m12: Rs0 starts to conflict with doable R_min 
+        #           -> set that too
+        # mvir 12.3, mid mdot, zsol, plind values, cannot seem to find
+        #           a solution: R_s seems to need to be very close to 
+        #           an R_min that doesn't yield any transsonic 
+        #           solutions (R_min_rvir ~ 8e-6)
+        # mvir 11.8 gives similar issues at pmdot = 0.16
+        # and mvir 12.6 for pmdot = 0.84
+        # Z=0.1 Zsol: mvir 12.2 at rest mid
+        #             mvir 11.1 -- 11.4, 11.7 and up fails at pmdot 0.16
+        #             mvir 12.5 fails at pmdot 0.84
+
+        filen_out = 'set2_part1_jsmodel.hdf5'
         redshift = 0.75
-        logmvirs_msun = np.arange(11., 13.6, 0.5)
-        pmdots = (0.16, 0.5, 0.84)
+        logmvirs_msun = np.arange(11., 13.65, 0.1)
+        pmdots = (0.5, 0.16, 0.84,)
+        zsols = (1.0, 0.3, 0.1, )
+        plinds = (-0.1, 0.0, -0.2)
         findsolutions_mdot_rsonic(logmvirs_msun, pmdots, redshift,
-                                  zsols=(0.3,), plinds=(-0.1,),
-                                  filen_out=filen_out)
+                                  zsols=zsols, plinds=plinds,
+                                  filen_out=filen_out,
+                                  R_min_rvir=3e-5, R_max_rvir=10.,
+                                  _rs0_kpc=1.)
     print(f'Done running solution-finding loop {i}')
 
 if __name__ == '__main__':

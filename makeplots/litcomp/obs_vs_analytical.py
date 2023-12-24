@@ -271,7 +271,8 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
 
     ods = '_'.join(obsdata)
     outname = (f'prof_Ne8_analytical_pl_s19_z{redshift_model:.2f}'
-               f'_vs_{ods}_loghalomass_{pli_k_str}_{pli_vc_str}')
+               f'_vs_{ods}_loghalomass_{pli_k_str}_{pli_vc_str}'
+               '_nhnorm_0p1_to_1_Rvir')
     outname = outname.replace('.', 'p')
     outname = outname.replace('-', 'm')
     plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')
@@ -451,7 +452,8 @@ def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
     ods = '_'.join(obsdata)
     outname = (f'prof_Ne8_analytical_pl_s19_z{redshift_model:.2f}'
                f'_vs_{ods}_mvir{logmvir_msun:.1f}'
-               f'_{pli_k_str}_{pli_vc_str}_Zsol_0.30_{fcgm_str}')
+               f'_{pli_k_str}_{pli_vc_str}_Zsol_0.30_{fcgm_str}'
+               '_nhnorm_0p1_to_1_Rvir')
     outname = outname.replace('.', 'p')
     outname = outname.replace('-', 'm')
     plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')

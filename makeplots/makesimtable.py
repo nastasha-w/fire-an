@@ -38,6 +38,44 @@ def get_resolution(simname):
 def get_refs(simname):
     return 'TODO'
 
+sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2 \
+          + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
+sims_f2md = sl.m12_f2md
+
+def getdata(simname):
+    _filldct = {}
+    _filldct['ic'] = sl.ic_from_simname(simname)
+    _filldct['phys'] = sl.plotlabel_from_physlabel[
+        sl.physlabel_from_simname(simname)]
+    res = get_resolution(simname)
+    _filldct['gasres'] = res
+    snap1 = max(sl.snaps_sr) if simname in sims_sr \
+            else max(sl.snaps_hr) if simname in sims_hr \
+            else max(sl.snaps_f2md) if simname in sims_f2md \
+            else None
+    snap0 = min(sl.snaps_sr) if simname in sims_sr \
+            else min(sl.snaps_hr) if simname in sims_hr \
+            else min(sl.snaps_f2md) if simname in sims_f2md \
+            else None
+    simpath = sl.dirpath_from_simname(simname)
+    _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
+    _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
+    _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
+                            / c.solar_mass
+    _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
+                            / (c.cm_per_mpc * 1e-3)
+    _filldct['mstar0'] = halodat0['mstar_gal_g'] \
+                            / c.solar_mass
+    _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
+                            / c.solar_mass
+    _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
+                            / (c.cm_per_mpc * 1e-3)
+    _filldct['mstar1'] = halodat1['mstar_gal_g'] \
+                            / c.solar_mass
+    _filldct['refs'] = get_refs(simname)
+    return _filldct
+
 def maketable_main(simset='all'):
     if simset == 'FIRE-3':
         simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
@@ -50,30 +88,30 @@ def maketable_main(simset='all'):
     elif simset == 'm12plus':
         simnames = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
 
-    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2 \
-              + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
-    sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
-    sims_f2md = sl.m12_f2md
     simnames.sort()
     for sn in sl.buglist2:
         if sn in simnames:
             simnames.remove(sn)
-    ics = [sl.ic_from_simname(sn) for sn in simnames]
-    ics_clean = ['m12f', 'm13h113', 'm13h206'] 
+    #ics = [sl.ic_from_simname(sn) for sn in simnames]
+    #ics_clean = ['m12f', 'm13h113', 'm13h206'] 
     # ics_clean = [ic for ic in ics if sum([ic == _ic for _ic in ics]) == 3]
-    ics_clean = np.unique(ics_clean)
-    ics_clean.sort()
-    ics_rest = np.array(list(set(ics) - set(ics_clean)))
-    ics_rest.sort()
-    
-    simnames_clean = [simname for simname in simnames 
-                      if sl.ic_from_simname(simname) in ics_clean]
-    simnames_clean.sort(key=lambda x: (sl.ic_from_simname(x), 
-                                       sl.physlabel_from_simname(x)))
-    simnames_rest = [simname for simname in simnames 
-                     if sl.ic_from_simname(simname) in ics_rest]
-    simnames_rest.sort(key=lambda x: (sl.ic_from_simname(x), 
-                                      sl.physlabel_from_simname(x)))
+    #ics_clean = np.unique(ics_clean)
+    #ics_clean.sort()
+    #ics_rest = np.array(list(set(ics) - set(ics_clean)))
+    #ics_rest.sort()
+    #
+    #simnames_clean = [simname for simname in simnames 
+    #                  if sl.ic_from_simname(simname) in ics_clean]
+    #simnames_clean.sort(key=lambda x: (sl.ic_from_simname(x), 
+    #                                   sl.physlabel_from_simname(x)))
+    #simnames_rest = [simname for simname in simnames 
+    #                 if sl.ic_from_simname(simname) in ics_rest]
+    #simnames_rest.sort(key=lambda x: (sl.ic_from_simname(x), 
+    #                                  sl.physlabel_from_simname(x)))
+    simgroupkeys = ['FIRE-2', 'noBH', 'noBH-m12+', 'AGN-noCR', 'AGN-CR']
+    simgroups = {key: [sn for sn in simnames 
+                       if sl.physlabel_from_simname(sn) == key]
+                 for key in simgroupkeys}
 
     colsmain = ['{ic}', '{phys}', '{gasres}',
                 '{mhalo0}', '{mstar0}', '{rhalo0}', 
@@ -120,10 +158,6 @@ def maketable_main(simset='all'):
               'rhalo1': '{rhalo1:.0f}',
               'refs': '{refs}',
               }
-    cleanhead = (f'\\multicolumn{{{ncols}}}{{c}}'
-                 '{clean sample} \\\\')
-    resthead = (f'\\multicolumn{{{ncols}}}{{c}}'
-                 '{full sample} \\\\')
     hline = '\\hline'
     colspecfill = ' '.join(colsmain)
     colspec = colspecfill.format(**aligndict)
@@ -133,81 +167,97 @@ def maketable_main(simset='all'):
     fillmain = _fillmain.format(**fmtdct)
     head1 = _fillmain.format(**head1dct)
     head2 = _fillmain.format(**head2dct)
-    printlist = [start, hline, head0, head1, head2, hline, cleanhead, hline]
-
-    for simname in simnames_clean:
-        _filldct = {}
-        _filldct['ic'] = sl.ic_from_simname(simname)
-        _filldct['phys'] = sl.plotlabel_from_physlabel[
-            sl.physlabel_from_simname(simname)]
-        res = get_resolution(simname)
-        _filldct['gasres'] = res
-        snap1 = max(sl.snaps_sr) if simname in sims_sr \
-                else max(sl.snaps_hr) if simname in sims_hr \
-                else max(sl.snaps_f2md) if simname in sims_f2md \
-                else None
-        snap0 = min(sl.snaps_sr) if simname in sims_sr \
-                else min(sl.snaps_hr) if simname in sims_hr \
-                else min(sl.snaps_f2md) if simname in sims_f2md \
-                else None
-        simpath = sl.dirpath_from_simname(simname)
-        _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
-        _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
-        _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
-                             / c.solar_mass
-        _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
-                             / (c.cm_per_mpc * 1e-3)
-        _filldct['mstar0'] = halodat0['mstar_gal_g'] \
-                             / c.solar_mass
-        _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
-                             / c.solar_mass
-        _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
-                             / (c.cm_per_mpc * 1e-3)
-        _filldct['mstar1'] = halodat1['mstar_gal_g'] \
-                             / c.solar_mass
-        _filldct['refs'] = get_refs(simname)
-        _str = fillmain.format(**_filldct)
-        # 3e+05 -> 3e5, 3e+12 -> 3e12
-        _str = _str.replace('+0', '')
-        _str = _str.replace('+', '')
-        printlist.append(_str)
-    printlist = printlist + [hline, resthead, hline]
-    for simname in simnames_rest:
-        _filldct = {}
-        _filldct['ic'] = sl.ic_from_simname(simname)
-        _filldct['phys'] = sl.plotlabel_from_physlabel[
-            sl.physlabel_from_simname(simname)]
-        res = get_resolution(simname)
-        _filldct['gasres'] = res
-        snap1 = max(sl.snaps_sr) if simname in sims_sr \
-                else max(sl.snaps_hr) if simname in sims_hr \
-                else max(sl.snaps_f2md) if simname in sims_f2md \
-                else None
-        snap0 = min(sl.snaps_sr) if simname in sims_sr \
-                else min(sl.snaps_hr) if simname in sims_hr \
-                else min(sl.snaps_f2md) if simname in sims_f2md \
-                else None
-        simpath = sl.dirpath_from_simname(simname)
-        _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
-        _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
-        _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
-                             / c.solar_mass
-        _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
-                             / (c.cm_per_mpc * 1e-3)
-        _filldct['mstar0'] = halodat0['mstar_gal_g'] \
-                             / c.solar_mass
-        _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
-                             / c.solar_mass
-        _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
-                             / (c.cm_per_mpc * 1e-3)
-        _filldct['mstar1'] = halodat1['mstar_gal_g'] \
-                             / c.solar_mass
-        _filldct['refs'] = get_refs(simname)
-        _str = fillmain.format(**_filldct)
-        # 3e+05 -> 3e5, 3e+12 -> 3e12
-        _str = _str.replace('+0', '')
-        _str = _str.replace('+', '')
-        printlist.append(_str)
+    printlist = [start, hline, head0, head1, head2]
+    
+    for sgkey in simgroupkeys:
+        simnames = simgroups[sgkey]
+        if len(simnames) == 0:
+            continue
+        #shead = (f'\\multicolumn{{{ncols}}}{{c}}'
+        #         f'{sl.plotlabel_from_physlabel(sgkey)} \\\\')
+        printlist = printlist + [hline, hline]
+        filldcts = {sn: getdata(sn) for sn in simnames}
+        simnames.sort(key=lambda sn: filldcts[sn]['mhalo0'])
+        for sn in simnames:
+            _str = fillmain.format(**(filldcts[sn]))
+            # 3e+05 -> 3e5, 3e+12 -> 3e12
+            _str = _str.replace('+0', '')
+            _str = _str.replace('+', '')
+            printlist.append(_str)
+        
+    # for simname in simnames_clean:
+    #     _filldct = {}
+    #     _filldct['ic'] = sl.ic_from_simname(simname)
+    #     _filldct['phys'] = sl.plotlabel_from_physlabel[
+    #         sl.physlabel_from_simname(simname)]
+    #     res = get_resolution(simname)
+    #     _filldct['gasres'] = res
+    #     snap1 = max(sl.snaps_sr) if simname in sims_sr \
+    #             else max(sl.snaps_hr) if simname in sims_hr \
+    #             else max(sl.snaps_f2md) if simname in sims_f2md \
+    #             else None
+    #     snap0 = min(sl.snaps_sr) if simname in sims_sr \
+    #             else min(sl.snaps_hr) if simname in sims_hr \
+    #             else min(sl.snaps_f2md) if simname in sims_f2md \
+    #             else None
+    #     simpath = sl.dirpath_from_simname(simname)
+    #     _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
+    #     _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
+    #     _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
+    #                          / c.solar_mass
+    #     _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
+    #                          / (c.cm_per_mpc * 1e-3)
+    #     _filldct['mstar0'] = halodat0['mstar_gal_g'] \
+    #                          / c.solar_mass
+    #     _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
+    #                          / c.solar_mass
+    #     _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
+    #                          / (c.cm_per_mpc * 1e-3)
+    #     _filldct['mstar1'] = halodat1['mstar_gal_g'] \
+    #                          / c.solar_mass
+    #     _filldct['refs'] = get_refs(simname)
+    #     _str = fillmain.format(**_filldct)
+    #     # 3e+05 -> 3e5, 3e+12 -> 3e12
+    #     _str = _str.replace('+0', '')
+    #     _str = _str.replace('+', '')
+    #     printlist.append(_str)
+    # printlist = printlist + [hline, resthead, hline]
+    # for simname in simnames_rest:
+    #     _filldct = {}
+    #     _filldct['ic'] = sl.ic_from_simname(simname)
+    #     _filldct['phys'] = sl.plotlabel_from_physlabel[
+    #         sl.physlabel_from_simname(simname)]
+    #     res = get_resolution(simname)
+    #     _filldct['gasres'] = res
+    #     snap1 = max(sl.snaps_sr) if simname in sims_sr \
+    #             else max(sl.snaps_hr) if simname in sims_hr \
+    #             else max(sl.snaps_f2md) if simname in sims_f2md \
+    #             else None
+    #     snap0 = min(sl.snaps_sr) if simname in sims_sr \
+    #             else min(sl.snaps_hr) if simname in sims_hr \
+    #             else min(sl.snaps_f2md) if simname in sims_f2md \
+    #             else None
+    #     simpath = sl.dirpath_from_simname(simname)
+    #     _, _, halodat0 = cgp.readdata_cengalcen(simpath, snap0)
+    #     _, _, halodat1 = cgp.readdata_cengalcen(simpath, snap1)
+    #     _filldct['mhalo0'] = halodat0['halodata']['Mvir_g'] \
+    #                          / c.solar_mass
+    #     _filldct['rhalo0'] = halodat0['halodata']['Rvir_cm'] \
+    #                          / (c.cm_per_mpc * 1e-3)
+    #     _filldct['mstar0'] = halodat0['mstar_gal_g'] \
+    #                          / c.solar_mass
+    #     _filldct['mhalo1'] = halodat1['halodata']['Mvir_g'] \
+    #                          / c.solar_mass
+    #     _filldct['rhalo1'] = halodat1['halodata']['Rvir_cm'] \
+    #                          / (c.cm_per_mpc * 1e-3)
+    #     _filldct['mstar1'] = halodat1['mstar_gal_g'] \
+    #                          / c.solar_mass
+    #     _filldct['refs'] = get_refs(simname)
+    #     _str = fillmain.format(**_filldct)
+    #     # 3e+05 -> 3e5, 3e+12 -> 3e12
+    #     _str = _str.replace('+0', '')
+    #     _str = _str.replace('+', '')
+    #     printlist.append(_str)
     printlist = printlist + [hline, end]
     table = '\n'.join(printlist)
     print(table)

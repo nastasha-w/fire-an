@@ -377,3 +377,19 @@ def printsims_used(simset='all'):
         _sn = getlongname(simname)
         _sn = _sn.replace('\_', '_') # remove LaTeX escapes
         print(_sn)
+
+
+def print_checklist(simset='FIRE-3'):
+    if simset == 'FIRE-3':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-2':
+        simnames = sl.m12_f2md
+    elif simset == 'all':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-3 m12+':
+        simnames = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+    for simname in simnames:
+        _path = '.' + sl.dirpath_from_simname(simname) + 'output/'
+        print(_path)

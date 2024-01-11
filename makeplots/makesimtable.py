@@ -270,6 +270,10 @@ def getlongname(simname):
                        + longname
         else:
             longname = 'core + metal diffusion, ' + simname
+    elif sl.physlabel_from_simname(simname) == 'noBH-m12+':
+        if simname.startswith('fire3nobh_plus_'):
+            longname = '_'.join(simname.split('_')[2:])
+            longname = 'high-mass m12 FIRE-3 NoBH, ' + longname
     else:
         longname = simname
     longname = longname.replace('_', '\\_')
@@ -350,3 +354,26 @@ def maketable_appendix(simset='all'):
     printlist = printlist + [hline, end]
     table = '\n'.join(printlist)
     print(table)
+
+def printsims_used(simset='all'):
+    if simset == 'FIRE-3':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-2':
+        simnames = sl.m12_f2md
+    elif simset == 'all':
+        simnames = sl.m12_hr_all2 + sl.m12_sr_all2 + sl.m12_f2md + \
+                   sl.m13_hr_all2 + sl.m13_sr_all2
+    elif simset == 'FIRE-3 m12+':
+        simnames = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+    
+    simnames.sort()
+    for sn in sl.buglist2:
+        if sn in simnames:
+            simnames.remove(sn)
+    simnames.sort(key=lambda x: (sl.ic_from_simname(x), 
+                                 sl.physlabel_from_simname(x)))
+    for simname in simnames:
+        _sn = getlongname(simname)
+        _sn = _sn.replace('\_', '_') # remove LaTeX escapes
+        print(_sn)

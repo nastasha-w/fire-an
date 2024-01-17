@@ -390,6 +390,17 @@ def print_checklist(simset='FIRE-3'):
                    sl.m13_hr_all2 + sl.m13_sr_all2
     elif simset == 'FIRE-3 m12+':
         simnames = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+    sims_md = sl.m12_f2md
+    sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2 \
+              + sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+    sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     for simname in simnames:
         _path = '.' + sl.dirpath_from_simname(simname) + 'output/'
-        print(_path)
+        if simname in sims_md:
+            snapshots = sl.snaps_f2md
+        elif simname in sims_hr:
+            snapshots = sl.snaps_hr
+        elif simname in sims_sr:
+            snapshots = sl.snaps_sr
+
+        print(_path + ' \t ' + str(snapshots))

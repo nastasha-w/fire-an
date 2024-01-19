@@ -52,7 +52,7 @@ class Line:
         print(vps)
         tau = np.sum(vps * norms[np.newaxis, :], axis=1)
         print(tau)
-        normflux = 1. - np.exp(-1. * tau)
+        normflux = np.exp(-1. * tau)
         return normflux
     
     def tau_to_coldens(self, spectau, specv_kmps):

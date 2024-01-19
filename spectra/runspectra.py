@@ -15,7 +15,22 @@ x check how ion fractions in ray cells are calculated:
     - ion-weighted temperature, velocity or something else used to
       deposit lines onto the spectrum
       -> values per particle are used directly
-o check how the velocities in the spectra are centered
+o check how the velocities in the spectra are centered:
+  -> total redshift (for default observing redshift of 0):
+     snapshot redshift, hubble flow, peculiar velocity
+     from trident/light_ray.py:
+     sub_data[('gas', 'redshift')] = my_segment['redshift'] - \
+              (sub_data[('gas', 'l')] / ray_length) * \
+              (my_segment['redshift'] - next_redshift)
+     I think next_redshift comes from 
+     yt_astro_analysis/cosmological_observation/cosmology_splice.py
+     _deltz_forward: 'Calculate deltaz corresponding to moving a 
+          comoving distance starting from some redshift'
+     for simple rays.
+     redshift_eff includes velocity effect if not turned off.
+     velocity/lambda calculations convert lambda to velocity using
+     c * (lambda_obs - lambda_0) / lambda_0, i.e., doppler velocity
+     that would give the same redshift.
 '''
 
 import h5py

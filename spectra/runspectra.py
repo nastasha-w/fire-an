@@ -3,11 +3,18 @@ should make a separate repo eventually, but convenient to have it with
 the halo property finders for now
 
 TODO: 
-o check how ion fractions in ray cells are calculated:
+x check how ion fractions in ray cells are calculated:
     - interpolated to grid first or ion fractions calculated first
+      -> no grid interpolation anywhere
     - interpolation method
+      -> ion density * mass / density * kernel integral over l.o.s.
+      (ion density is projected onto the l.o.s. from SPH kernel 
+       integration. In practice, the integration is done for a 
+       limited number of normalized impact parameters, and 
+       interpolated.)
     - ion-weighted temperature, velocity or something else used to
       deposit lines onto the spectrum
+      -> values per particle are used directly
 o check how the velocities in the spectra are centered
 '''
 

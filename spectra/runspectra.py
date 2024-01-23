@@ -2,7 +2,7 @@
 should make a separate repo eventually, but convenient to have it with
 the halo property finders for now
 
-TODO: 
+Trident info: 
 x check how ion fractions in ray cells are calculated:
     - interpolated to grid first or ion fractions calculated first
       -> no grid interpolation anywhere

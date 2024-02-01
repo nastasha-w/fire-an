@@ -9,6 +9,8 @@ import scipy.stats as st
 
 import fire_an.utils.constants_and_units as c
 
+# Bayesian model comparison, with some methods details:
+# https://www.imperial.ac.uk/media/imperial-college/research-centres-and-groups/astrophysics/public/icic/data-analysis-workshop/2018/Model_comparison_TrottaSept_2018.pdf
 @dataclass
 class Line:
     name: str
@@ -79,7 +81,7 @@ class Line:
 ne8_770 = Line(name='Ne VIII 770', wavelength_A=770.409000,
                fosc=1.020000e-01, atrans_Hz=5.720000e+08)
 
-class Spectrum:
+class SpectrumFitFreq:
     
     def __init__(self, line: Line, filen: str):
         self.line = line
@@ -339,4 +341,197 @@ class Spectrum:
                 _grp.create_dataset('bvals_kmps', self.bvals_kmps_final)
                 _grp.create_dataset('vcens_kmps', self.vcens_kmps_final)
                      
+
+class SpectrumFitBayes:
+    
+    def __init__(self, 
+                 line: Line, 
+                 filen: str | None = None):
+        self.line = line
+        self.filen = filen
+        if self.filen is not None:
+            self.readin_txtspectrum(self.filen)
+        self._set_default_fitpars()
+    
+    def _set_default_fitpars(self):
+        self.fitrange_b_kmps = (10., 16.)
+        self.fitrange_logN_cm2 = (1., 200.)
+        self.fitrange_v_kmps = (-500., 500.)
+
+        self.fitunit_b_kmps = 40.
+        self.fitunit_logN_cm2 = 1.
+        self.fitunit_v_kmps = 100.
+        self._set_fitrange_fitunits()
+    
+    def _set_fitrange_fitunits(self):
+        self._fitrange_b = (None if self.fitrange_b_kmps[0] is None else
+                            self.fitrange_b_kmps[0] / self.fitunit_b_kmps,
+                            None if self.fitrange_b_kmps[1] is None else
+                            self.fitrange_b_kmps[1] / self.fitunit_b_kmps
+                            ) 
+        self._fitrange_v = (None if self.fitrange_v_kmps[0] is None else
+                            self.fitrange_v_kmps[0] / self.fitunit_v_kmps,
+                            None if self.fitrange_v_kmps[1] is None else
+                            self.fitrange_v_kmps[1] / self.fitunit_v_kmps
+                            ) 
+        self._fitrange_logN = (None if self.fitrange_logN_cm2[0] is None else
+                            self.fitrange_logN_cm2[0] / self.fitunit_logN_cm2,
+                            None if self.fitrange_logN_cm2[1] is None else
+                            self.fitrange_logN_cm2[1] / self.fitunit_logN_cm2
+                            ) 
+
+    def readin_txtspectrum(self, filen: str):
+        '''
+        Read in the spectrum from a Trident .txt file. (Assumes a 
+        in velocity space.)
+        '''
+        spec = pd.read_csv(self.filen, comment='#', 
+                           columns=['velocity_kmps', 'tau', 
+                                    'flux', 'flux_error'])
+        self.spec_raw = np.array(spec['flux'])
+        self.vel_kmps = np.array(spec['velocity_kmps'])
+        self.wl_A = self.line.wavelength_A * (1. + self.vel_kmps * 1e5 / c.c)
+        self.nu_Hz = c.c / (self.wl_A * 1e-8)
+    
+    def add_mockspectrum(self,
+                         components: np.ndarray[float], 
+                         vbins_kmps: np.ndarray[float],
+                         sigma_specres_kmps: float = 30.):
+        '''
+        Parameters:
+        -----------
+        components:
+            absorption components, in fit units. (See getspectrum.)
+        vbins_kmps:
+            spectral bins in velocity. Should include any cosmological
+            redshift.
+        sigma_specres_kmps:
+            spectral resolution (Gaussian sigma).
+        '''
+        self.vel_kmps = vbins_kmps
+        self.wl_A = self.line.wavelength_A * (1. + self.vel_kmps * 1e5 / c.c)
+        self.nu_Hz = c.c / (self.wl_A * 1e-8)
+        self._spec = self.getspectrum(components)
+        self.spec_raw = self._convolve_gauss(self._spec, sigma_specres_kmps)
+
+    def setfitranges(self, 
+                     logNranges_cm2: tuple[float, float] | None = None,
+                     brange_kmps: tuple[float, float] | None = None,
+                     vrange_kmps: tuple[float, float] | None = None,
+                     ):
+        '''
+        Bayesian prior support regions. a `None` bound means no
+        upper/lower bound on the value.
+        '''
+        if brange_kmps is not None:
+            self.fitrange_b_kmps = brange_kmps
+        if logNranges_cm2 is not None:
+            self.fitrange_logNcm2 = logNranges_cm2
+        if vrange_kmps is not None:
+            self.fitrange_v_kmps = vrange_kmps
+        self._set_fitrange_fitunits()
+    
+    def getspectrum(self,
+                    components: np.ndarray[float],
+                    sigma_specres_kmps: float = 30.):
+        '''
         
+        '''
+        logcds_cm2 = 10**components[0::3] * self.fitunit_logN_cm2
+        bvals_kmps = components[1::3] * self.fitunit_b_kmps
+        centers_kmps = components[2::3] * self.fitunit_v_kmps
+        normflux = self.line.getspectrum(self.nu_Hz, logcds_cm2, 
+                                         bvals_kmps, centers_kmps)
+        convflux = self._convolve_gauss(normflux, sigma_specres_kmps)
+        return convflux
+
+    def _convolve_gauss(self, spec: np.ndarray[float], width_kmps: float=30.):
+        self.dv = np.average(np.diff(self.spec_raw))
+        self.width_bins = width_kmps / self.dv
+        self.kernel = Gaussian1DKernel(self.width_bins)
+        spec_smoothed = convolve(spec, self.kernel, 
+                                 boundary='fill', fill_value=1.)
+        return spec_smoothed
+    
+    def _noisyspec(self, 
+                   rawspec: np.ndarray[float], 
+                   sigma_kmps: float = 30., 
+                   snr: float = 30.):
+        pass
+
+    def _logp_spec(self,
+                   fitspec: np.ndarray[float],
+                   components: np.ndarray[float],
+                   snr: float = 30.,
+                   sigma_specres_kmps: float = 30.):
+        '''
+        Parameters:
+        -----------
+        fitspec: 
+            the spectrum to fit
+        components:
+            the components to evaluate the likelihood at (see getspectrum)
+        Notes:
+        ------
+        Assumes Gaussian noise, with sigma = 1. / snr
+        '''
+        self._isigma = snr
+        self._modelspec = self.getspectrum(components, 
+                                           sigma_specres_kmps=
+                                           sigma_specres_kmps)
+        # single-bin log p = log (1 / (sigma * sqrt(2 pi)) 
+        #                     * exp(- 0.5 * (model - value)^2 / sigma^2)
+        #                  = np.log(invsigma / (2 * np.pi)) 
+        #                    -0.5 * (model - value)**2 * invsigma**2 
+        _logp = len(fitspec) * np.log(self._isigma / (2. * np.pi)) \
+                -0.5 * np.sum(((fitspec - self._modelspec) * self._isigma)**2)
+        return _logp
+    
+    def _fitnewcomponent(self, 
+                         fitspec: np.ndarray[float], 
+                         oldcomponents: np.ndarray[float], 
+                         sigma_specres_kmps: float = 30.):
+        # some clever sampling method for high-dimensional spaces
+        pass
+
+    def _checknewcomponent(self):
+        pass
+
+    def fitcomponents(self, 
+                      snr: float = 30.,
+                      sigma_specres_kmps: float = 30.,
+                      sigma_det=3.):
+        self.snr = snr
+        self.sigma_specres_kmps = sigma_specres_kmps
+        self.sigma_det = sigma_det
+        pass
+
+    def savefit(self, h5filen: str, h5grp: str):
+        self.logN_cm2_final = self.components_final[0::3] \
+                              * self.fitunit_logN_cm2
+        self.bvals_kmps_final = self.components_final[1::3] \
+                                * self.fitunit_b_kmps
+        self.vcens_kmps_final = self.components_final[2::3] \
+                                * self.fitunit_v_kmps
+
+        # just save the parameters, can get the spectra from there
+        with h5py.File(h5filen, 'a')as f:
+            grp = f.create_group(h5grp)
+            _grp = grp.create_group('line')
+            self.line.save(_grp)
+            grp.attrs.create('spectrumfilen', np.string_(self.filen))
+            grp.attrs.create('resolution_kmps', self.sigma_specres_kmps)
+            grp.attrs.create('snr', self.snr)
+            grp.attrs.create('sigma_det', self.sigma_det)
+            grp.attrs.create('npert', npert)
+            _grp = grp.create_group('noisy_fits')
+            for i in range(len(self.noisyfits)):
+                    _sgrp = _grp.create_group(f'fit{i}')
+                    dct = self.noisyfits[i]
+                    for key in dct:
+                        _sgrp.create_dataset(key, data=dct[key])
+            _grp = grp.create_group('final_fit')
+            _grp.create_dataset('ncomp', self.ncomp_final)
+            _grp.create_dataset('logN_cm2', self.logN_cm2_final)
+            _grp.create_dataset('bvals_kmps', self.bvals_kmps_final)
+            _grp.create_dataset('vcens_kmps', self.vcens_kmps_final)

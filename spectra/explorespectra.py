@@ -38,7 +38,8 @@ def plotoverview_spectra(filepattern: str,
     if infofile is not None:
         cgpath = 'Header/cengal/halodata_doc_dict'
         with h5py.File(infofile, 'r') as f:
-            cosmopars = {key: val for key, val in f[cgpath].attrs.items()}
+            cosmopars = {key: val for key, val in 
+                         f[cgpath]['cosmopars_dict'].attrs.items()}
             pgal_cm = f[cgpath].attrs['pcen_cm']
             vcom_cmps = f[cgpath].attrs['vcom_cmps']
             hpar = cu.Hubble(cosmopars)

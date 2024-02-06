@@ -66,7 +66,7 @@ class Line:
         dnu = np.average(np.diff(specnu)) 
         norm = (c.electronmass * c.c) \
                / (np.pi * c.electroncharge**2 * self.fosc)
-        coldens = norm * np.sum(spectau) * dnu
+        coldens = norm * np.sum(spectau) * np.abs(dnu)
         return coldens
     
     def save(self, h5grp):

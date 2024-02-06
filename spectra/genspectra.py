@@ -40,7 +40,7 @@ x check how the velocities in the spectra are centered:
      * (1. - ('gas', 'l') * Hubble(z) / c)
      * (1. + z_snapshot) - 1
     los velocity is 'reversed', and so is l: 
-    start -> end of the Ray in towards the observer
+    start -> end of the Ray is towards the observer
 '''
 
 import h5py

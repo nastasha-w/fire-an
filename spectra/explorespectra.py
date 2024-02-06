@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 
 # used for read-in, not actual fitting
-import findcomponents as fc
+import fire_an.spectra.findcomponents as fc
 
 
-logN_defaults = (-np.inf, 13.0, 13.5, 14.0, 14.5, np.inf)
+logN_defaults = (-np.inf, 12.5, 13.0, 13.5, 14.0, np.inf)
 
 def plotoverview_spectra(filepattern: str,
                          logNbins: np.ndarray | None 
@@ -24,39 +24,43 @@ def plotoverview_spectra(filepattern: str,
 
     grid = gsp.GridSpec(ncols=1, nrows=nrows, hspace=0.,
                         wspace=0.)
-    fig = plt.figure(size=(panelwidth, height))
+    fig = plt.figure(figsize=(panelwidth, height))
     axes = [fig.add_subplot(grid[ri, 0]) for ri in range(nrows)]
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
 
     filens = glob.glob(filepattern)
     for filen in filens:
+        #print(filen)
         spec = fc.SpectrumFitFreq(fc.ne8_770, filen=filen)
+        #print(spec.tau_raw)
+        #print(spec.vel_kmps)
         logN = np.log10(spec.line.tau_to_coldens(spec.tau_raw, spec.vel_kmps))
+        #print(logN)
         ri = np.searchsorted(logNbins, logN) - 1
         if ri < 0 or ri >= nrows:
             print(f'Skipping spectrum {filen}; out of logNbins range')
             continue
         ax = axes[ri]
         ax.plot(spec.vel_kmps, spec.spec_raw, linestyle='solid',
-                color='gray', alpha='0.5', linewidth=1.)
+                color='gray', alpha=0.5, linewidth=1.)
     
     xlims = [ax.get_xlim() for ax in axes]
     xmin = min([xl[0] for xl in xlims])
     xmax = max([xl[1] for xl in xlims])
     for ri, ax in enumerate(axes):
-        ax.set_ylim(0.0, 1.05)
+        #ax.set_ylim(0.0, 1.05)
         ax.set_xlim(xmin, xmax)
         ax.tick_params(which='both', labelleft=True, 
                        labelbottom=(ri == nrows - 1),
                        direction='in', labelsize=fontsize - 1)
-        ax.hline(1., color='black', linestyle='dotted', linewidth=1.,
-                 alpha=0.7)
-        label = ('$\\log \\mathrm{N} [\\mathrm{cm}^{-2}] = '
+        ax.axhline(1., color='black', linestyle='dotted', linewidth=1.,
+                   alpha=0.7)
+        label = ('$\\log_{10} \\mathrm{N} \\,[\\mathrm{cm}^{-2}] = '
                 f'{logNbins[ri]:.1f} \\endash {logNbins[ri + 1]:.1f}$')
         ax.text(0.98, 0.02, label, fontsize=fontsize,
                 transform=ax.transAxes, horizontalalignment='right',
-                verticalalignment='right')
+                verticalalignment='bottom')
         if ri == nrows - 1:
             ax.set_xlabel('$v \\; [\\mathrm{km}\\,\\mathrm{s}^{-1}]$',
                           fontsize=fontsize)

@@ -1,5 +1,6 @@
 import glob
 
+import h5py
 import matplotlib.gridspec as gsp
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,11 +8,16 @@ import pandas as pd
 
 # used for read-in, not actual fitting
 import fire_an.spectra.findcomponents as fc
+import fire_an.spectra.genspectra as gs
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
+
 
 
 logN_defaults = (-np.inf, 12.5, 13.0, 13.5, 14.0, np.inf)
 
 def plotoverview_spectra(filepattern: str,
+                         infofile: str | None = None,
                          logNbins: np.ndarray | None 
                                    = np.array(logN_defaults),
                          title: str | None = None,
@@ -29,6 +35,32 @@ def plotoverview_spectra(filepattern: str,
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
 
+    if infofile is not None:
+        cgpath = 'Header/cengal/halodata_doc_dict'
+        with h5py.File(infofile, 'r') as f:
+            cosmopars = {key: val for key, val in f[cgpath].attrs.items()}
+            pgal_cm = f[cgpath].attrs['pcen_cm']
+            vcom_cmps = f[cgpath].attrs['vcom_cmps']
+            hpar = cu.Hubble(cosmopars)
+            axis = np.string(f['Header/sample'].attrs['axis'])
+            _, _, losaxi = gs.getinds_ax(axis)
+            starts = f['startpos_cm'][:, losaxi]
+            ends = f['endpos_cm'][:, losaxi]
+            if not (np.allclose(starts, starts[0]) 
+                    and np.allclose(ends, ends[0])):
+                print('Sightlines start and end at different positions,'
+                      ' so they will not be on a common velocity grid.')
+                vgal_kmps = 0.
+            p0 = starts[0]
+            poff = pgal_cm[losaxi] - p0
+            zgal = (vcom_cmps[losaxi] / c.c + 1.) \
+                   * (1. - poff * hpar / c.c) \
+                   * (1. + cosmopars['z']) - 1
+            vgal_kmps = zgal * c.c * 1e-5
+            
+    else:
+        vgal_kmps = 0. # just use the output velocities
+
     filens = glob.glob(filepattern)
     for filen in filens:
         #print(filen)
@@ -42,7 +74,7 @@ def plotoverview_spectra(filepattern: str,
             print(f'Skipping spectrum {filen}; out of logNbins range')
             continue
         ax = axes[ri]
-        ax.plot(spec.vel_kmps, spec.spec_raw, linestyle='solid',
+        ax.plot(spec.vel_kmps - vgal_kmps, spec.spec_raw, linestyle='solid',
                 color='gray', alpha=0.5, linewidth=1.)
     
     xlims = [ax.get_xlim() for ax in axes]

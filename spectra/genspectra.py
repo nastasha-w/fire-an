@@ -15,7 +15,7 @@ x check how ion fractions in ray cells are calculated:
     - ion-weighted temperature, velocity or something else used to
       deposit lines onto the spectrum
       -> values per particle are used directly
-o check how the velocities in the spectra are centered:
+x check how the velocities in the spectra are centered:
   -> total redshift (for default observing redshift of 0):
      snapshot redshift, hubble flow, peculiar velocity
      from trident/light_ray.py:
@@ -31,6 +31,16 @@ o check how the velocities in the spectra are centered:
      velocity/lambda calculations convert lambda to velocity using
      c * (lambda_obs - lambda_0) / lambda_0, i.e., doppler velocity
      that would give the same redshift.
+  For a z projection: 
+     ('gas', 'relative_velocity_z') = -1 * ('gas', 'velocity_los')
+     ('gas', 'l') - ('gas', 'l')[0] and ('gas', 'z') - ('gas', 'z')[0]
+     are allclose (so l and z position differ only in zero point)
+     verified allclose: redshift_eff and
+     (('gas', 'velocity_los') / c + 1)
+     * (1. - ('gas', 'l') * Hubble(z) / c)
+     * (1. + z_snapshot) - 1
+    los velocity is 'reversed', and so is l: 
+    start -> end of the Ray in towards the observer
 '''
 
 import h5py
@@ -39,6 +49,7 @@ import trident
 import unyt
 import yt
 
+import fire_an.mainfunc.cengalprop as cgp
 import fire_an.mainfunc.haloprop as hp
 import fire_an.readfire.readin_fire_data as rfd
 import fire_an.simlists as sl
@@ -112,6 +123,9 @@ def runsightlines(simname, snapnum, outname_base=None,
     ds, simpath, codelength_cm = getytds(simname, snapnum)
     halodat, todoc_halo = hp.readhalodata_shrinkingsphere(simpath, snapnum,
                                                           meandef='BN98')
+    pcen_cm, vcom_cmps, todoc_cengal = cgp.readdata_cengalcen(simpath, 
+                                                              snapnum)
+    
     cen = unyt.unyt_array([halodat['Xc_cm'], 
                            halodat['Yc_cm'],
                            halodat['Zc_cm']], 'cm')
@@ -154,9 +168,15 @@ def runsightlines(simname, snapnum, outname_base=None,
         h5u.savedict_hdf5(_grp, halodat)
         _grp = hed.create_group('halo_todoc')
         h5u.savedict_hdf5(_grp, todoc_halo)
+        _grp = hed.create_group('cengal')
+        _grp.attrs.create('pcen_cm', pcen_cm)
+        _grp.attrs.create('vcom_cmps', vcom_cmps)
+        h5u.savedict_hdf5(_grp, todoc_cengal)
         hed.attrs.create('simname', np.string_(simname))
         hed.attrs.create('snapnum', snapnum)
         hed.attrs.create('simpath', np.string_(simpath))
+        _grp = hed.create_group('sample')
+        h5u.savedict_hdf5(_grp, setargs)
         f.create_dataset('startpos_cm', data=start_positions.to('cm').v)
         f.create_dataset('endpos_cm', data=end_positions.to('cm').v)
 

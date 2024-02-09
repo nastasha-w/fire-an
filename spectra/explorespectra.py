@@ -61,10 +61,12 @@ def plotoverview_spectra(filepattern: str,
             p0 = starts[0, losaxi]
             poff = pgal_cm[losaxi] - p0
             zgal = (vcom_cmps[losaxi] / c.c + 1.) \
-                   * (1. - poff * hpar / c.c) \
+                   * (1. - poff * hpar / c.c) - 1.
             # for vbins, snapshot redshift is factored out
                    #* (1. + cosmopars['z']) - 1
             vgal_kmps = zgal * c.c * 1e-5
+            print(zgal)
+            print(vgal_kmps)
 
             ipars = (starts[:, xaxi] - pgal_cm[xaxi])**2 \
                     + (starts[:, yaxi] - pgal_cm[yaxi])**2

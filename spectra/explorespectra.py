@@ -141,7 +141,7 @@ def plotoverview(testset=4):
         for snapnum in snapshots:
             filebase = f'/tridentray_{simname}_{snapnum}'
             filepattern = filedir + filebase + '_*.txt'
-            infofile = filebase + '_info.hdf5'
+            infofile = filedir + filebase + '_info.hdf5'
             title = f'FIRE-2 core, {simname}, snapshot {snapnum}'
             outname = outdir + f'spectra_overview_{simname}_{snapnum}.pdf'
             plotoverview_spectra(filepattern, infofile=infofile,

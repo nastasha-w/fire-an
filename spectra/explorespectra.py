@@ -58,7 +58,7 @@ def plotoverview_spectra(filepattern: str,
                 print('Sightlines start and end at different positions,'
                       ' so they will not be on a common velocity grid.')
                 vgal_kmps = 0.
-            p0 = starts[0]
+            p0 = starts[0, losaxi]
             poff = pgal_cm[losaxi] - p0
             zgal = (vcom_cmps[losaxi] / c.c + 1.) \
                    * (1. - poff * hpar / c.c) \
@@ -72,6 +72,7 @@ def plotoverview_spectra(filepattern: str,
     else:
         vgal_kmps = 0. # just use the output velocities
     maxipar = np.max(ipars)
+    print(maxipar)
     cmap = pu.paste_cmaps([cmapn], edges=[0., maxipar])
     clabel = 'impact parameter [kpc]'
 
@@ -81,7 +82,9 @@ def plotoverview_spectra(filepattern: str,
         sli = filen.split('.')[-2]
         sli = sli.split('_')[-1]
         sli = int(sli)
+        print(sli)
         ipar = ipars[sli]
+        print(ipar)
         spec = fc.SpectrumFitFreq(fc.ne8_770, filen=filen)
         #print(spec.tau_raw)
         #print(spec.vel_kmps)

@@ -49,7 +49,7 @@ def plotoverview_spectra(filepattern: str,
             pgal_cm = f['Header/cengal'].attrs['pcen_cm']
             vcom_cmps = f['Header/cengal'].attrs['vcom_cmps']
             hpar = cu.Hubble(cosmopars)
-            axis = str(f['Header/sample'].attrs['axis'])
+            axis = (f['Header/sample'].attrs['axis']).decode()
             xaxi, yaxi, losaxi = gs.getinds_ax(axis)
             starts = f['startpos_cm'][:]
             ends = f['endpos_cm'][:]

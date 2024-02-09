@@ -106,7 +106,7 @@ def getsightlines_grid(cen, totlength=unyt.unyt_quantity(500., 'kpc'),
     return start_positions, end_positions
     
 def runsightlines(simname, snapnum, outname_base=None,
-                  settype='grid', **setargs):
+                  settype='grid', skiprepeat=False, **setargs):
     '''
     seems to work somewhat
 

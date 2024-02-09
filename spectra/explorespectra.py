@@ -62,7 +62,8 @@ def plotoverview_spectra(filepattern: str,
             poff = pgal_cm[losaxi] - p0
             zgal = (vcom_cmps[losaxi] / c.c + 1.) \
                    * (1. - poff * hpar / c.c) \
-                   * (1. + cosmopars['z']) - 1
+            # for vbins, snapshot redshift is factored out
+                   #* (1. + cosmopars['z']) - 1
             vgal_kmps = zgal * c.c * 1e-5
 
             ipars = (starts[:, xaxi] - pgal_cm[xaxi])**2 \
@@ -72,7 +73,7 @@ def plotoverview_spectra(filepattern: str,
     else:
         vgal_kmps = 0. # just use the output velocities
     maxipar = np.max(ipars)
-    print(maxipar)
+    #print(maxipar)
     cmap = pu.paste_cmaps([cmapn], edges=[0., maxipar])
     clabel = 'impact parameter [kpc]'
 
@@ -82,9 +83,7 @@ def plotoverview_spectra(filepattern: str,
         sli = filen.split('.')[-2]
         sli = sli.split('_')[-1]
         sli = int(sli)
-        print(sli)
         ipar = ipars[sli]
-        print(ipar)
         spec = fc.SpectrumFitFreq(fc.ne8_770, filen=filen)
         #print(spec.tau_raw)
         #print(spec.vel_kmps)

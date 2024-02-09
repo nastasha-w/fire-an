@@ -5,6 +5,9 @@ import fire_an.spectra.genspectra as gs
 
 ## Notes on requirements:
 # on Quest, 200 sightlines ran in a bit under 6 hours (1 node/1 CPU)
+# but only about 300 made it in a 10 hours time limit
+#    (2procs/node, 2 CPUs/ proc)
+# 16 hours:
 
 def runtest2():
     '''

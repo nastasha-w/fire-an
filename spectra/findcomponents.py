@@ -1,3 +1,4 @@
+from typing import Any
 from astropy.convolution import convolve, convolve_fft, Gaussian1DKernel
 from dataclasses import dataclass
 import h5py
@@ -230,10 +231,10 @@ class SpectrumFitFreq:
                              resolution_kmps: float=30., 
                              snr: float | None =30.,
                              sigma_det: float=3.,
-                             plotinterm: bool = True) -> (int, 
-                                                      np.ndarray[float],
-                                                      np.ndarray[float],
-                                                      np.ndarray[float]):
+                             plotinterm: bool = True) -> tuple[int, 
+                                                         np.ndarray[float],
+                                                         np.ndarray[float],
+                                                         np.ndarray[float]]:
         # one-sided test: no sucj thing as negatiev absorption
         # (no emission line in this model or in the mock spectra)
         self.minpval_newcomp = st.norm().cdf(sigma_det)
@@ -577,7 +578,7 @@ class SpectrumFitBayes:
         Read in the spectrum from a Trident .txt file. (Assumes a 
         in velocity space.)
         '''
-        spec = pd.read_csv(self.filen, comment='#', 
+        spec = pd.read_csv(filen, comment='#', 
                            columns=['velocity_kmps', 'tau', 
                                     'flux', 'flux_error'])
         self.spec_raw = np.array(spec['flux'])
@@ -649,7 +650,12 @@ class SpectrumFitBayes:
                    rawspec: np.ndarray[float], 
                    sigma_kmps: float = 30., 
                    snr: float = 30.):
-        pass
+        out = self._convolve_gauss(rawspec, width_kmps=sigma_kmps)
+        self.sigma_noise = 1. / snr
+        self._delta = np.random.normal(loc=0.0, scale=self.sigma_noise, 
+                                       size=len(out))
+        out += self._delta
+        return out
 
     def _logp_spec(self,
                    fitspec: np.ndarray[float],
@@ -679,24 +685,128 @@ class SpectrumFitBayes:
                 -0.5 * np.sum(((fitspec - self._modelspec) * self._isigma)**2)
         return _logp
     
-    def _fitnewcomponent(self, 
-                         fitspec: np.ndarray[float], 
-                         oldcomponents: np.ndarray[float], 
-                         sigma_specres_kmps: float = 30.):
+    def _fitspec(self, 
+                 fitspec: np.ndarray[float], 
+                 componentsguess: np.ndarray[float], 
+                 sigma_specres_kmps: float = 30.) -> tuple[np.ndarray, 
+                                                           np.ndarray,
+                                                           Any]:
+        '''
+        returns the best-fit parameters, the best-fit spectrum,
+        and whatever object the fitter gives back
+        '''
         # some clever sampling method for high-dimensional spaces
         pass
 
-    def _checknewcomponent(self):
+    def _checknewcomponent(self, fitres):
+        '''
+        input: fitting object from _fitspec
+        output: boolean: accept new component or not
+        '''
         pass
-
+    
+    def _fitspec_single(self,
+                        target_cur: np.ndarray, 
+                        sigma_specres_kmps: float = 30.) -> tuple[int,
+                                                                  np.ndarray,
+                                                                  np.ndarray,
+                                                                  np.ndarray]:
+        guess_logN = 13.5 / self.fitunit_logN_cm2
+        guess_bval_kmps = 20. / self.fitunit_b_kmps
+        ncomp_cur = 0
+        fitspec_cur = np.ones(len(target_cur))
+        fitcomp_cur = np.zeros((0,), dtype=guess_logN.dtype)
+        trynew = True
+        while trynew:
+            ncomp_cur += 1
+            fitspec_prev = fitspec_cur
+            fitcomp_prev = fitcomp_cur
+            maxdiffi = np.argmax(np.abs(fitspec_prev - target_cur))
+            guess_v_kmps = self.vel_kmps[maxdiffi] / self.fitunit_v_kmps
+            newcomp_guess = np.array([guess_logN, 
+                                      guess_bval_kmps, 
+                                      guess_v_kmps])
+            componentsguess = np.append(fitcomp_prev, newcomp_guess)
+            fitcomp_cur, fitspec_cur, fitres = self._fitspec(
+                target_cur, componentsguess,
+                sigma_specres_kmps=sigma_specres_kmps)
+            trynew = self._checknewcomponent(fitres)
+        ncomp = ncomp_cur - 1
+        logcds_cm2 = fitcomp_prev[0::3] * self.fitunit_logN_cm2
+        bvals_kmps = fitcomp_prev[1::3] * self.fitunit_b_kmps
+        vcens_kmps = fitcomp_prev[2::3] * self.fitunit_v_kmps
+        return ncomp, logcds_cm2, bvals_kmps, vcens_kmps
+            
     def fitcomponents(self, 
                       snr: float = 30.,
                       sigma_specres_kmps: float = 30.,
-                      sigma_det=3.):
+                      sigma_det: float = 3.,
+                      npert: int = 5):
         self.snr = snr
         self.sigma_specres_kmps = sigma_specres_kmps
         self.sigma_det = sigma_det
-        pass
+        self.npert = npert
+        
+        self.noisyfits = []
+        self.noisyspectra = []
+        for _ in npert:
+            self.target_cur = self._noisyspec(
+                self.spec_raw, sigma_kmps=self.sigma_specres_kmps,
+                snr=self.snr)
+            _ncomp, _logcds_cm2, _bvals_kmps, _vcens_kmps = \
+                self._fitspec_single(self.target_cur, self.sigma_specres_kmps)
+            self.noisyfits.append({'ncomp': _ncomp,
+                                   'logN_cm2': np.copy(_logcds_cm2),
+                                   'bvals_kmps': np.copy(_bvals_kmps),
+                                   'vcens_kmps': np.copy(_vcens_kmps)})
+            self.noisyspectra.append(self.target_cur.copy())
+        ncomp_noisy = np.array([fit['ncomp'] for fit in self.noisyfits])
+        self.ncomp_final = int(np.ceil((np.median(ncomp_noisy))))
+        if self.ncomp_final == 0:
+            self.logN_cm2_final = np.zeros(shape=(0,), dtype=np.float64)
+            self.bvals_kmps_final = np.zeros(shape=(0,), dtype=np.float64)
+            self.vcens_kmps_final = np.zeros(shape=(0,), dtype=np.float64)
+        else:
+            if np.any(ncomp_noisy == self.ncomp_final):
+                guessi = np.where(ncomp_noisy == self.ncomp_final)[0][0]
+                guessN = self.noisyfits[guessi]['logN_cm2'] 
+                guessb = self.noisyfits[guessi]['bvals_kmps']
+                guessv = self.noisyfits[guessi]['vcens_kmps']
+                self.guess = np.empty((self.ncomp_final, 3), 
+                                      dtype=guessN.dtype)
+                self.guess[:, 0] = guessN / self.fitunit_logN_cm2
+                self.guess[:, 1] = guessb / self.fitunit_b_kmps
+                self.guess[:, 2] = guessv / self.fitunit_v_kmps
+                self.guess.shape = (self.ncomp_final * 3,)
+            else:
+                # get a spectrum with the smallest number of 
+                # extra components
+                opts = np.where(ncomp_noisy > self.ncomp_final)[0]
+                subi = np.argmin(ncomp_noisy[opts])
+                guessi = opts[subi]
+                
+                guessN = self.noisyfits[guessi]['logN_cm2']
+                guessb = self.noisyfits[guessi]['bvals_kmps']
+                guessv = self.noisyfits[guessi]['vcens_kmps']
+                # largest-logN components within that fit
+                compsel = np.argsort(guessN)[::-1][:self.ncomp_final]
+                self.guess = np.empty((self.ncomp_final, 3), 
+                                      dtype=guessN.dtype)
+                self.guess[:, 0] = guessN[compsel] / self.fitunit_logN_cm2
+                self.guess[:, 1] = guessb[compsel] / self.fitunit_b_kmps
+                self.guess[:, 2] = guessv[compsel] / self.fitunit_v_kmps
+                self.guess.shape = (self.ncomp_final * 3,)
+        self.noiseless_target = self._convolve_gauss(
+            self.spec_raw, width_kmps=sigma_specres_kmps)
+        self.components_final, self.fitspec_final, self.fitobj_final = \
+            self._fitspec(self.fitspec_final, self.guess, 
+                          sigma_specres_kmps=sigma_specres_kmps)
+        self.logN_cm2_final = self.components_final[0::3] \
+                                * self.fitunit_logN_cm2
+        self.bvals_kmps_final = self.components_final[1::3] \
+                                * self.fitu_bvals_kmps
+        self.vcens_kmps_final = self.components_final[2::3] \
+                                * self.fitu_vcens_kmps
 
     def savefit(self, h5filen: str, h5grp: str):
         self.logN_cm2_final = self.components_final[0::3] \
@@ -715,7 +825,7 @@ class SpectrumFitBayes:
             grp.attrs.create('resolution_kmps', self.sigma_specres_kmps)
             grp.attrs.create('snr', self.snr)
             grp.attrs.create('sigma_det', self.sigma_det)
-            grp.attrs.create('npert', npert)
+            grp.attrs.create('npert', self.npert)
             _grp = grp.create_group('noisy_fits')
             for i in range(len(self.noisyfits)):
                     _sgrp = _grp.create_group(f'fit{i}')

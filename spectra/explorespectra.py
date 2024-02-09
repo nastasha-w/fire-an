@@ -46,8 +46,8 @@ def plotoverview_spectra(filepattern: str,
         with h5py.File(infofile, 'r') as f:
             cosmopars = {key: val for key, val in 
                          f[cgpath]['cosmopars_dict'].attrs.items()}
-            pgal_cm = f[cgpath].attrs['pcen_cm']
-            vcom_cmps = f[cgpath].attrs['vcom_cmps']
+            pgal_cm = f['Header/cengal'].attrs['pcen_cm']
+            vcom_cmps = f['Header/cengal'].attrs['vcom_cmps']
             hpar = cu.Hubble(cosmopars)
             axis = np.string(f['Header/sample'].attrs['axis'])
             xaxi, yaxi, losaxi = gs.getinds_ax(axis)

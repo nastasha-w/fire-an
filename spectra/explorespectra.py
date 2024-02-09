@@ -78,7 +78,7 @@ def plotoverview_spectra(filepattern: str,
     filens = glob.glob(filepattern)
     for filen in filens:
         #print(filen)
-        sli = filen.split('.')[-1]
+        sli = filen.split('.')[-2]
         sli = sli.split('_')[-1]
         sli = int(sli)
         ipar = ipars[sli]

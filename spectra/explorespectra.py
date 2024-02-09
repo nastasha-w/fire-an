@@ -7,8 +7,10 @@ import numpy as np
 import pandas as pd
 
 # used for read-in, not actual fitting
+import fire_an.makeplots.plot_utils as pu
 import fire_an.spectra.findcomponents as fc
 import fire_an.spectra.genspectra as gs
+import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 
@@ -28,10 +30,14 @@ def plotoverview_spectra(filepattern: str,
     height = panelheight * nrows
     fontsize = 12
 
-    grid = gsp.GridSpec(ncols=1, nrows=nrows, hspace=0.,
-                        wspace=0.)
+    grid = gsp.GridSpec(ncols=2, nrows=nrows, hspace=0.,
+                        wspace=0.,
+                        width_ratios=[6.5, 0.5])
     fig = plt.figure(figsize=(panelwidth, height))
     axes = [fig.add_subplot(grid[ri, 0]) for ri in range(nrows)]
+    cax = fig.add_subplot(grid[:, 1])
+    cmapn = 'rainbow'
+
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
 
@@ -44,11 +50,11 @@ def plotoverview_spectra(filepattern: str,
             vcom_cmps = f[cgpath].attrs['vcom_cmps']
             hpar = cu.Hubble(cosmopars)
             axis = np.string(f['Header/sample'].attrs['axis'])
-            _, _, losaxi = gs.getinds_ax(axis)
-            starts = f['startpos_cm'][:, losaxi]
-            ends = f['endpos_cm'][:, losaxi]
-            if not (np.allclose(starts, starts[0]) 
-                    and np.allclose(ends, ends[0])):
+            xaxi, yaxi, losaxi = gs.getinds_ax(axis)
+            starts = f['startpos_cm'][:]
+            ends = f['endpos_cm'][:]
+            if not (np.allclose(starts[:, losaxi], starts[0, losaxi]) 
+                    and np.allclose(ends[:, losaxi], ends[0, losaxi])):
                 print('Sightlines start and end at different positions,'
                       ' so they will not be on a common velocity grid.')
                 vgal_kmps = 0.
@@ -58,13 +64,24 @@ def plotoverview_spectra(filepattern: str,
                    * (1. - poff * hpar / c.c) \
                    * (1. + cosmopars['z']) - 1
             vgal_kmps = zgal * c.c * 1e-5
+
+            ipars = (starts[:, xaxi] - pgal_cm[xaxi])**2 \
+                    + (starts[:, yaxi] - pgal_cm[yaxi])**2
+            ipars = np.sqrt(ipars) / (c.cm_per_mpc * 1e-3)
             
     else:
         vgal_kmps = 0. # just use the output velocities
+    maxipar = np.max(ipars)
+    cmap = pu.paste_cmaps([cmapn], edges=[0., maxipar])
+    clabel = 'impact parameter [kpc]'
 
     filens = glob.glob(filepattern)
     for filen in filens:
         #print(filen)
+        sli = filen.split('.')[-1]
+        sli = sli.split('_')[-1]
+        sli = int(sli)
+        ipar = ipars[sli]
         spec = fc.SpectrumFitFreq(fc.ne8_770, filen=filen)
         #print(spec.tau_raw)
         #print(spec.vel_kmps)
@@ -75,12 +92,17 @@ def plotoverview_spectra(filepattern: str,
             print(f'Skipping spectrum {filen}; out of logNbins range')
             continue
         ax = axes[ri]
+        color = cmap(ipar / maxipar)
         ax.plot(spec.vel_kmps - vgal_kmps, spec.spec_raw, linestyle='solid',
-                color='gray', alpha=0.5, linewidth=1.)
+                color=color, alpha=0.5, linewidth=1.)
     
     xlims = [ax.get_xlim() for ax in axes]
     xmin = min([xl[0] for xl in xlims])
     xmax = max([xl[1] for xl in xlims])
+    pu.add_colorbar(cax, vmin=0., vmax=maxipar, cmap=cmap,
+                    clabel=clabel, fontsize=fontsize,
+                    extend='neither', orientation='vertical')
+
     for ri, ax in enumerate(axes):
         #ax.set_ylim(0.0, 1.05)
         ax.set_xlim(xmin, xmax)
@@ -103,9 +125,27 @@ def plotoverview_spectra(filepattern: str,
     if outname is not None:
         plt.savefig(outname, bbox_inches='tight')
 
-        
 
-
+def plotoverview(testset=4):
+    if testset == 4:
+        simnames = sl.m12_f2md
+        snapshots = [sl.snaps_f2md[0], sl.snaps_f2md[1]]
+        filedir = '/projects/b1026/nastasha/spectra/test4/'
+        outdir =  '/projects/b1026/nastasha/imgs/spectra/test4/'
+        # the one that worked the first time
+        simnames = ['crheatfix_m12i_r7100']
+        snapshots = [294]
+    
+    
+    for simname in simnames:
+        for snapnum in snapshots:
+            filebase = f'/tridentray_{simname}_{snapnum}'
+            filepattern = filedir + filebase + '_*.txt'
+            infofile = filebase + '_info.hdf5'
+            title = f'FIRE-2 core, {simname}, snapshot {snapnum}'
+            outname = outdir + f'spectra_overview_{simname}_{snapnum}.pdf'
+            plotoverview_spectra(filepattern, infofile=infofile,
+                                 title=title, outname=outname)
 
 
 

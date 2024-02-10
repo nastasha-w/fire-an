@@ -137,8 +137,8 @@ def plotoverview(testset=4):
         filedir = '/projects/b1026/nastasha/spectra/test4/'
         outdir =  '/projects/b1026/nastasha/imgs/spectra/test4/'
         # the one that worked the first time
-        simnames = ['crheatfix_m12i_r7100', 'crheatfix_m12f_r7100']
-        snapshots = [294, 277]
+        #simnames = ['crheatfix_m12i_r7100', 'crheatfix_m12f_r7100']
+        #snapshots = [294, 277]
     
     
     for simname in simnames:

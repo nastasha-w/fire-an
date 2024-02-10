@@ -8,7 +8,8 @@ import fire_an.spectra.genspectra as gs
 # but only about 300 made it in a 10 hours time limit
 #    (2procs/node, 2 CPUs/ proc)
 # 16 hours: works for some, doesn't quite cut it for all.
-# + 10 hours, skipping existing files
+# + 10 hours, skipping existing files: still not there, 
+# another 10 did it for m12z_r4200
 
 def runtest2():
     '''

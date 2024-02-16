@@ -152,6 +152,153 @@ def plotoverview(testset=4):
                                  title=title, outname=outname)
 
 
+def plotspectra_minlogN(filepatterns: list[str],
+                        infofiles: list[str],
+                        title: str | None = None,
+                        outname: str | None = None,
+                        minlogN: float = 13.5,
+                        xlims: tuple[float, float] | None = None,
+                        ylims: tuple[float, float] | None = None):
+    nrows = 5
+    panelheight = 1.5
+    panelwidth = 7.5
+    height = panelheight * nrows
+    fontsize = 12
+
+    grid = gsp.GridSpec(ncols=2, nrows=nrows, hspace=0.,
+                        wspace=0.,
+                        width_ratios=[6.5, 0.5])
+    fig = plt.figure(figsize=(panelwidth, height))
+    axes = [fig.add_subplot(grid[ri, 0]) for ri in range(nrows)]
+    cax = fig.add_subplot(grid[:, 1])
+    cmapn = 'rainbow'
+    clabel = ('$\\log_{10} \\, \\mathrm{N}_{\\mathrm{tot}}'
+              ' \\;[\\mathrm{cm}^{-2}]$')
+
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+    
+    spectra_toplot = []
+    maxlogN = -np.inf
+    for infofile, filepattern in zip(infofiles, filepatterns):
+        cgpath = 'Header/cengal/halodata_doc_dict'
+        with h5py.File(infofile, 'r') as f:
+            cosmopars = {key: val for key, val in 
+                         f[cgpath]['cosmopars_dict'].attrs.items()}
+            pgal_cm = f['Header/cengal'].attrs['pcen_cm']
+            vcom_cmps = f['Header/cengal'].attrs['vcom_cmps']
+            hpar = cu.Hubble(cosmopars)
+            axis = (f['Header/sample'].attrs['axis']).decode()
+            xaxi, yaxi, losaxi = gs.getinds_ax(axis)
+            starts = f['startpos_cm'][:]
+            ends = f['endpos_cm'][:]
+            if not (np.allclose(starts[:, losaxi], starts[0, losaxi]) 
+                    and np.allclose(ends[:, losaxi], ends[0, losaxi])):
+                print('Sightlines start and end at different positions,'
+                      ' so they will not be on a common velocity grid.')
+                vgal_kmps = 0.
+            p0 = starts[0, losaxi]
+            poff = pgal_cm[losaxi] - p0
+            zgal = (-1. * vcom_cmps[losaxi] / c.c + 1.) \
+                   * (1. - poff * hpar / c.c) - 1.
+            # for vbins, snapshot redshift is factored out
+                   #* (1. + cosmopars['z']) - 1
+            vgal_kmps = zgal * c.c * 1e-5
+            print(zgal)
+            print(vgal_kmps)
+
+            ipars = (starts[:, xaxi] - pgal_cm[xaxi])**2 \
+                    + (starts[:, yaxi] - pgal_cm[yaxi])**2
+            ipars = np.sqrt(ipars) / (c.cm_per_mpc * 1e-3)
+            
+        filens = glob.glob(filepattern)
+        for filen in filens:
+            #print(filen)
+            sli = filen.split('.')[-2]
+            sli = sli.split('_')[-1]
+            sli = int(sli)
+            ipar = ipars[sli]
+            spec = fc.SpectrumFitFreq(fc.ne8_770, filen=filen)
+            #print(spec.tau_raw)
+            #print(spec.vel_kmps)
+            logN = np.log10(spec.line.tau_to_coldens(spec.tau_raw, 
+                                                     spec.vel_kmps))
+            if logN >= minlogN:
+                spectra_toplot.append(spec)
+                maxlogN = max(maxlogN, logN)
+            #print(logN)
+
+    ntoplot = len(spectra_toplot)
+    nperrow = (ntoplot - 1) // nrows + 1
+    cmap = pu.paste_cmaps([cmapn], edges=[minlogN, maxlogN])
+    for ri, ax in enumerate(axes):
+        sel = slice(ri * nperrow, (ri + 1) * nperrow, None)
+        _toplot = spectra_toplot[sel]
+        for spec in _toplot:
+            logN = np.log10(spec.line.tau_to_coldens(spec.tau_raw, 
+                                                     spec.vel_kmps))
+            color = cmap((logN - minlogN) / (maxlogN - minlogN))
+            ax.plot(spec.vel_kmps - vgal_kmps, spec.spec_raw, 
+                    linestyle='solid',
+                    color=color, alpha=0.5, linewidth=1.)
+    
+    if xlims is None:
+        xlims = [ax.get_xlim() for ax in axes]
+        xmin = min([xl[0] for xl in xlims])
+        xmax = max([xl[1] for xl in xlims])
+    else:
+        xmin = xlims[0]
+        xmax = xlims[1]
+    if ylims is None:
+        ylims = [ax.get_ylim() for ax in axes]
+        ymin = min([yl[0] for yl in ylims])
+        ymax = max([yl[1] for yl in ylims])
+    else:
+        ymin = ylims[0]
+        ymax = ylims[1]
+    pu.add_colorbar(cax, vmin=minlogN, vmax=maxlogN, cmap=cmap,
+                    clabel=clabel, fontsize=fontsize,
+                    extend='neither', orientation='vertical')
+
+    for ri, ax in enumerate(axes):
+        #ax.set_ylim(0.0, 1.05)
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+        ax.tick_params(which='both', labelleft=True, 
+                       labelbottom=(ri == nrows - 1),
+                       direction='in', labelsize=fontsize - 1)
+        ax.axhline(1., color='black', linestyle='dotted', linewidth=1.,
+                   alpha=0.7)
+        if ri == nrows - 1:
+            ax.set_xlabel('$v \\; [\\mathrm{km}\\,\\mathrm{s}^{-1}]$',
+                          fontsize=fontsize)
+        if ri == nrows // 2:
+            ax.set_ylabel('transmission', fontsize=fontsize)
+
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
 
 
-
+def plotset_minlogN(testset=4, minlogN=13.5):
+    if testset == 4:
+        simnames = sl.m12_f2md
+        snapshots = [sl.snaps_f2md[0], sl.snaps_f2md[1]]
+        filedir = '/projects/b1026/nastasha/spectra/test4/'
+        outdir =  '/projects/b1026/nastasha/imgs/spectra/test4/'
+        # the one that worked the first time
+        #simnames = ['crheatfix_m12i_r7100', 'crheatfix_m12f_r7100']
+        #snapshots = [294, 277]
+        title = f'FIRE-2 core, snapshots {snapshots}, z-projection, FG09\n'
+        title += ('$\\log_{10} \\, \\mathrm{N}_{\\mathrm{tot}}'
+                  ' \\; [\\mathrm{cm}^{-2}]'
+                  f' \geq {minlogN:.1f}$')
+        outname = outdir + f'spectra_minlogN_{minlogN:.1f}_testset4.pdf'
+        filepatterns = [filedir + f'/tridentray_{simname}_{snapnum}_*.txt'
+                       for simname in simnames for snapnum in snapshots]
+        infofiles = [filedir + f'/tridentray_{simname}_{snapnum}_info.hdf5'
+                       for simname in simnames for snapnum in snapshots]
+        xlims = (-650., 500.)
+        ylims = (0.75, 1.02)
+    plotspectra_minlogN(filepatterns, infofiles,
+                        title=title, outname=outname, minlogN=minlogN,
+                        xlims=xlims, ylims=ylims)

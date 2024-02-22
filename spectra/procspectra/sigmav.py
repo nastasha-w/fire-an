@@ -10,6 +10,7 @@ import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 
 def calc_vcen_sigmav_logN(specfilen: str, 
+                          vcengal_kmps: float, 
                           line: fc.Line = fc.ne8_770):
     '''
     Returns:
@@ -29,8 +30,10 @@ def calc_vcen_sigmav_logN(specfilen: str,
     vcen = np.sum(weight * vel) / np.sum(weight)
     dv = vel - vcen
     sigma = np.sqrt(np.sum(weight * dv**2) / np.sum(weight))
+    dvgal = vel - vcengal_kmps
+    sigma_gal = np.sqrt(np.sum(weight * dvgal**2) / np.sum(weight))
     logN = np.log10(spec.line.tau_to_coldens(weight, vel))
-    return vcen, sigma, logN
+    return vcen, sigma, sigma_gal, logN
 
 def getdata_sigmav(infofilens: list[str], 
                    filepatterns: list[str],
@@ -45,7 +48,7 @@ def getdata_sigmav(infofilens: list[str],
     
     lineelts = ['simname', 'snapnum', 'los_axis',
                 'impactpar_kpc', 'Ntot_logcm2', 'vcen_Nwtd_kmps',
-                'sigmav_kmps', 'vgal_kmps',
+                'sigmav_kmps', 'sigmav_galv_kmps', 'vgal_kmps',
                 'Mstar_logMsun', 'Mvir_logMsun',
                 'Rvir_kpc']
     eltfmt = {'simname': '{simname}',
@@ -55,6 +58,7 @@ def getdata_sigmav(infofilens: list[str],
                'Ntot_logcm2': '{Ntot_logcm2:.3f}',
                'vcen_Nwtd_kmps': '{vcen_Nwtd_kmps:.2f}',
                'sigmav_kmps': '{sigmav_kmps:.2f}',
+               'sigmav_galv_kmps': '{sigmav_galv_kmps:.2f}',
                'vgal_kmps': '{vgal_kmps:.2f}',
                'Mstar_logMsun': '{Mstar_logMsun:.2f}',
                'Mvir_logMsun': '{Mvir_logMsun:.2f}',
@@ -117,14 +121,15 @@ def getdata_sigmav(infofilens: list[str],
                 sli = int(sli)
                 ipar_kpc = ipars_kpc[sli]
 
-                vcen_kmps, sigmav_kmps, logN_cm2 = calc_vcen_sigmav_logN(
-                    filen, line=line)
+                vcen_kmps, sigmav_kmps, sigma_gal, logN_cm2 = \
+                    calc_vcen_sigmav_logN(filen, vgal_kmps, line=line)
 
                 l2dct = l1dct.copy()
                 l2dct.update({'impactpar_kpc': ipar_kpc,
                               'Ntot_logcm2': logN_cm2,
                               'vcen_Nwtd_kmps': vcen_kmps,
-                              'sigmav_kmps': sigmav_kmps})
+                              'sigmav_kmps': sigmav_kmps,
+                              'sigmav_galv_kmps': sigma_gal})
 
                 pline = linefmt.format(**l2dct)
                 fo.write(pline)

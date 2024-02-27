@@ -91,7 +91,7 @@ def run_tauwtd_vprof(testset=4):
         # the one that worked the first time
         #simnames = ['crheatfix_m12i_r7100', 'crheatfix_m12f_r7100']
         #snapshots = [294, 277]
-        outname = outdir + f'tau_av_ne8_770_minlogN_testset4.pdf'
+        outname = outdir + f'tau_av_ne8_770_minlogN_testset4.hdf5'
         filepatterns = [filedir + f'/tridentray_{simname}_{snapnum}_*.txt'
                        for simname in simnames for snapnum in snapshots]
         infofiles = [filedir + f'/tridentray_{simname}_{snapnum}_info.hdf5'

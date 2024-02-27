@@ -169,5 +169,3 @@ def selectsystems(logMh_sim: np.ndarray[float],
         sel &= df[f'err_Mvir_{nsig:.1f}_plus'] >= minlogMh
     return df[sel]
 
-
-        

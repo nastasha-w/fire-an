@@ -21,6 +21,7 @@ iontab_sylvia_ssh = pre + 'iontab/PS20/UVB_dust1_CR1_G1_shield1.hdf5'
 simdir_fire3 = '/scratch3/01799/phopkins/fire3_suite_done/'
 simdir_fire2_md = ''
 simdir_fire3_m12plus = ''
+simdir_fire3x_tests = '/scratch3/01799/phopkins/fire3_suite_done/'
 
 kernel_list = ['C2','gadget']
 # desngb = 58 read out from sample hdf5 file (RunTimePars)

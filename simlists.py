@@ -137,6 +137,21 @@ m12plus_f3nobh_lores = ['fire3nobh_plus_m12a_r57000',
                      'fire3nobh_plus_m12u_r28000',
                      'fire3nobh_plus_m12x_r28000',
                      ] # len 9
+# FIRE-3 tests with FIRE-2 SNe feedback
+m12_fire3x_tests = [('m12i_m7e3_HD_fire3_fireBHnorepos_constpterm_nogtidal'
+                     '_Oct242023_hr_crdiffc690_sdp1e10_gacc31_fa0.5_fcr1e-4'
+                     '_vw3e4'),
+                    ('m12i_m7e3_HD_fire3_fireBHnorepos_scmodules_constpterm'
+                     '_Oct242023_hr_crdiffc690_sdp1e10_gacc31_fa0.5_fcr1e-4'
+                     '_vw3e4'),
+                    ('m12m_m7e3_HD_fire3_fireBHnorepos_scmodules_constpterm'
+                     '_gtidal1_Nov082023_hr_crdiffc690_sdp1e10_gacc31_fa0.5'
+                     '_fcr1e-4_vw3e4'),
+                    ('m12q_m7e3_HD_fire3_fireBHnorepos_scmodules_constpterm'
+                     '_gtidal1_Nov082023_hr_crdiffc690_sdp1e10_gacc31_fa0.5'
+                     '_fcr1e-4_vw3e4'),
+                    ] # len 4
+
 ## experimental m11 selection for C ion series
 # phys variations selected by match to m12 series names
 # mass res is ~ m12-sr res for all; hr/sr is for snapshot cadence
@@ -459,6 +474,11 @@ def physlabel_from_simname(simname):
         physlabel = 'FIRE-2'
     elif simname.startswith('fire3nobh_plus_'):
         physlabel = 'noBH-m12+'
+    elif simname in m12_fire3x_tests:
+        if 'scmodules' in simname:
+            physlabel = 'FIRE-3x-scmodules'
+        else:
+            physlabel = 'FIRE-3x-constpterm'
     elif '_sdp1e10_' in simname:
         physlabel = 'noBH'
     elif '_MHDCRspec1_' in simname:
@@ -473,6 +493,8 @@ plotlabel_from_physlabel_short = {
     'AGN-noCR': 'F3 BH',
     'AGN-CR': 'F3 BH+CR',
     'noBH-m12+': 'F3 NoBH m12+',
+    'FIRE-3x-scmodules': 'F3x NoBH sc',
+    'FIRE-3x-constpterm': 'F3x NoBH cp',
 }
 
 plotlabel_from_physlabel = {
@@ -481,6 +503,8 @@ plotlabel_from_physlabel = {
     'AGN-noCR': 'FIRE-3 BH',
     'AGN-CR': 'FIRE-3 BH+CR',
     'noBH-m12+': 'FIRE-3 NoBH m12+',
+    'FIRE-3x-scmodules': 'FIRE-3x NoBH scmodules',
+    'FIRE-3x-constpterm': 'FIRE-3x NoBH constpterm',
 }
 
 

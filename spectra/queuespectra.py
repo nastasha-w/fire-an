@@ -7,7 +7,9 @@ import fire_an.spectra.genspectra as gs
 # on Quest, 200 sightlines ran in a bit under 6 hours (1 node/1 CPU)
 # but only about 300 made it in a 10 hours time limit
 #    (2procs/node, 2 CPUs/ proc)
-# 16 hours:
+# 16 hours: works for some, doesn't quite cut it for all.
+# + 10 hours, skipping existing files: still not there, 
+# another 10 did it for m12z_r4200
 
 def runtest2():
     '''
@@ -45,7 +47,7 @@ def runtest4(ind):
                'gridpoints_side': 20, 
                'axis':'z'}
     gs.runsightlines(simname, snapnum, outname_base=outbase,
-                      settype='grid', **setargs)
+                      settype='grid', skiprepeat=True, **setargs)
     
 def main(ind):
     if ind == 0:

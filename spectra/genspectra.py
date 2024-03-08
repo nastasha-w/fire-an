@@ -43,6 +43,8 @@ x check how the velocities in the spectra are centered:
     start -> end of the Ray is towards the observer
 '''
 
+import os
+
 import h5py
 import numpy as np
 import trident
@@ -120,6 +122,14 @@ def runsightlines(simname, snapnum, outname_base=None,
             'gridside' is multiplied by the same
     
     '''
+    if outname_base is None:
+        outname_base = f'tridentray_{simname}_{snapnum}'
+    _outname = savedir_spectra + outname_base
+    filen_info = _outname + '_info.hdf5'
+    if skiprepeat and os.path.isfile(filen_info):
+        print('Skippping; this grid was already fully run,'
+              f' or at least, its _info file exists: {filen_info}')
+        return None
     ds, simpath, codelength_cm = getytds(simname, snapnum)
     halodat, todoc_halo = hp.readhalodata_shrinkingsphere(simpath, snapnum,
                                                           meandef='BN98')
@@ -135,15 +145,14 @@ def runsightlines(simname, snapnum, outname_base=None,
         setargs['totlength'] = setargs['totlength'] * rvir
         setargs['gridside'] = setargs['gridside'] * rvir
         start_positions, end_positions = getsightlines_grid(cen, **setargs)
-    
-    if outname_base is None:
-        outname_base = f'tridentray_{simname}_{snapnum}'
-    _outname = savedir_spectra + outname_base
 
     trident.add_ion_fields(ds, ions=['Ne VIII', 'O VI', 'H I'])
     
     for ri, (_spos, _epos) in enumerate(zip(start_positions, end_positions)):
         outname = _outname + f'_{ri}.h5'
+        specname = outname[:-3] + '.txt'
+        if skiprepeat and os.path.isfile(specname):
+            continue
         # YTarray values don't work in make_simple_ray for some reason
         spos = np.array(_spos.to('cm')) / codelength_cm
         epos = np.array(_epos.to('cm')) / codelength_cm
@@ -159,9 +168,8 @@ def runsightlines(simname, snapnum, outname_base=None,
             lambda_min='auto', lambda_max='auto', dlambda=2., 
             bin_space='velocity')
         sg.make_spectrum(ray, lines='Ne VIII 770')
-        sg.save_spectrum(outname[:-3] + '.txt')
+        sg.save_spectrum(specname)
     
-    filen_info = _outname + '_info.hdf5'
     with h5py.File(filen_info, 'a') as f:
         hed = f.create_group('Header')
         _grp = hed.create_group('halo_data')

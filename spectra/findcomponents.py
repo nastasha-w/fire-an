@@ -535,6 +535,7 @@ class SpectrumFitFreq:
             plt.plot(self.vel_kmps, convflux, label='fit',
                      color='gray', linewidth=1.3, linestyle='dashed')                         
         plt.show()
+
 class SpectrumFitBayes:
     
     def __init__(self, 
@@ -578,10 +579,13 @@ class SpectrumFitBayes:
         Read in the spectrum from a Trident .txt file. (Assumes a 
         in velocity space.)
         '''
-        spec = pd.read_csv(filen, comment='#', 
-                           columns=['velocity_kmps', 'tau', 
-                                    'flux', 'flux_error'])
+        spec = pd.read_csv(self.filen, comment='#',
+                           sep=' ',
+                           names=['velocity_kmps', 'tau', 
+                                  'flux', 'flux_error'],
+                           dtype=float)
         self.spec_raw = np.array(spec['flux'])
+        self.tau_raw = np.array(spec['tau'])
         self.vel_kmps = np.array(spec['velocity_kmps'])
         self.wl_A = self.line.wavelength_A * (1. + self.vel_kmps * 1e5 / c.c)
         self.nu_Hz = c.c / (self.wl_A * 1e-8)
@@ -604,8 +608,8 @@ class SpectrumFitBayes:
         self.vel_kmps = vbins_kmps
         self.wl_A = self.line.wavelength_A * (1. + self.vel_kmps * 1e5 / c.c)
         self.nu_Hz = c.c / (self.wl_A * 1e-8)
-        self._spec = self.getspectrum(components)
-        self.spec_raw = self._convolve_gauss(self._spec, sigma_specres_kmps)
+        self.spec_raw = self.getspectrum(components)
+        #self.spec_raw = self._convolve_gauss(self._spec, sigma_specres_kmps)
 
     def setfitranges(self, 
                      logNranges_cm2: tuple[float, float] | None = None,

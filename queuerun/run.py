@@ -359,6 +359,8 @@ def fromcommandline(index):
     elif index >= 46858 and index < 47074:
         # 216 indices
         rcn.run_clumpiness(opt=index - 46858 + 1248)
+    elif index >= 47074 and index < 47098:
+        rhp.run_haloprop_fire3_m12new(index - 47074)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

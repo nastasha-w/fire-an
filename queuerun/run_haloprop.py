@@ -333,3 +333,44 @@ def run_haloprop_fire3_m12new(opt):
     print(f'Galaxy re-centering, {simname}, snap {snapnum}')
     cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
                      vcenrad_rvir=0.05, mstarrad_rvir=0.1)
+    
+
+def run_haloprop_fire3_m12new(opt):
+    '''
+    1 index runs the Halo (all particles but type 2, 1 Rvir) and
+    the galaxy (parttype 4, 0.1 Rvir) velocity calculation,
+    and the central galaxy re-centering (parttype 4 in 0.3 Rvir)
+    '''
+    # 1st run does not include m12g_r7100: 
+    # Pratik is re-running after files were corrupted
+    _dirpath = ol.simdir_fire3x_tests
+    meandef = 'BN98'
+
+    if opt >= 0 and opt < 24:
+        ind = opt - 0
+        simnames = sl.m12_fire3x_tests #4
+        snaps = sl.snaps_sr # 6
+
+    simi = ind // len(snaps)
+    snapi = ind % len(snaps)
+    simname = simnames[simi]
+    snapnum = snaps[snapi]
+
+    #dirpath = '/'.join([_dirpath, simname]) 
+    dirpath = sl.dirpath_from_simname(simname)
+
+    print(f'Whole halo center, {simname}, snap {snapnum}')
+    hp.gethalodata_shrinkingsphere(dirpath, snapnum, 
+                                   meandef=('BN98', '200c', '200m'))
+
+    #print(f'Whole halo Vcom, {simname}, snap {snapnum}')
+    #hp.get_vcom(dirpath, snapnum, 1., meandef_rvir=meandef,
+    #            parttypes='all')
+    #print('\n\n')
+    #print(f'Galaxy Vcom, {simname}, snap {snapnum}')
+    #hp.get_vcom(dirpath, snapnum, 0.1, meandef_rvir=meandef,
+    #            parttypes=(4,)) 
+    #print('\n\n')
+    #print(f'Galaxy re-centering, {simname}, snap {snapnum}')
+    #cgp.getcengalcen(dirpath, snapnum, startrad_rvir=0.3,
+    #                 vcenrad_rvir=0.05, mstarrad_rvir=0.1)

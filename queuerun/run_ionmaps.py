@@ -1491,6 +1491,14 @@ def run_vdoplosmaps_m12new(opt=0):
         ind = opt - 108
         simnames = sl.m12plus_f3nobh_lores # len 9
         snaps = sl.snaps_hr # len 6
+    elif opt >= 594 and opt < 738:
+        # frontera
+        outdir = '/scratch1/08466/tg877653/output/maps/vdopmaps_f3x/'
+        # 24 halos, 144 indices
+        ind = opt - 594
+        simnames = sl.m12_fire3x_tests
+        snaps = sl.snaps_sr
+
         
     simi = ind // (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))
     snpi = (ind % (len(snaps) * len(ions) * len(loss) * len(rloss_rvir))) \

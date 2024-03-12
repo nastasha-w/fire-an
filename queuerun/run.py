@@ -359,8 +359,28 @@ def fromcommandline(index):
     elif index >= 46858 and index < 47074:
         # 216 indices
         rcn.run_clumpiness(opt=index - 46858 + 1248)
+    ## add data for experimental fire3.x runs
     elif index >= 47074 and index < 47098:
+        # 24 indices
+        # run 2x, halo centers first, 
+        # then change comments -> center of mass, gal. cen.
         rhp.run_haloprop_fire3_m12new(index - 47074)
+    elif index >= 47098 and index < 47386:
+        # 288 indices
+        rhs.run_hist_rad_vrad_weighted_f3x(index - 47098)
+    elif index >= 47386 and index < 47410:
+        # 24 indices
+        rhs.run_hist_Zprof(index - 47386 + 366)
+    elif index >= 47410 and index < 47434:
+        # 24 indices
+        rhs.run_hist_mstellar_Zstellar(index - 47410 + 366)
+    elif index >= 47434 and index < 47578:
+        # 144 indices
+        rim.run_vdoplosmaps_m12new(opt=index - 47434 + 594)
+    elif index >= 47578 and index < 47674:
+        # 96 indices
+        # run 2x, comment out different mts sets
+        rcn.run_clumpiness(opt=index - 47578 + 1464)
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

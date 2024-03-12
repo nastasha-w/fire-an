@@ -882,6 +882,72 @@ def run_hist_rad_vrad_weighted(opt):
                          logweights=True, logaxes=logaxes, axbins=axbin,
                          outfilen=outfilen, overwrite=False)
 
+def run_hist_rad_vrad_weighted_f3x(opt):
+    # different ions, Z, weights in rad-vrad space
+    # get data for the fire3.x experimental runs
+    atsplus = [['sim-direct'], ['Metal'], ['sim-direct']]
+    atplusargs = [[{'field': 'Temperature'}],
+                  [{'element': 'Hydrogen', 'density': True}],
+                  [{'field': 'ElementAbundance/Neon'}]]
+    atplusbins = [[0.1], [0.1], [0.1]]
+    logaxes = [False, True]
+    atlabels = ['temperature', 'density', 'NeonAbundance']
+    # frontera
+    outdir = '/scratch1/08466/tg877653/output/hists/r_vr_f3x/'
+    
+    # 24 haloes/snaps, 12 weights/weighted qtys
+    # -> 288 indices
+    ind = opt - 0
+    simnames = sl.m12_fire3x_tests # len 4
+    snaps = sl.snaps_sr # len 6
+
+    wts = ['Mass', 'Volume', 'Metal'] + ['ion'] 
+    wtargs = [{}, {}, 
+              {'element': 'Neon'},
+              {'ion': 'Ne8', 'ps20depletion': False},
+              ]
+    ats = ['coords']
+    atargs = [{'vel': 'vrad'}]
+    axbins = [5e5]
+
+    #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
+    simi = ind // (len(snaps) * len(wts) * len(atsplus))
+    snpi = (ind % (len(snaps) * len(wts) * len(atsplus))) \
+           // (len(wts) * len(atsplus))
+    wti = (ind % (len(wts) * len(atsplus))) // len(atsplus)
+    ati = ind % len(atsplus)
+    simname = simnames[simi]
+    snapnum = snaps[snpi]
+    wt = wts[wti]
+    wtarg = wtargs[wti]
+    at = ats + atsplus[ati]
+    atarg = atargs + atplusargs[ati]
+    axbin = axbins + atplusbins[ati]
+
+    runit = 'Rvir'
+    rbins = np.linspace(0.0, 1.3, 27)
+
+    #dirpath = '/'.join([_dirpath, simname])
+    dirpath = sl.dirpath_from_simname(simname)
+
+    atstr = 'rcen_vcen_' + atlabels[ati]
+    wtstr = 'gasmass' if wt == 'Mass' else\
+            'gasvol' if wt == 'Volume' else\
+            wtarg['ion'] if wt == 'ion' else \
+            wtarg['element']
+    outfilen = outdir +\
+               (f'hist_{atstr}_by_{wtstr}_{simname}_snap{snapnum}'
+                '_bins1_v1_hvcen.hdf5')
+    if os.path.isfile(outfilen):
+        print(outfilen, ' already exists; skipping')
+        return None
+    mh.histogram_radprof(dirpath, snapnum,
+                         wt, wtarg, at, atarg,
+                         particle_type=0, 
+                         center='shrinksph', rbins=rbins, runit=runit,
+                         logweights=True, logaxes=logaxes, axbins=axbin,
+                         outfilen=outfilen, overwrite=False)
+
 def run_phasediagrams_radius(opt):
     # nH-T weighted by M, V, Ne, Ne8
     # sample all2
@@ -1003,6 +1069,12 @@ def run_hist_Zprof(opt):
         ind = opt - 312
         simnames = sl.m12plus_f3nobh_lores
         snaps = sl.snaps_hr
+    elif opt >= 366 and opt < 390:
+        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
+        # 24 indices
+        ind = opt - 366
+        simnames = sl.m12_fire3x_tests
+        snaps = sl.snaps_sr
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps))
@@ -1080,6 +1152,11 @@ def run_hist_mstellar_Zstellar(opt):
         ind = opt - 312
         simnames = sl.m12plus_f3nobh_lores
         snaps = sl.snaps_hr
+    elif opt >= 366 and opt < 390:
+        # 24 indices
+        ind = opt - 366
+        simnames = sl.m12_fire3x_tests
+        snaps = sl.snaps_sr
 
     #_dirpath = '/scratch/projects/xsede/GalaxiesOnFIRE/metal_diffusion/'
     simi = ind // (len(snaps))

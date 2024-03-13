@@ -1070,7 +1070,6 @@ def run_hist_Zprof(opt):
         simnames = sl.m12plus_f3nobh_lores
         snaps = sl.snaps_hr
     elif opt >= 366 and opt < 390:
-        outdir = '/projects/b1026/nastasha/hists/r_wtd/'
         # 24 indices
         ind = opt - 366
         simnames = sl.m12_fire3x_tests

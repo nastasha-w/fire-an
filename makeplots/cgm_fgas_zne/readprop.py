@@ -6,13 +6,13 @@ import fire_an.simlists as sl
 import fire_an.utils.constants_and_units as c
 
 ddir = '/projects/b1026/nastasha/hists/r_vr_all2/'
-totfilen = ddir + 'gas_Neon_Ne8_masses_rTcuts.dat'
+totfilen = ddir + 'gas_Neon_Ne8_masses_rTcuts_v2.dat'
 ## just get from total masses; mostly got those to check totals anyway
 #avfilen = ddir + 'mean_ZNe_by_mass_volume_rcuts.dat'
-totZfilen = ddir + 'mean_Ztot_by_mass_rcuts_tcuts.dat'
-mstarfilen = ddir + 'stellarmass_rcuts.dat'
+totZfilen = ddir + 'mean_Ztot_by_mass_rcuts_tcuts_v2.dat'
+mstarfilen = ddir + 'stellarmass_rcuts_v2.dat'
 
-def getbasedata(massset, inclm12plus=False):
+def getbasedata(massset, inclm12plus=False, f3xset=False):
     '''
     set up a dataframe with simnames, snapnums for a mass set 
     ('m12' or 'm13'), excluding runs with bugs
@@ -21,19 +21,26 @@ def getbasedata(massset, inclm12plus=False):
     snaps_sr = sl.snaps_sr
     snaps_hr = sl.snaps_hr
     snaps_m12plus = sl.snaps_hr
+    snaps_f3x = snaps_sr
     sims_f2 = sl.m12_f2md
     sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2
     sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
     sims_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
-
-    simnames_all = sims_f2 + sims_sr + sims_hr 
-    if inclm12plus:
-        simnames_all = simnames_all + sims_m12plus
+    sims_f3x = sl.m12_fire3x_tests
+    
+    if f3xset:
+        simnames_all = sims_f2 + sims_f3x \
+                       + sl.m12_nobh_clean2 + sl.m12_nobh_rest2
+    else:
+        simnames_all = sims_f2 + sims_sr + sims_hr 
+        if inclm12plus:
+            simnames_all = simnames_all + sims_m12plus
     simnames_all = [sn for sn in simnames_all if sn not in sl.buglist2]
     snapnums = [snaps_f2 if sn in sims_f2 else
                 snaps_sr if sn in sims_sr else
                 snaps_hr if sn in sims_hr else
                 snaps_m12plus if sn in sims_m12plus else
+                snaps_f3x if sn in sims_f3x else
                 None
                 for sn in simnames_all]
     snapnums = [snap for l1 in snapnums for snap in l1]
@@ -66,13 +73,13 @@ def getbasedata(massset, inclm12plus=False):
     return data
 
 def readin_all_data(rrange_rvir=(0.1, 1.0), trange_logk=(-np.inf, np.inf),
-                    massset='m12', inclm12plus=False):
+                    massset='m12', inclm12plus=False, f3xset=False):
     '''
     reads useful info for each simname, snapnum in the massset
     note: stellar mass selection is independent of the gas temperature 
           range
     '''
-    data = getbasedata(massset, inclm12plus=inclm12plus)
+    data = getbasedata(massset, inclm12plus=inclm12plus, f3xset=f3xset)
 
     # 1st pass total mass: gas mass, halo gas fraction
     _data = pd.read_csv(totfilen, sep='\t')

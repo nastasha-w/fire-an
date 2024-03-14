@@ -17,6 +17,8 @@ different lines (can group later) for radial ranges, T ranges,
                                       weighting
 store cosmopars for each line too (Omega_b / Omega_m normalization)
 
+_v2 files: includes FIRE-3.x data
+
 '''
 import h5py
 import numpy as np
@@ -38,11 +40,14 @@ simnames_sr = sl.m12_sr_all2 + sl.m13_sr_all2
 simnames_hr = sl.m12_hr_all2 + sl.m13_hr_all2
 simnames_f2 = sl.m12_f2md
 simnames_m12plus = sl.m12plus_f3nobh + sl.m12plus_f3nobh_lores
+simnames_f3x = sl.m12_fire3x_tests
 snaps_sr = sl.snaps_sr
 snaps_hr = sl.snaps_hr
 snaps_f2 = sl.snaps_f2md
 snaps_m12plus = snaps_hr
-simnames_all = simnames_sr + simnames_hr + simnames_f2 + simnames_m12plus
+snaps_f3x = snaps_sr
+simnames_all = simnames_sr + simnames_hr + simnames_f2 + simnames_m12plus \
+               + simnames_f3x
 
 tranges_logk = [(-np.inf, np.inf), (5., np.inf), (5.5, np.inf)]
 rsels_cat = [(0.1, 1.0), (0.0, 1.0), (0.0, 0.1)]
@@ -57,6 +62,8 @@ def getsnaps(simname):
         return snaps_f2
     elif simname in simnames_m12plus:
         return snaps_m12plus
+    elif simname in simnames_f3x:
+        return snaps_f3x
     else:
         raise ValueError(f'No snapshots lsited for {simname}') 
 
@@ -298,7 +305,9 @@ def getdata_masses():
                                               trange_logk=trange_logk, 
                                               weight=weight, first=False)
                         out = out + line
-    outfile = datadir_rvcen + 'gas_Neon_Ne8_masses_rTcuts.dat'
+    #outfile = datadir_rvcen + 'gas_Neon_Ne8_masses_rTcuts.dat'
+    # with FIRE-3.x test data:
+    outfile = datadir_rvcen + 'gas_Neon_Ne8_masses_rTcuts_v2.dat'
     with open(outfile, 'w') as f:
         f.write(out)
 
@@ -341,7 +350,9 @@ def getdata_wtdav():
                                          rrange_rvir=rrange_rvir, 
                                          weight=weight, first=False)
                     out = out + line
-    outfile = datadir_rvcen + 'mean_ZNe_by_mass_volume_rcuts.dat'
+    #outfile = datadir_rvcen + 'mean_ZNe_by_mass_volume_rcuts.dat'
+    # with FIRE-3.x test data
+    outfile = datadir_rvcen + 'mean_ZNe_by_mass_volume_rcuts_v2.dat'            
     with open(outfile, 'w') as f:
         f.write(out)
 
@@ -390,7 +401,9 @@ def getdata_avZtot():
                                           trange_logk=trange_logk, 
                                           first=False)
                     out = out + line
-    outfile = datadir_rvcen + 'mean_Ztot_by_mass_rcuts_tcuts.dat'
+    #outfile = datadir_rvcen + 'mean_Ztot_by_mass_rcuts_tcuts.dat'
+    # with FIRE-3.x test data
+    outfile = datadir_rvcen + 'mean_Ztot_by_mass_rcuts_tcuts_v2.dat'
     with open(outfile, 'w') as f:
         f.write(out)
 
@@ -432,6 +445,8 @@ def getdata_mstellar():
                                             rrange_rvir=rrange_rvir,
                                             first=False)
                     out = out + line
-    outfile = datadir_rvcen + 'stellarmass_rcuts.dat'
+    #outfile = datadir_rvcen + 'stellarmass_rcuts.dat'
+    # with FIRE-3.x data
+    outfile = datadir_rvcen + 'stellarmass_rcuts_v2.dat'
     with open(outfile, 'w') as f:
         f.write(out)

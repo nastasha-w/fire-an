@@ -134,9 +134,11 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
                  'noBH': 1,
                  'noBH-m12+': 2,
                  'AGN-noCR': 3,
-                 'AGN-CR': 4}
-    print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mvir_g'] / c.solar_mass)
-    print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mstarcen_g'] / c.solar_mass)
+                 'AGN-CR': 4,
+                 'FIRE-3x-scmodules': 5,
+                 'FIRE-3x-constpterm': 6}
+    #print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mvir_g'] / c.solar_mass)
+    #print(df.loc[df['physmodel'] == 'noBH-m12+', 'Mstarcen_g'] / c.solar_mass)
     physmodels.sort(key=sortorder.__getitem__)
     for pi, physmodel in enumerate(physmodels):
         binoffset = delta * (pi + 0.5 - 0.5 * numphys)
@@ -150,7 +152,8 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
 def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
                        trange_logk=(5.0, np.inf),
                        panels=('fgas', 'ZNe', 'Ne8frac'),
-                       xlabels=None, inclm12plus=False):
+                       xlabels=None, inclm12plus=False,
+                       f3xset=False):
     fontsize = 12
     npanels = len(panels)
     ncols = min(npanels, 2)
@@ -173,12 +176,16 @@ def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
     
     df = rpr.readin_all_data(massset=massset, rrange_rvir=rrange_rvir,
                              trange_logk=trange_logk, 
-                             inclm12plus=inclm12plus)
+                             inclm12plus=inclm12plus, f3xset=f3xset)
     kwa_phys = {key: {'color': val, 'linewidth': 1.5}
                 for key, val in sl.physcolors.items()}
     kwa_phys['noBH-m12+'] = kwa_phys['noBH'].copy()
     kwa_phys['noBH-m12+']['linestyle'] = 'dashed'
     kwa_phys['noBH-m12+']['color'] = 'black'
+    kwa_phys['FIRE-3x-scmodules'] = kwa_phys['noBH'].copy()
+    kwa_phys['FIRE-3x-scmodules']['color'] = sl._physcolors.cyan
+    kwa_phys['FIRE-3x-constpterm'] = kwa_phys['noBH'].copy()
+    kwa_phys['FIRE-3x-constpterm']['color'] = sl._physcolors.purple
 
     for axi, (ax, panel) in enumerate(zip(axes, panels)):
         doleft = axi % ncols == 0
@@ -215,9 +222,10 @@ def plotpanels_general(massset, rrange_rvir=(0.1, 1.0),
                    handlelength=1.)
     
     m12plusstr = '_inclm12plus' if inclm12plus else ''
+    f3xstr = '_f3xtest' if f3xset else ''
     outname = (f'cgmprophist_{massset}_{rrange_rvir[0]:.2f}_to_'
                f'{rrange_rvir[1]:.2f}_gas_ge_{trange_logk[0]:.1f}_logK'
-               '_') + m12plusstr + '_'.join(panels)
+               '_') + m12plusstr + f3xstr + '_'.join(panels)
     outname = outname.replace('.', 'p')
     outname = outname.replace('-', 'm')
     outname = mdir + outname + '.pdf'
@@ -356,6 +364,24 @@ def plotpanels_main(massset='m12'):
     outname = outname.replace('-', 'm')
     outname = mdir + outname + '.pdf'
     plt.savefig(outname, bbox_inches='tight')
+
+
+def plotoverviews_f3xtest():
+    plotpanels_general('m12', rrange_rvir=(0.1, 1.0),
+                       trange_logk=(5.0, np.inf),
+                       panels=('Mvir', 'Mstarcen',
+                               'ZoverMstarcen', 'ZoverMstarhalo',
+                               'fgas', 'ZNe', 'Ztot'),
+                       xlabels=None, inclm12plus=False,
+                       f3xset=True)
+    plotpanels_general('m12', rrange_rvir=(0.1, 1.0),
+                       trange_logk=(-np.inf, np.inf),
+                       panels=('Mvir', 'Mstarcen',
+                               'ZoverMstarcen', 'ZoverMstarhalo',
+                               'fgas', 'ZNe', 'Ztot'),
+                       xlabels=None, inclm12plus=False,
+                       f3xset=True)
+    
 
         
         

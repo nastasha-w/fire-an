@@ -11,6 +11,8 @@ import fire_an.simlists as sl
 
 proffilen = ('/projects/b1026/nastasha/plotdata/'
              'coldens_radprof_Ne8_opt2.hdf5')
+proffilen_f3x = ('/projects/b1026/nastasha/plotdata/'
+                 'coldens_radprof_Ne8_opt3.hdf5')
 mdir = '/projects/b1026/nastasha/imgs/datacomp/'
 oddir = '/projects/b1026/nastasha/extdata/'
 q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
@@ -23,6 +25,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     perc_mid = '0.5'
     samplestr = ''
     sample_ds = sample
+    firefilen = proffilen
     if massset == 'm12':
         if sample == 'main':
             samplestr = '_main'
@@ -38,6 +41,12 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
         elif sample == 'fire2':
             samplestr = '_fire2'
             physmodels = ['FIRE-2']
+        elif sample == 'f3xtest':
+            samplestr = '_f3xtest'
+            physmodels = ['FIRE-2', 'noBH', 'FIRE-3x-constpterm', 
+                          'FIRE-3x-scmodules']
+            sample = 'f3xtest'
+            firefilen = proffilen_f3x
     elif massset == 'm13':
         physmodels = ['noBH', 'AGN-noCR', 'AGN-CR']
 
@@ -109,7 +118,7 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
 
         # plot FIRE data
         grpn = massset + '_' + physmodel + '_' + zr
-        with h5py.File(proffilen, 'r') as f:
+        with h5py.File(firefilen, 'r') as f:
             grp = f[grpn]
             rbins = grp['rbins'][:]
             yv_mid = grp[f'perc-{perc_mid}'][:]

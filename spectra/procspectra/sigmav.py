@@ -6,8 +6,12 @@ import numpy as np
 import fire_an.simlists as sl
 import fire_an.spectra.findcomponents as fc
 import fire_an.spectra.genspectra as gs
+import fire_an.spectra.procspectra.rough_detmasks as rdm
 import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
+
+## CUBS (Qu et al., 2024): FWHM spectral resolution is ~20 km/s
+sigma_lsf_cubs_kmps = 20. / (2. * np.sqrt(2. * np.log(2.)))
 
 def calc_vcen_sigmav_logN(specfilen: str, 
                           vcengal_kmps: float, 
@@ -35,6 +39,44 @@ def calc_vcen_sigmav_logN(specfilen: str,
     logN = np.log10(spec.line.tau_to_coldens(weight, vel))
     return vcen, sigma, sigma_gal, logN
 
+def calc_vcen_sigmav_logN_roughcomponents(specfilen: str, 
+                                          vcengal_kmps: float, 
+                                          line: fc.Line = fc.ne8_770,
+                                          mindetcomp_logN_cm2: float = 14.,
+                                          sigma_lsf_kmps: float = 30.,
+                                          maxbpar_kmps: float = 100.):
+    '''
+    Returns:
+    --------
+    vcen: float
+        optical-depth-weighted line of sight velocity 
+        (km/s, trident frame)
+    sigma: float
+        optical-depth-weighted second moment of the line of sight
+        velocity (km/s)
+    logN: float
+        total column density along the line of sight (log10 cm**-2)
+    logN_det: float
+        total column density along the line of sight in the detected
+        components (log10 cm**-2)
+    '''
+    spec = fc.SpectrumFitBayes(line, filen=specfilen)
+    mask, enclinds_det, cds = \
+        rdm.get_roughdetmask(spec, lsf_sigma_kmps=sigma_lsf_kmps,
+                             coldetlim_logN_cm2=mindetcomp_logN_cm2,
+                             maxbpar_kmps=maxbpar_kmps)
+    logN_det = np.log10(np.sum(cds))
+    vel = spec.vel_kmps
+    weight = spec.tau_raw
+    vcen = np.sum(weight[mask] * vel[mask]) / np.sum(weight[mask])
+    dv = vel - vcen
+    sigma = np.sqrt(np.sum(weight[mask] * dv[mask]**2) / np.sum(weight[mask]))
+    dvgal = vel - vcengal_kmps
+    sigma_gal = np.sqrt(np.sum(weight[mask] * dvgal[mask]**2)
+                        / np.sum(weight[mask]))
+    logN = np.log10(spec.line.tau_to_coldens(weight, vel))
+    return vcen, sigma, sigma_gal, logN, logN_det
+    
 def getdata_sigmav(infofilens: list[str], 
                    filepatterns: list[str],
                    simnames: list[str],

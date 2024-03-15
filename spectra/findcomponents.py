@@ -643,7 +643,7 @@ class SpectrumFitBayes:
         return convflux
 
     def _convolve_gauss(self, spec: np.ndarray[float], width_kmps: float=30.):
-        self.dv = np.average(np.diff(self.spec_raw))
+        self.dv = np.average(np.diff(self.vel_kmps))
         self.width_bins = width_kmps / self.dv
         self.kernel = Gaussian1DKernel(self.width_bins)
         spec_smoothed = convolve(spec, self.kernel, 

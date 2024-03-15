@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 import fire_an.spectra.findcomponents as fc
@@ -26,9 +27,9 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
                                dv_cmps)
     nu_minspec_Hz = nuline_Hz / (1. + v_minspec_cmps / c.c)
     minspec = line.getspectrum(nu_minspec_Hz,
-                               coldetlim_logN_cm2,
-                               equiv_bval_kmps,
-                               nuline_Hz)
+                               np.array([coldetlim_logN_cm2]),
+                               np.array([equiv_bval_kmps]),
+                               np.array([0.]))
     minlevel = np.min(minspec)
 
     # find min level crossings: candidate components lie between those
@@ -36,14 +37,17 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
     # crosses minlevel between index and index + 1
     crossinds = np.searchsorted(vvals, vcross) - 1
     enclinds = []
-    if convflux[0] > minlevel: 
-        enclinds.append([0, crossinds[0]])
-        crossinds = crossinds[1:]
-    numi = len(crossinds) // 2 # round down to an even number
-    enclinds += [[crossinds[2 * i], crossinds[2 * i + 1] + 1]
-                 for i in range(numi)]
-    if convflux[-1] > minlevel:
-        enclinds.append([crossinds[-1], len(vvals)])
+    if np.all(convflux < minlevel):
+        enclinds = [[0, len(vvals)]]
+    else:
+        if convflux[0] < minlevel: 
+            enclinds.append([0, crossinds[0]])
+            crossinds = crossinds[1:]
+        numi = len(crossinds) // 2 # round down to an even number
+        enclinds += [[crossinds[2 * i], crossinds[2 * i + 1] + 1]
+                    for i in range(numi)]
+        if convflux[-1] < minlevel:
+            enclinds.append([crossinds[-1], len(vvals)])
     
     # check each 'component' for detectability (raw spectrum)
     enclinds_det = []
@@ -56,7 +60,77 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
             enclinds_det.append([imin, imax])
             cds.append(cd)
             mask[sel] = True
-    
     return mask, enclinds_det, cds
     
+def test_rough_detmasks(spectrum: fc.SpectrumFitBayes,
+                        outname: str | None = None,
+                        lsf_sigma_kmps: float = 30.,
+                        coldetlim_logN_cm2: float = 13.5,
+                        maxbpar_kmps: float = 100.):
+    vvals = spectrum.vel_kmps
+    rawspec = spectrum.spec_raw
+    convflux = spectrum._convolve_gauss(rawspec, width_kmps=lsf_sigma_kmps)
+    mask, enclinds, cds = get_roughdetmask(
+        spectrum, lsf_sigma_kmps=lsf_sigma_kmps,
+        coldetlim_logN_cm2=coldetlim_logN_cm2, maxbpar_kmps=maxbpar_kmps)
+    
+    fig = plt.figure(figsize=(6., 2.5))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(vvals, rawspec, linestyle='solid', color='blue', linewidth=1.5,
+            label='raw spectrum')
+    ax.plot(vvals, convflux, linestyle='solid', color='black', linewidth=1.5,
+            label='spectrum + LSF')
+    for ci, (imin, imax) in enumerate(enclinds):
+        sl = slice(imin, imax + 1, None)
+        label = 'detected' if ci == 0 else None
+        ax.plot(vvals[sl], rawspec[sl], linestyle='dashed', color='red',
+                linewidth=1.5, label=label)
+        vcen = 0.5 * (vvals[imin] + vvals[imax])
+        ax.text(vcen, 1.02, '$ \\log_{10} \\, \\mathrm{N} = '
+                f'{np.log10(cds[ci]):.2f}$',
+                horizontalalignment='center',
+                verticalalignment='bottom',
+                fontsize=10)    
+    ax.axhline(1., linestyle='dotted', linewidth=1.5, color='gray')
+    pmask = np.asarray(np.logical_not(mask), dtype=np.float32)
+    pmask[mask] = min(np.min(rawspec), np.min(convflux)) - 0.02 
+    ax.plot(vvals, pmask, linestyle='dotted', linewidth=1.5, color='red')
 
+    ax.set_xlabel('$v \\;[\\mathrm{km} / \\mathrm{s}]$', fontsize=12)
+    ax.set_ylabel('transmission', fontsize=12)
+    ax.tick_params(which='both', direction='in', labelsize=11.,
+                   top=True, right=True)
+    if outname is not None:
+        plt.savefig(outname, bbox_inches='tight')
+
+
+def runtest_rough_detmasks():
+    # some pretty much random sightlines,
+    # but close to the galaxy for hopefully higher column densities
+    outdir = '/projects/b1026/nastasha/tests/absspec_rough_compdet/'
+    outname_temp = 'test_compdet_ne8_770_{specname}_lsf30_detlim13p0_maxb50.pdf'
+    specdir = '/projects/b1026/nastasha/spectra/test4/'
+    specfiles = ['tridentray_m12z_r4200_294_210.txt',
+                 #'tridentray_m12z_r4200_294_208.txt',
+                 #'tridentray_m12z_r4200_294_212.txt',
+                 #'tridentray_m12w_r7100_294_210.txt',
+                 #'tridentray_m12w_r7100_294_208.txt',
+                 #'tridentray_m12w_r7100_294_212.txt',
+                 #'tridentray_crheatfix_m12f_r7100_294_210.txt',
+                 #'tridentray_crheatfix_m12f_r7100_294_208.txt',
+                 #'tridentray_crheatfix_m12f_r7100_294_212.txt',
+                 #'tridentray_m12m_r7100_294_210.txt',
+                 #'tridentray_m12m_r7100_294_208.txt',
+                 #'tridentray_m12m_r7100_294_212.txt',
+                 ]
+                 
+
+    for specfile in specfiles:
+        outname = outdir + outname_temp.format(specname=specfile)
+        spectrum = fc.SpectrumFitBayes(fc.ne8_770,
+                                       filen=specdir + specfile)
+        test_rough_detmasks(spectrum,
+                            outname=outname,
+                            lsf_sigma_kmps=30.,
+                            coldetlim_logN_cm2=13.0,
+                            maxbpar_kmps=50.)

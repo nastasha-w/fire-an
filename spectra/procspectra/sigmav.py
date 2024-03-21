@@ -12,6 +12,15 @@ import fire_an.utils.cosmo_utils as cu
 
 ## CUBS (Qu et al., 2024): FWHM spectral resolution is ~20 km/s
 sigma_lsf_cubs_kmps = 20. / (2. * np.sqrt(2. * np.log(2.)))
+## from Prochaska, Burchett, et al. (2019, CASBaH galaxy survey):
+# Integrating the redshift measurements from Hectospec, DEIMOS, 
+# and the SDSS database, we performed internal comparisons between 
+# the ∼175 sources common to two or more of the sub-surveys. 
+# Ignoring catostrophic failures (described below), the measured 
+# rms values between Hectosec/SDSS and DEIMOS/Hectospec are 
+# ~=35 and ~=36 km/s respectively. 
+# Therefore, we advise adopting a minimum redshift uncertainty of
+# 35km/s for galaxies drawn from the CASBaH database.
 
 def calc_vcen_sigmav_logN(specfilen: str, 
                           vcengal_kmps: float, 

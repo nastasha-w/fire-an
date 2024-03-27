@@ -1,13 +1,17 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import fire_an.analytic_halo.model_ionprof_pl as mip
 import fire_an.ionrad.ion_utils as iu
+import fire_an.makeplots.tol_colors as tc
 
 # fire_an.makeplots.litcomp.obsdataread for calculations
 oddir = '/projects/b1026/nastasha/extdata/'
 q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
 b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
+g05filen = oddir + 'gallazzi_etal_2005_table2_stellarMZ.txt'
+g05_Zsun = 0.0127 # I couldn't actually find a value in the paper
 
 # some estimates of SSP yields, 
 # given a set of single-star yields and an IMF
@@ -59,8 +63,24 @@ metal_yield = 0.02 # TODO: look up a literature value
 # find redshift evolution of M*-Z* between z=0 and z=0.4
 # but this is specifically for quiescent galaxies
 # [Fe/H] ~ -0.5 -- 0 at M* = 10^10 -- 10^10.5 Msun, z=0.4
-
+#
+# Gallazzi et al. (2005): z=0, but plenty of data
+# https://ui.adsabs.harvard.edu/abs/2005MNRAS.362...41G/abstract
+# 
 starZ = 0.014 # TODO: look up actual stellar metallicity
+g05dat = pd.read_csv(g05filen, sep='\t', comment='#')
+def get_starZ_range(logmstar_msun):
+    lovals = np.interp(logmstar_msun,
+                       g05dat['Mstar_logMsun'],
+                       g05dat['Z_logZsun_p16'])
+    midvals = np.interp(logmstar_msun,
+                       g05dat['Mstar_logMsun'],
+                       g05dat['Z_logZsun_p50'])
+    hivals = np.interp(logmstar_msun,
+                       g05dat['Mstar_logMsun'],
+                       g05dat['Z_logZsun_p84'])
+    out = np.array([lovals, midvals, hivals]).T * g05_Zsun
+    return out
 
 
 def check_consistency_cieplmodel(infodict: dict,
@@ -73,7 +93,8 @@ def check_consistency_cieplmodel(infodict: dict,
     '''
     mstar_msun_opts = 10**infodict['mstar_opts_logMsun']
     totmetals = mstar_msun_opts * metal_yield
-    starmetals = mstar_msun_opts * starZ
+    _starZ = get_starZ_range(infodict['mstar_opts_logMsun'])
+    starmetals = mstar_msun_opts[:, np.newaxis] * _starZ
 
     mvir_msun_opts = 10**infodict['mvir_opts_logMsun']
     redshift = infodict['z']
@@ -208,3 +229,42 @@ def runcheck_enough_metals_hotphase():
     print(res)    
 
 
+def plotcheck_enough_metals_hotphase(info: dict,
+                                     plis_vc: tuple = (0.0, -0.15, -0.3),
+                                     plis_entropy: tuple = (0.67, 1., 1.2),
+                                     survey='CASBaH'):
+    massZ_inferred, starmetals, totmetals = \
+            check_consistency_cieplmodel(info, plis_vc=plis_vc,
+                                         plis_entropy=plis_entropy)
+    fig = plt.figure(figsize=(5.5, 5.))
+    ax = fig.add_subplot()
+    colors = tc.tol_cset('vibrant')
+
+    lMZ_cgm = np.log10(massZ_inferred)
+    lMZ_stars = np.log10(starmetals.flatten())
+    lMZ_prod = np.log10(totmetals)
+    xmin = min([np.min(lMZ_cgm), np.min(lMZ_stars), np.min(lMZ_prod)])
+    xmax = max([np.max(lMZ_cgm), np.max(lMZ_stars), np.max(lMZ_prod)])
+    bins = np.linspace(0.95 * xmin, 1.05 * xmax, 25)
+    ax.hist(lMZ_cgm, bins=bins, density=False, color=colors[0],
+            label='CGM')
+    ax.hist(lMZ_stars, bins=bins, density=False, color=colors[1],
+            label='stars')
+    ax.hist(lMZ_prod, bins=bins, density=False, color=colors[2],
+            label='prod.')
+    ax.legend(fontsize=10)
+    ax.set_xlabel('$\\log_10 \\, \\mathrm{M}_{\\mathrm{Z}} '
+                  '\\; [\\mathrm{M}_{\\odot}]$',
+                  fontsize=12)
+    ax.set_ylabel('# points', fontsize=12)
+    ax.tick_params(which='both', labelsize=11, direction='in',
+                   top=True, right=True)
+    title = ('$\\log_{10} \\, \\mathrm{N} = '
+             f'{info["cd_opts_logcm2"][2]:.1f}'
+             ', \\mathrm{r}_{\\perp} = '
+             f'{info["ipar_kpc"]:.0f}$ kpc')
+    title = survey + ', ' + title
+    fig.suptitle(title, fontsize=12)
+
+
+    

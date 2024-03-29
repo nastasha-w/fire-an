@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import fire_an.analytic_halo.model_ionprof_pl as mip
 import fire_an.ionrad.ion_utils as iu
 import fire_an.makeplots.tol_colors as tc
+import fire_an.utils.constants_and_units as c
+import fire_an.utils.cosmo_utils as cu
 
 # fire_an.makeplots.litcomp.obsdataread for calculations
 oddir = '/projects/b1026/nastasha/extdata/'
@@ -12,6 +14,8 @@ q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
 b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 g05filen = oddir + 'gallazzi_etal_2005_table2_stellarMZ.txt'
 g05_Zsun = 0.0127 # I couldn't actually find a value in the paper
+
+mdir = '/projects/b1026/nastasha/imgs/analytical/ion_origins/'
 
 # some estimates of SSP yields, 
 # given a set of single-star yields and an IMF
@@ -79,7 +83,7 @@ def get_starZ_range(logmstar_msun):
     hivals = np.interp(logmstar_msun,
                        g05dat['Mstar_logMsun'],
                        g05dat['Z_logZsun_p84'])
-    out = np.array([lovals, midvals, hivals]).T * g05_Zsun
+    out = 10**np.array([lovals, midvals, hivals]).T * g05_Zsun
     return out
 
 
@@ -240,23 +244,26 @@ def plotcheck_enough_metals_hotphase(info: dict,
     ax = fig.add_subplot()
     colors = tc.tol_cset('vibrant')
 
-    lMZ_cgm = np.log10(massZ_inferred)
+    lMZ_cgm = np.log10(massZ_inferred.flatten())
     lMZ_stars = np.log10(starmetals.flatten())
-    lMZ_prod = np.log10(totmetals)
+    lMZ_prod = np.log10(totmetals.flatten())
     xmin = min([np.min(lMZ_cgm), np.min(lMZ_stars), np.min(lMZ_prod)])
     xmax = max([np.max(lMZ_cgm), np.max(lMZ_stars), np.max(lMZ_prod)])
     bins = np.linspace(0.95 * xmin, 1.05 * xmax, 25)
-    ax.hist(lMZ_cgm, bins=bins, density=False, color=colors[0],
-            label='CGM')
-    ax.hist(lMZ_stars, bins=bins, density=False, color=colors[1],
-            label='stars')
-    ax.hist(lMZ_prod, bins=bins, density=False, color=colors[2],
-            label='prod.')
+    ax.hist(lMZ_cgm, bins=bins, density=True, color=colors[0],
+            label='CGM', weights=[1. / len(lMZ_cgm)] * len(lMZ_cgm),
+            histtype='step', linewidth=2, linestyle='solid')
+    ax.hist(lMZ_stars, bins=bins, density=True, color=colors[1],
+            label='stars',  weights=[1. / len(lMZ_stars)] * len(lMZ_stars),
+            histtype='step', linewidth=2, linestyle='dashed')
+    ax.hist(lMZ_prod, bins=bins, density=True, color=colors[2],
+            label='prod.',  weights=[1. / len(lMZ_prod)] * len(lMZ_prod),
+            histtype='step', linewidth=2, linestyle='dotted')
     ax.legend(fontsize=10)
-    ax.set_xlabel('$\\log_10 \\, \\mathrm{M}_{\\mathrm{Z}} '
+    ax.set_xlabel('$\\log_{10} \\, \\mathrm{M}_{\\mathrm{Z}} '
                   '\\; [\\mathrm{M}_{\\odot}]$',
                   fontsize=12)
-    ax.set_ylabel('# points', fontsize=12)
+    ax.set_ylabel('pdf', fontsize=12)
     ax.tick_params(which='both', labelsize=11, direction='in',
                    top=True, right=True)
     title = ('$\\log_{10} \\, \\mathrm{N} = '
@@ -266,5 +273,92 @@ def plotcheck_enough_metals_hotphase(info: dict,
     title = survey + ', ' + title
     fig.suptitle(title, fontsize=12)
 
+    outname = mdir + (f'hotphase_Zbudget_{survey}_logN_'
+                      f'{info["cd_opts_logcm2"][2]:.1f}'
+                      f'ipar_{info["ipar_kpc"]:.0f}.pdf')
+    plt.savefig(outname, bbox_inches='tight')
 
+def runset_enough_metals_hotphase():
+    # print everything at the end to get a nice overview
+    # (model calculation print a lot of stuff)
+    df = pd.read_csv(b19filen, sep='\t')
+    df = df[np.logical_not(df['log_N_Ne8_isUL'])]
+    for i in df.index:
+        info = getinfo_1sys(df, i, survey='casbah')
+        plotcheck_enough_metals_hotphase(info, survey='CASBaH')
+    df = pd.read_csv(q23filen, sep='\t')
+    df = df[np.logical_not(df['isul_ne8'])]
+    for i in df.index:
+        info = getinfo_1sys(df, i, survey='cubs')
+        plotcheck_enough_metals_hotphase(info, survey='CUBS')
+ 
     
+def check_pathlengths_pie(info: dict,
+                          logTKrange: tuple[float, float] = (3.5, 4.5),
+                          survey='cubs'):
+    z = info['z']
+    ion = 'Ne8'
+    assumedZ_solar = 0.3
+    if survey == 'cubs':
+        cosmopars = {'h': 0.7, 'omegam': 0.3, 'omegalambda': 0.7}
+    elif survey == 'casbah':
+        cosmopars = {'h': 0.677, 'omegam': 0.31, 'omegalambda': 0.69}
+    cosmopars.update({'z': z, 'a': 1. / (1. + z)})
+
+    itab = iu.Linetable_PS20(ion, z, lintable=True)
+    itab.findiontable()
+    solarZ = itab.solarZ
+    tableZ = itab.logZsol
+    iZ = np.argmin(np.abs(tableZ - assumedZ_solar))
+    ionf = itab.iontable_T_Z_nH[:, iZ, :]
+    tablenH = itab.lognHcm3
+    tableT = itab.logTK
+    selT = tableT <= logTKrange[1]
+    selT &= tableT >= logTKrange[0]
+    dctZ = {'logZ': np.array([np.log10(assumedZ_solar * solarZ)])}
+    nitonh = itab.find_assumedabundance(dctZ, log=False)
+    iondens = ionf[selT, :] * 10**tablenH[np.newaxis, :] * nitonh
+    maxid = np.max(iondens)
+
+    pathlengths_kpc = 10**info['cd_opts_logcm2'] / maxid \
+                      / (c.cm_per_mpc * 1e-3)
+    rvir_cm = cu.rvir_from_mvir(10**info['mvir_opts_logMsun'] * c.solar_mass,
+                                cosmopars=cosmopars, meandef='BN98')
+    rvir_kpc = rvir_cm / (c.cm_per_mpc * 1e-3)
+
+    return pathlengths_kpc, rvir_kpc
+
+def runcheck_pathlengths_pie():
+    # print everything at the end to get a nice overview
+    # (model calculation print a lot of stuff)
+    res = ''
+    res = res + 'CASBaH data:\n'
+    res = res + '------------\n'
+    df = pd.read_csv(b19filen, sep='\t')
+    df = df[np.logical_not(df['log_N_Ne8_isUL'])]
+    for i in df.index:
+        info = getinfo_1sys(df, i, survey='casbah')
+        res = res + '\n'
+        pathlengths_kpc, rvir_kpc = \
+            check_pathlengths_pie(info, survey='casbah')
+        res = res + ('for abs. sys. log10 N = '
+                     f'{info["cd_opts_logcm2"][2]}'
+                     f', at {info["ipar_kpc"]} kpc\n'
+                     f'inferred min. pathlength: {pathlengths_kpc} kpc\n'
+                     f'inferred virial radius: {rvir_kpc} kpc\n')
+    res = res + '\n\n'
+    res = res + 'CUBS data:\n'
+    res = res + '----------\n'
+    df = pd.read_csv(q23filen, sep='\t')
+    df = df[np.logical_not(df['isul_ne8'])]
+    for i in df.index:
+        info = getinfo_1sys(df, i, survey='cubs')
+        res = res + '\n'
+        pathlengths_kpc, rvir_kpc = \
+            check_pathlengths_pie(info, survey='cubs')
+        res = res + ('for abs. sys. log10 N = '
+                     f'{info["cd_opts_logcm2"][2]}'
+                     f', at {info["ipar_kpc"]} kpc\n'
+                     f'inferred min. pathlength: {pathlengths_kpc} kpc\n'
+                     f'inferred virial radius: {rvir_kpc} kpc\n')
+    print(res)    

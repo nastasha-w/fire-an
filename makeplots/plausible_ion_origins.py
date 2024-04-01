@@ -22,7 +22,7 @@ mdir = '/projects/b1026/nastasha/imgs/analytical/ion_origins/'
 # https://ui.adsabs.harvard.edu/abs/2016MNRAS.455.4183V/abstract
 # pretty wide ranges here: ~0.01 -- 0.04 (at t=infinity) depending
 # on IMF and stellar yield data 
-metal_yield = 0.02 # TODO: look up a literature value
+metal_yield = 0.02 
 
 ## Notes on estimating stellar metallicities
 # In general, z~0.5 -- 1.0 seems to be pretty rare for Z* data (mostly 

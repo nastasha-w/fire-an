@@ -49,7 +49,7 @@ def get_totals(simname, snapnum, outname):
 def run_totals(index):
     outdir = '/projects/b1026/nastasha/hists/gas_stars_metals/'
     # leaving out the fire3_m12plus halos for npw
-    if index >=0 and index < 108:
+    if index >= 0 and index < 108:
         ind = index - 0
         simnames = sl.m12_hr_all2 # 18
         snapnums = sl.snaps_hr # 6

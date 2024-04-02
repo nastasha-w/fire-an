@@ -1,6 +1,7 @@
 
 import sys
 
+import fire_an.explore.effective_yields as efy
 import fire_an.explore.run_clumpiness as rcn
 import fire_an.explore.run_partsel_pv as spv
 import fire_an.mainfunc.haloprop as hp
@@ -381,6 +382,13 @@ def fromcommandline(index):
         # 96 indices
         # run 2x, comment out different mts sets
         rcn.run_clumpiness(opt=index - 47578 + 1464)
+    elif index >= 47674 and index < 47968:
+        # run yields on quest: 294 indices
+        efy.run_totals(index - 47674)
+    elif index >= 47968 and index < 47992:
+        # run yields on frontera: 24 indices
+        efy.run_totals(index - 47968 + 294)
+
     else:
         raise ValueError('Nothing specified for index {}'.format(index))
 

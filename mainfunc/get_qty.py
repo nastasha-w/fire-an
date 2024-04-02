@@ -445,8 +445,14 @@ def get_qty(snap, parttype, maptype, maptype_args, filterdct=None):
         else:
             qty *= snap.readarray_emulateEAGLE(basepath + 'Masses')[filter]
         toCGS = toCGS * snap.toCGS
-        toCGS = toCGS / elt_atomw_cgs(element)
-        todoc['units'] = '(# nuclei)'
+        if element == 'total':
+            # number of nuclei would depend on the metal fractions
+            # -> that's a pain, just return grams ( / cm^3)
+            todoc['units'] = 'g'
+        else:
+            todoc['units'] = '(# nuclei)'
+            toCGS = toCGS / elt_atomw_cgs(element)
+        
         if output_density:
             todoc['units'] += ' * cm**-3'
         todoc['density'] = output_density

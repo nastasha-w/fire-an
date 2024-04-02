@@ -70,6 +70,8 @@ def run_totals(index):
         simnames = sl.m12_f2md # 10
         snapnums = sl.snaps_f2md #6
     elif index >= 294 and index < 318:
+        # frontera output dir
+        outdir = '/scratch1/08466/tg877653/output/hists/gas_stars_metals/'
         ind = index - 294
         simnames = sl.m12_fire3x_tests # 4
         snapnums = sl.snaps_sr #6

@@ -9,7 +9,8 @@ import fire_an.utils.constants_and_units as c
 import fire_an.utils.cosmo_utils as cu
 
 # fire_an.makeplots.litcomp.obsdataread for calculations
-oddir = '/projects/b1026/nastasha/extdata/'
+oddir = '/projects/b1026/nastasha/extdata/' # quest
+#oddir = '/Users/nastasha/ciera/projects_lead/fire3_ionabs/' #laptop 
 q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
 b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 g05filen = oddir + 'gallazzi_etal_2005_table2_stellarMZ.txt'

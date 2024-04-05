@@ -4,12 +4,26 @@ zoom simulation volumes
 '''
 
 import h5py
+import matplotlib.gridspec as gsp
+import matplotlib.pyplot as plt
 import numpy as np
 
 import fire_an.mainfunc.get_qty as gq
 import fire_an.readfire.readin_fire_data as rfd
 import fire_an.simlists as sl
 import fire_an.utils.h5utils as h5u
+
+snaps_hr = sl.snaps_hr
+snaps_sr = sl.snaps_sr
+snaps_md = sl.snaps_f2md
+sims_hr = sl.m12_hr_all2 + sl.m13_hr_all2
+sims_sr = sl.m12_sr_all2 + sl.m13_sr_all2 + sl.m12_fire3x_tests
+sims_md = sl.m12_f2md
+snaps_z = sl.snaps_z
+physcolors = sl.physcolors.copy()
+physcolors.update({'FIRE-3x-scmodules': sl._physcolors.cyan,
+                   'FIRE-3x-constpterm': sl._physcolors.magenta})
+
 
 def get_totals(simname, snapnum, outname):
     metals = ['total', 'Oxygen', 'Neon', 'Carbon', 'Nitrogen', 'Iron',
@@ -27,7 +41,7 @@ def get_totals(simname, snapnum, outname):
         hed.attrs.create('snapnum', snapnum)
         cosmopars = snap.cosmopars.getdct()
         csm = hed.create_group('cosmopars')
-        h5u.savedict_hdf5(cosmopars, csm)
+        h5u.savedict_hdf5(csm, cosmopars)
         f.create_group('gas')
         f.create_group('stars')
 
@@ -85,4 +99,10 @@ def run_totals(index):
 
     get_totals(simname, snapnum, outname)
             
+def get_yielddata(simname):
+    pass
+
+def plotyields(species='total', source='all'):
+    pass
+
 

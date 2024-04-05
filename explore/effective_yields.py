@@ -22,7 +22,7 @@ sims_md = sl.m12_f2md
 snaps_z = sl.snaps_z
 physcolors = sl.physcolors.copy()
 physcolors.update({'FIRE-3x-scmodules': sl._physcolors.cyan,
-                   'FIRE-3x-constpterm': sl._physcolors.magenta})
+                   'FIRE-3x-constpterm': sl._physcolors.purple})
 
 
 def get_totals(simname, snapnum, outname):

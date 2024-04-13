@@ -12,7 +12,8 @@ totfilen = ddir + 'gas_Neon_Ne8_masses_rTcuts_v2.dat'
 totZfilen = ddir + 'mean_Ztot_by_mass_rcuts_tcuts_v2.dat'
 mstarfilen = ddir + 'stellarmass_rcuts_v2.dat'
 
-def getbasedata(massset, inclm12plus=False, f3xset=False):
+def getbasedata(massset, inclm12plus=False, f3xset=False,
+                f3xset_large=False):
     '''
     set up a dataframe with simnames, snapnums for a mass set 
     ('m12' or 'm13'), excluding runs with bugs
@@ -31,6 +32,8 @@ def getbasedata(massset, inclm12plus=False, f3xset=False):
     if f3xset:
         simnames_all = sims_f2 + sims_f3x \
                        + sl.m12_nobh_clean2 + sl.m12_nobh_rest2
+    elif f3xset_large:
+        simnames_all = sims_f2 + sims_f3x + sims_sr + sims_hr 
     else:
         simnames_all = sims_f2 + sims_sr + sims_hr 
         if inclm12plus:
@@ -73,13 +76,15 @@ def getbasedata(massset, inclm12plus=False, f3xset=False):
     return data
 
 def readin_all_data(rrange_rvir=(0.1, 1.0), trange_logk=(-np.inf, np.inf),
-                    massset='m12', inclm12plus=False, f3xset=False):
+                    massset='m12', inclm12plus=False, f3xset=False,
+                    f3xset_large=False):
     '''
     reads useful info for each simname, snapnum in the massset
     note: stellar mass selection is independent of the gas temperature 
           range
     '''
-    data = getbasedata(massset, inclm12plus=inclm12plus, f3xset=f3xset)
+    data = getbasedata(massset, inclm12plus=inclm12plus, f3xset=f3xset,
+                       f3xset_large=f3xset_large)
 
     # 1st pass total mass: gas mass, halo gas fraction
     _data = pd.read_csv(totfilen, sep='\t')

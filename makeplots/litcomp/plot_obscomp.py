@@ -1,5 +1,6 @@
 import h5py
 import matplotlib.gridspec as gsp
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -18,8 +19,22 @@ oddir = '/projects/b1026/nastasha/extdata/'
 q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
 b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 
+def runningpercentiles(xvals, yvals, yperc=0.5, npoints=5):
+    xp = []
+    yp = []
+    _xvals = np.array(xvals)
+    _yvals = np.array(yvals)
+    xorder = np.argsort(_xvals)
+    for i in range(len(xvals) - npoints):
+        sel = slice(i, i + npoints, None)
+        # median of x points
+        xp.append(np.quantile(_xvals[xorder][sel], 0.5))
+        yp.append(np.quantile(_yvals[xorder][sel], yperc))
+    return np.array(xp), np.array(yp)
+
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main'):
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=False, npoints_percul=(5, 10)):
 
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
@@ -168,7 +183,37 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                         s=30, facecolors='none', edgecolors=color, 
                         label=ullabel, zorder=5, linewidths=1.5)
             labelsdone = True
-    
+        if percentilesul:
+            xv_goodmatch = (ipar_obs[np.logical_or(dsel_main_ul,
+                                                   dsel_main_noul)]).copy()
+            xv_all = ipar_obs.copy()
+            yv_goodmatch = (cd_obs[np.logical_or(dsel_main_ul,
+                                                   dsel_main_noul)]).copy()
+            yv_all = cd_obs.copy()
+            xp_goodmed, yp_goodmed = \
+                runningpercentiles(xv_goodmatch, yv_goodmatch, 
+                                   yperc=float(perc_mid), 
+                                   npoints=npoints_percul[0])
+            xp_goodhi, yp_goodhi = \
+                runningpercentiles(xv_goodmatch, yv_goodmatch, 
+                                   yperc=float(percs_shading[1]), 
+                                   npoints=npoints_percul[1])
+            xp_allmed, yp_allmed = \
+                runningpercentiles(xv_all, yv_all, 
+                                   yperc=float(perc_mid), 
+                                   npoints=npoints_percul[0])
+            xp_allhi, yp_allhi = \
+                runningpercentiles(xv_all, yv_all, 
+                                   yperc=float(percs_shading[1]), 
+                                   npoints=npoints_percul[1])
+            ax.plot(xp_goodmed, yp_goodmed, linestyle='dashed', 
+                    color='red', zorder=10)
+            ax.plot(xp_goodhi, yp_goodhi, linestyle='dotted', 
+                    color='red', zorder=10)
+            ax.plot(xp_allmed, yp_allmed, linestyle='dashed', 
+                    color='pink', zorder=10)
+            ax.plot(xp_allhi, yp_allhi, linestyle='dotted', 
+                    color='pink', zorder=10)
     # sync ax limits
     ylims = [ax.get_ylim() for ax in axes]
     ymax = min([yl[1] for yl in ylims])
@@ -194,9 +239,38 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
     axes[0].add_artist(leg0)
-
+    if percentilesul:
+        handles = [mlines.Line2D((), (), color=color_main,
+                                 linestyle='dashed', 
+                                 label='run. perc. ' + perc_mid 
+                                        + f', {npoints_percul[0]} pts.'),
+                   mlines.Line2D((), (), color=color_main,
+                                 linestyle='dotted', 
+                                 label='run. perc. ' + percs_shading[1] 
+                                        + f', {npoints_percul[1]} pts.'),
+                    mlines.Line2D((), (), color='red',
+                                  linestyle='dashdot', 
+                                  label='good Mvir match'),
+                    mlines.Line2D((), (), color='pink',
+                                  linestyle='dashdot', 
+                                  label='ok Mvir match')]
+        axes[1].legend(handles=handles[:2], 
+                       fontsize=fontsize - 3., loc='upper right',
+                       handlelength=1., ncol=1, handletextpad=0.3,
+                       columnspacing=1.0, labelspacing=0.3,
+                       borderaxespad=0.2)
+        axes[2].legend(handles=handles[2:], 
+                       fontsize=fontsize - 3., loc='upper right',
+                       handlelength=1., ncol=1, handletextpad=0.3,
+                       columnspacing=1.0, labelspacing=0.3,
+                       borderaxespad=0.2)
+        perculstr = (f'_percUL_running_{perc_mid}_{npoints_percul[0]}pts'
+                     f'_{percs_shading[1]}_{npoints_percul[1]}pts')
+        perculstr = perculstr.replace('.', 'p')
+    else:
+        perculstr = ''
     outname = mdir + (f'coldenscomp_Ne8_{obssample}_vs_{massset}_at_{zr}'
-                      f'_opt2{samplestr}.pdf')
+                      f'_opt2{samplestr}{perculstr}.pdf')
     plt.savefig(outname, bbox_inches='tight')
 
 def runplots_obscomp():
@@ -224,3 +298,23 @@ def runplots_appendix():
                  ricut_pkpc=ricut_pkpc, sample='m12_f3nobh_comp')
     ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc, 
                                sample='m12_f3nobh_comp') 
+    
+def runplots_runningperc_ul():
+    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(5, 10))
+    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(7, 12))
+    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(10, 15))
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(5, 10))
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(7, 12))
+    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+                 ricut_pkpc=450., sample='main',
+                 percentilesul=True, npoints_percul=(10, 15))

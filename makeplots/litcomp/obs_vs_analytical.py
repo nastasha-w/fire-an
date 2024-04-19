@@ -154,8 +154,8 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
     redshift = 0.75
     plis_vc = [-0.1] #[0.0, -0.20]
     colors_vc = ['black'] #['black', 'blue']
-    plis_k = [0.0, 2./3., 1.2]
-    linestyles_k = ['dotted', 'dashed', 'solid']
+    plis_k = [0.0, 2./3., 1., 1.2]
+    linestyles_k = ['dotted', 'dashed', 'dashdot', 'solid']
     
     if len(obsdata) == 1:
        _colors = {'1s': 'black', '2s': 'gray'}
@@ -242,9 +242,9 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                         linestyle=ls,
                         label=f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$')
                     for pli_k, ls in zip(plis_k, linestyles_k)]
-        axes[-2].legend(handles=handles2, fontsize=fontsize,
-                        loc='upper right', bbox_to_anchor=(1.0, 0.86),
-                        handlelength=1.5, labelspacing=0.1,
+        axes[-2].legend(handles=handles2, fontsize=fontsize - 1.,
+                        loc='upper right', bbox_to_anchor=(0.93, 0.87),
+                        handlelength=2., labelspacing=0.1,
                         handletextpad=0.4)
     if len(obsdata) > 1:
         handles2 = [mlines.Line2D((), (), linestyle='none', marker='s',
@@ -260,7 +260,7 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                          c=colors['B+19']['1s'])]
         axes[-3].legend(handles=handles2,
                         fontsize=fontsize - 2,
-                        loc='upper right', bbox_to_anchor=(1.0, 0.86),
+                        loc='upper right', bbox_to_anchor=(1.0, 0.88),
                         handlelength=1.0, labelspacing=0.3,
                         handletextpad=0.4)
     
@@ -278,7 +278,7 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
     plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')
 
 
-def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
+def plot_plmodel_datacomp_parvar_old(obsdata=('Q+23', 'B+19')):
     ion = 'Ne8'
     redshift_model = 0.75
     nsigmas = (1, 2)
@@ -440,6 +440,193 @@ def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
                       handlelength=1.0, labelspacing=0.0,
                       handletextpad=0.4)
     axes[1][1].axis('off')
+
+    pli_vc_str = 'pli_vc_' + \
+                 '_'.join([f'{pli_vc:.2f}' for pli_vc in plis_vc])
+    pli_k_str = 'pli_k_' + \
+                 '_'.join([f'{pli_k:.2f}' for pli_k in plis_k])
+    #zsol_str = 'Zsol_' + \
+    #             '_'.join([f'{z_sol:.2f}' for z_sol in z_sols])
+    fcgm_str = 'fCGM_' + \
+                 '_'.join([f'{fcgm:.2f}' for fcgm in fcgms])
+    ods = '_'.join(obsdata)
+    outname = (f'prof_Ne8_analytical_pl_s19_z{redshift_model:.2f}'
+               f'_vs_{ods}_mvir{logmvir_msun:.1f}'
+               f'_{pli_k_str}_{pli_vc_str}_Zsol_0.30_{fcgm_str}'
+               '_nhnorm_0p1_to_1_Rvir')
+    outname = outname.replace('.', 'p')
+    outname = outname.replace('-', 'm')
+    plt.savefig(outdir + outname + '.pdf', bbox_inches='tight')
+
+def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
+    ion = 'Ne8'
+    redshift_model = 0.75
+    nsigmas = (1, 2)
+
+    impactpars_kpc = np.linspace(5., 465., 50)
+    logmvir_msun = 12.2
+    fcgms = [1.0, 0.3, 0.1]
+    fcgm_def = 0.3
+    #z_sols = [1.0, 0.3, 0.1]
+    z_sol_def = 0.3
+    _colors = tc.tol_cset('bright')
+    colors_fZ = [_colors.blue, _colors.green, _colors.yellow]
+    redshift = 0.75
+    plis_vc = [0.0, -0.2, -0.5]
+    pli_vc_def = -0.1 
+    colors_pli_vc = [_colors.cyan, _colors.red, _colors.purple]
+    plis_k = [0.0, 2./3., 1., 1.2]
+    
+    if len(obsdata) == 1:
+       _colors = {'1s': 'black', '2s': 'gray'}
+       odcolors = {obsdata[0]: _colors}
+    else:
+        _colors = tc.tol_cset('high-contrast')
+        c1 = mcolors.to_rgba(_colors.blue)
+        c2 = mcolors.to_rgba(_colors.red)
+        odcolors = {'B+19': {'1s': c1, '2s': c1[:3] + (0.5,)},
+                    'Q+23': {'1s': c2, '2s': c2[:3] + (0.5,)}}
+    odata = get_obsdata(obsdata=(obsdata))
+    
+    panelsize = 1.8
+    ncols = len(plis_k)
+    nrows = 2
+    width_ratios = [panelsize] * ncols
+    height_ratios = [panelsize] * nrows
+    hspace = 0.3
+    height = sum(height_ratios) * (1. + hspace * (nrows - 1) / nrows)
+ 
+    fig = plt.figure(figsize=(sum(width_ratios), height))
+    grid = gsp.GridSpec(ncols=ncols, nrows=nrows, wspace=0.0, 
+                        hspace=hspace, width_ratios=width_ratios,
+                        height_ratios=height_ratios)
+    axes = [[fig.add_subplot(grid[i, j]) 
+             for j in range(ncols) if i < 1 or j > 0]
+             for i in range(nrows)]
+    fontsize = 12
+    linewidth = 1.5
+    
+    for ri in range(nrows):
+        for ci in range(ncols):
+            if ri == 1 and ci >= len(plis_k) - 2:
+                continue
+            ax = axes[ri][ci]
+            doleft = ci == 0
+            dobottom = ri == 1 or (ri == 0 and 
+                                   (ci == 0 or ci == len(plis_k) - 1))
+            if dobottom and ri == 1:
+                ax.set_xlabel('$\\mathrm{r}_{\\perp} \\; [\\mathrm{pkpc}]$',
+                              fontsize=fontsize)
+            if doleft and ri == 0:
+                ax.set_ylabel('$\\log_{10} \\, \\mathrm{N}('
+                              '\\mathrm{Ne\\,VIII})'
+                              '\\; [\\mathrm{cm}^{-2}]$',
+                              fontsize=fontsize)
+            ax.tick_params(which='both', direction='in', 
+                           labelsize=fontsize - 1.,
+                           top=True, right=True, labelleft=doleft,
+                           labelbottom=dobottom)
+            pli_k = plis_k[ci]
+            if ri == 1:
+                pli_k = plis_k[ci + 1]
+            axlabel = f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$'
+            ax.text(0.92, 0.92, axlabel,
+                    transform=ax.transAxes, fontsize=fontsize,
+                    verticalalignment='top', horizontalalignment='right')
+            yvir_max = -np.inf
+            
+            labels_r = []
+            colors_r = []
+            cvs_r = []
+            if ri == 0:
+                pli_vc = pli_vc_def
+                #fcgm = fcgms[ci]
+                z_sol = z_sol_def
+                subtitle = (f'$\\mathrm{{Z}} = {z_sol:.1f} \\,'
+                            '\\mathrm{Z}_{\\odot},\\;'
+                            'v_{\\mathrm{c}} \\propto '
+                            f'r^{{{pli_vc:.1f}}},\\;'
+                            '\\mathrm{f}_{\\mathrm{CGM}}:$')
+                print(pli_vc, pli_k)
+   
+                for fi, fcgm in enumerate(fcgms):
+                    labels_r.append(f'${fcgm:.1f}$')
+                    colors_r.append(colors_fZ[fi])
+                    hmod = mip.PLmodel(10**logmvir_msun, redshift, fcgm, 
+                                       z_sol, pli_vc, pli_entropy=pli_k)
+                    cvs = hmod.coldensprof(ion, impactpars_kpc)
+                    cvs_r.append(cvs)
+                    rvir = hmod.rvir_cgs / (c.cm_per_mpc * 1e-3)
+            elif ri == 1:
+                if ci >= len(plis_k) - 2: 
+                    continue
+                fcgm = fcgm_def
+                z_sol = z_sol_def
+                subtitle = ('$\\mathrm{f}_{\\mathrm{CGM}} '
+                            f'= {fcgm:.1f}, \\;'
+                            f'\\mathrm{{Z}} = {z_sol:.1f} \\,'
+                            '\\mathrm{Z}_{\\odot} $'
+                            )
+                print(pli_vc, pli_k)
+   
+                for plii, pli_vc in enumerate(plis_vc):
+                    labels_r.append('$v_{\\mathrm{c}} \\propto '
+                                     f'r^{{{pli_vc:.1f}}} $')
+                    colors_r.append(colors_pli_vc[plii])
+                    hmod = mip.PLmodel(10**logmvir_msun, redshift, fcgm, 
+                                       z_sol, pli_vc, pli_entropy=pli_k)
+                    cvs = hmod.coldensprof(ion, impactpars_kpc)
+                    cvs_r.append(cvs)
+                    rvir = hmod.rvir_cgs / (c.cm_per_mpc * 1e-3)
+            yvir_max = -np.inf
+            for color, label, cvs in zip(colors_r, labels_r, cvs_r):
+                ax.plot(impactpars_kpc, np.log10(cvs), 
+                        color=color, linestyle='solid',
+                        linewidth=linewidth, label=label)
+                if rvir <= impactpars_kpc[-1]:
+                    yv = mu.linterpsolve(impactpars_kpc, np.log10(cvs), rvir)
+                    yvir_max = max(yvir_max, yv)
+            if rvir <= impactpars_kpc[-1]:
+                ax.plot([rvir, rvir], [11., yvir_max + 0.2], color='gray',
+                        linestyle='solid', alpha=0.3, linewidth=3)
+            if ri == 1 and ci == 0:
+                #ax.set_title(subtitle, fontsize=fontsize - 1)
+                ax.text(1.0, 1.02, subtitle, fontsize=fontsize - 1.,
+                       transform=ax.transAxes,
+                       horizontalalignment='center',
+                       verticalalignment='bottom')
+            elif ri == 0 and ci == 0:
+                ax.text(0.65, 1.02, subtitle, fontsize=fontsize - 1, 
+                        horizontalalignment='left', 
+                        verticalalignment='bottom',
+                        transform=ax.transAxes)
+
+            addobsdata_panel(ax, odata, logmvir_msun, odcolors)
+
+    ylims = [ax.get_ylim() for sub in axes for ax in sub]
+    ymin = min([ylim[0] for ylim in ylims])
+    ymin = max(ymin, 12.5)
+    ymax = max([ylim[1] for ylim in ylims])
+    #ymax = ymax + 0.5
+    [ax.set_ylim((ymin, ymax)) for sub in axes for ax in sub]
+    # 470 instead of 450 so x labels don't overlap
+    [ax.set_xlim(0., 470.) for sub in axes for ax in sub]
+
+    handles0, labels0 = axes[0][0].get_legend_handles_labels()
+    axes[0][1].legend(handles=handles0[:3], labels=labels0,
+                      fontsize=fontsize - 1,
+                      loc='lower left', bbox_to_anchor=(1.11, 0.97),
+                      handlelength=1.0, labelspacing=0.0,
+                      handletextpad=0.4, ncol=3, columnspacing=0.7,
+                      frameon=False, borderpad=0.0)
+    handles2, labels2 = axes[1][0].get_legend_handles_labels()
+    ci_leg = len(plis_k) - 2
+    axes[1][ci_leg].legend(handles=handles2[:3], labels=labels2,
+                           fontsize=fontsize - 1,
+                           loc='lower left', bbox_to_anchor=(0.0, 0.0),
+                           handlelength=1.0, labelspacing=0.0,
+                           handletextpad=0.4)
+    axes[1][ci_leg].axis('off')
 
     pli_vc_str = 'pli_vc_' + \
                  '_'.join([f'{pli_vc:.2f}' for pli_vc in plis_vc])

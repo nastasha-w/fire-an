@@ -8,8 +8,10 @@ import pandas as pd
 
 import fire_an.makeplots.litcomp.obsdataread as odr
 import fire_an.makeplots.litcomp.obs_datasel as ods
+import fire_an.makeplots.plot_utils as pu
 import fire_an.makeplots.tol_colors as tc
 import fire_an.simlists as sl
+import fire_an.utils.math_utils as mu
 
 
 proffilen = ('/projects/b1026/nastasha/plotdata/'
@@ -128,6 +130,10 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     grid = gsp.GridSpec(ncols=ncols, nrows=nrows, hspace=0.0,
                         wspace=0.0)
     axes = [fig.add_subplot(grid[0, i]) for i in range(npanels)]
+    figtitle = massset + ' halos'
+    # avoid overlap with panel titles
+    fig.suptitle(figtitle, fontsize=fontsize + 1, y=0.977, 
+                 verticalalignment='bottom')
 
     for axi, (physmodel, ax) in enumerate(zip(physmodels, axes)):
         doleft = axi % ncols == 0
@@ -284,12 +290,11 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
     plt.savefig(outname, bbox_inches='tight')
 
 def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
-                        npoints_percul=((8, 15), (10, 20), (15, 30))):
+                        npoints_percul=((8, 15), (10, 20), (15, 30)),
+                        ricut_pkpc=450., zr='z0.5-1.0'):
     '''
     nice version of this plot made with the default settings
     '''
-    zr = 'z0.5-1.0'
-    ricut_pkpc = 450.
     if not hasattr(npoints_percul[0], '__len__'):
         npoints_percul = (npoints_percul,) * 3
 
@@ -369,6 +374,8 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
     grid = gsp.GridSpec(ncols=ncols, nrows=nrows, hspace=0.0,
                         wspace=0.0)
     axes = [fig.add_subplot(grid[0, i]) for i in range(npanels)]
+    figtitle = f'{massset} halos, {sl.plotlabel_from_physlabel[physmodel]}'
+    fig.suptitle(figtitle, fontsize=fontsize)
 
     for axi, ax in enumerate(axes):
         doleft = axi % ncols == 0
@@ -468,10 +475,39 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
             runningpercentiles(xv_all, yv_all, 
                                 yperc=float(percs_shading[1]), 
                                 npoints=_np_percul[1])
+        obsperccolor = (0.35, 0.35, 0.35)
+        pe = pu.getoutline(2.)
         ax.plot(xp_allmed, yp_allmed, linestyle='solid', 
-                color=(0.35, 0.35, 0.35), linewidth=2.5, zorder=6)
+                color=obsperccolor, linewidth=2., zorder=6,
+                path_effects=pe)
+        pe = pu.getoutline(1.3)
         ax.plot(xp_allhi, yp_allhi, linestyle='solid', 
-                color=(0.35, 0.35, 0.35), linewidth=1.8, zorder=6)
+                color=obsperccolor, linewidth=1.3, zorder=6,
+                path_effects=pe)
+        # add arrows indicating these are upper limits
+        offset_x = 15. # kpc (x units)
+        length = 0.18 # dex (y units)
+        dx = 0.
+        dy = -1. * length
+        hwidth = 12.
+        hlength = 0.07
+        akwa = {'facecolor': obsperccolor, 
+                'edgecolor': 'black', 
+                'length_includes_head': True,
+                'head_length': hlength,
+                'head_width': hwidth,
+                'zorder': 5.9,
+                'width': 0.004}
+        for xp, yp in [(xp_allmed, yp_allmed), (xp_allhi, yp_allhi)]:
+            x0 = xp[0] + offset_x
+            y0 = mu.linterpsolve(xp, yp, x0)
+            ax.arrow(x0, y0, dx, dy, **akwa)
+            x1 = xp[-1] - offset_x
+            y1 = mu.linterpsolve(xp, yp, x1)
+            ax.arrow(x1, y1, dx, dy, **akwa)
+            x2 = 0.5 * (xp[0] + xp[-1])
+            y2 = mu.linterpsolve(xp, yp, x2)
+            ax.arrow(x2, y2, dx, dy, **akwa)
     # sync ax limits
     ylims = [ax.get_ylim() for ax in axes]
     ymax = max([yl[1] for yl in ylims])
@@ -488,7 +524,7 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
     handles_obs, _ = axes[2].get_legend_handles_labels()
     b19_hsel = [0, 2, 3]
     q23_hsel = [1, 4]
-    axes[0].legend(handles=[handles_obs[hi] for hi in b19_hsel],
+    leg0 = axes[0].legend(handles=[handles_obs[hi] for hi in b19_hsel],
                    fontsize=fontsize - 3., loc='upper right',
                    handlelength=1., ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
@@ -498,50 +534,54 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
                    handlelength=1., ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
+    # + f', {npoints_percul[2][0]} pts.'
+    # + f', {npoints_percul[2][1]} pts.'
     handles = [mlines.Line2D((), (), color=(0.35, 0.35, 0.35),
-                             linestyle='solid', linewidth=2.5,
-                             label=f'{float(perc_mid) * 100: .0f}%' 
-                                  + f', {npoints_percul[2][0]} pts.'),
+                             linestyle='solid', linewidth=1.3,
+                             path_effects=pu.getoutline(1.3),
+                             label=f'{float(percs_shading[1]) * 100: .0f}% UL'
+                             ),
                mlines.Line2D((), (), color=(0.35, 0.35, 0.35),
-                             linestyle='solid', linewidth=1.8,
-                             label=f'{float(percs_shading[1]) * 100: .0f}%'
-                                 + f', {npoints_percul[2][1]} pts.')]
-    # copied legend defaults from docs
-    bbox_text = {'facecolor': 'white',
-                 'edgecolor': '0.8',
-                 'alpha': 0.8,
-                 'boxstyle': 'round'}
-    note0 = (f'{float(perc_mid) * 100: .0f}%: ' 
-             f'{npoints_percul[0][0]} pts., '
-             f'{float(percs_shading[1]) * 100: .0f}%: '
-             f'{npoints_percul[0][1]} pts.')
-    axes[0].text(0.035, 0.025, note0, color='black',
-                 fontsize=fontsize - 3., transform=axes[0].transAxes,
-                 horizontalalignment='left', verticalalignment='bottom',
-                 bbox=bbox_text)
-    note1 = (f'{float(perc_mid) * 100: .0f}%: ' 
-             f'{npoints_percul[1][0]} pts., '
-             f'{float(percs_shading[1]) * 100: .0f}%: '
-             f'{npoints_percul[1][1]} pts.')
-    axes[1].text(0.035, 0.025, note1, color='black',
-                 fontsize=fontsize - 3., transform=axes[1].transAxes,
-                 horizontalalignment='left', verticalalignment='bottom',
-                 bbox=bbox_text)
-    handlesl = [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
-                             color='black', 
-                             label= sl.plotlabel_from_physlabel[physmodel]
-                                    +' med.')]
-    leg2 = axes[2].legend(handles=handlesl,
-                          fontsize=fontsize - 3., loc='upper right',
-                          handlelength=1., ncol=1, handletextpad=0.3,
-                          columnspacing=1.0, labelspacing=0.3,
-                          borderaxespad=0.2)
+                             linestyle='solid', linewidth=2.5,
+                             path_effects=pu.getoutline(2.),
+                             label=f'{float(perc_mid) * 100: .0f}% UL'
+                             )]
     axes[2].legend(handles=handles, 
-                   fontsize=fontsize - 3., loc='lower left',
+                   fontsize=fontsize - 3., loc='upper right',
                    handlelength=1.5, ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
-    axes[2].add_artist(leg2)
+    ## copied legend defaults from docs
+    #bbox_text = {'facecolor': 'white',
+    #             'edgecolor': '0.8',
+    #             'alpha': 0.8,
+    #             'boxstyle': 'round'}
+    #note0 = (f'{float(perc_mid) * 100: .0f}%: ' 
+    #         f'{npoints_percul[0][0]} pts., '
+    #         f'{float(percs_shading[1]) * 100: .0f}%: '
+    #         f'{npoints_percul[0][1]} pts.')
+    #axes[0].text(0.035, 0.025, note0, color='black',
+    #             fontsize=fontsize - 3., transform=axes[0].transAxes,
+    #             horizontalalignment='left', verticalalignment='bottom',
+    #             bbox=bbox_text)
+    #note1 = (f'{float(perc_mid) * 100: .0f}%: ' 
+    #         f'{npoints_percul[1][0]} pts., '
+    #         f'{float(percs_shading[1]) * 100: .0f}%: '
+    #         f'{npoints_percul[1][1]} pts.')
+    #axes[1].text(0.035, 0.025, note1, color='black',
+    #             fontsize=fontsize - 3., transform=axes[1].transAxes,
+    #             horizontalalignment='left', verticalalignment='bottom',
+    #             bbox=bbox_text)
+    handlesl = [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
+                              color='black', 
+                              label= sl.plotlabel_from_physlabel[physmodel]
+                                     + ' med.')]
+    axes[0].legend(handles=handlesl,
+                          fontsize=fontsize - 3., loc='lower left',
+                          handlelength=1., ncol=1, handletextpad=0.3,
+                          columnspacing=1.0, labelspacing=0.3,
+                          borderaxespad=0.2)
+    axes[0].add_artist(leg0)
 
     nplist0 = [pts[0] for pts in npoints_percul]
     ptsstr0 = '_'.join([str(pts) for pts in nplist0])

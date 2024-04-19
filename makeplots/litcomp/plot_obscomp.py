@@ -27,11 +27,19 @@ def runningpercentiles(xvals, yvals, yperc=0.5, npoints=5):
     _xvals = np.array(xvals)
     _yvals = np.array(yvals)
     xorder = np.argsort(_xvals)
-    for i in range(len(xvals) - npoints):
+    #print('------ start ------')
+    #print('yperc: ', yperc)
+    #print(_xvals[xorder])
+    #print(_yvals[xorder])
+    for i in range(len(xvals) - npoints + 1):
         sel = slice(i, i + npoints, None)
+        #print('x in: ', (_xvals[xorder])[sel])
+        #print('y in: ', (_yvals[xorder])[sel])
         # median of x points
-        xp.append(np.quantile(_xvals[xorder][sel], 0.5))
-        yp.append(np.quantile(_yvals[xorder][sel], yperc))
+        xp.append(np.quantile((_xvals[xorder])[sel], 0.5))
+        yp.append(np.quantile((_yvals[xorder])[sel], yperc))
+        #print('x, y calc: ', xp[-1], ', ', yp[-1])
+    #print('------ end ------')
     return np.array(xp), np.array(yp)
 
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
@@ -188,10 +196,10 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
         if percentilesul:
             xv_goodmatch = (ipar_obs[np.logical_or(dsel_main_ul,
                                                    dsel_main_noul)]).copy()
-            xv_all = ipar_obs.copy()
+            #xv_all = ipar_obs.copy() # includes stuff at wrong mass, z, ipar
             yv_goodmatch = (cd_obs[np.logical_or(dsel_main_ul,
-                                                   dsel_main_noul)]).copy()
-            yv_all = cd_obs.copy()
+                                                 dsel_main_noul)]).copy()
+            #yv_all = cd_obs.copy()
             xp_goodmed, yp_goodmed = \
                 runningpercentiles(xv_goodmatch, yv_goodmatch, 
                                    yperc=float(perc_mid), 
@@ -200,22 +208,22 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                 runningpercentiles(xv_goodmatch, yv_goodmatch, 
                                    yperc=float(percs_shading[1]), 
                                    npoints=npoints_percul[1])
-            xp_allmed, yp_allmed = \
-                runningpercentiles(xv_all, yv_all, 
-                                   yperc=float(perc_mid), 
-                                   npoints=npoints_percul[0])
-            xp_allhi, yp_allhi = \
-                runningpercentiles(xv_all, yv_all, 
-                                   yperc=float(percs_shading[1]), 
-                                   npoints=npoints_percul[1])
+            #xp_allmed, yp_allmed = \
+            #    runningpercentiles(xv_all, yv_all, 
+            #                       yperc=float(perc_mid), 
+            #                       npoints=npoints_percul[0])
+            #xp_allhi, yp_allhi = \
+            #    runningpercentiles(xv_all, yv_all, 
+            #                       yperc=float(percs_shading[1]), 
+            #                       npoints=npoints_percul[1])
             ax.plot(xp_goodmed, yp_goodmed, linestyle='dashed', 
                     color='red', zorder=10)
             ax.plot(xp_goodhi, yp_goodhi, linestyle='dotted', 
                     color='red', zorder=10)
-            ax.plot(xp_allmed, yp_allmed, linestyle='dashed', 
-                    color='pink', zorder=10)
-            ax.plot(xp_allhi, yp_allhi, linestyle='dotted', 
-                    color='pink', zorder=10)
+            #ax.plot(xp_allmed, yp_allmed, linestyle='dashed', 
+            #        color='pink', zorder=10)
+            #ax.plot(xp_allhi, yp_allhi, linestyle='dotted', 
+            #        color='pink', zorder=10)
     # sync ax limits
     ylims = [ax.get_ylim() for ax in axes]
     ymax = max([yl[1] for yl in ylims])
@@ -275,10 +283,15 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                       f'_opt2{samplestr}{perculstr}.pdf')
     plt.savefig(outname, bbox_inches='tight')
 
-def plot_obscomp_percul(massset='m12', physmodel='noBH',
-                        npoints_percul=(5, 10)):
+def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
+                        npoints_percul=((8, 15), (10, 20), (15, 30))):
+    '''
+    nice version of this plot made with the default settings
+    '''
     zr = 'z0.5-1.0'
     ricut_pkpc = 450.
+    if not hasattr(npoints_percul[0], '__len__'):
+        npoints_percul = (npoints_percul,) * 3
 
     percs_shading = ['0.1', '0.9']
     perc_mid = '0.5'
@@ -412,7 +425,7 @@ def plot_obscomp_percul(massset='m12', physmodel='noBH',
                                    yerr=cderr_obs[:, _msel], 
                                    linestyle='None', elinewidth=2.,
                                    marker='o', 
-                                   markersize=7, color=colors[obsset][ckey],
+                                   markersize=6, color=colors[obsset][ckey],
                                    capsize=3, zorder=5,
                                    markeredgecolor='black',
                                    ecolor='black', label=noul_mainlabel)
@@ -420,41 +433,45 @@ def plot_obscomp_percul(massset='m12', physmodel='noBH',
                                    yerr=cderr_obs[:, _fsel], 
                                    linestyle='None', elinewidth=2., 
                                    marker='o', 
-                                   markersize=7, markerfacecolor='none', 
+                                   markersize=6, markerfacecolor='none', 
                                    markeredgecolor=colors[obsset][ckey],
                                    capsize=3, markeredgewidth=1.5,
                                    zorder=5, ecolor='black',
                                    label=noul_flaggedlabel)
                 axes[axi].scatter(ipar_obs[_usel], cd_obs[_usel],
                                   linestyle='None', marker='v', 
-                                  s=30, facecolors='none',
+                                  s=12, facecolors='none',
                                   edgecolors=colors[obsset][ckey], 
-                                  zorder=5, linewidths=1.5,
+                                  zorder=4, linewidths=1.2,
                                   label=ullabel)
         labelsdone = True
-
+    allsel = np.logical_or(mainsel, restsel)
+    allsel = np.logical_and(allsel, ipar_obs <= ricut_pkpc)
     for axi, (ax, obssets) in \
             enumerate(zip(axes, [('B+19',), ('Q+23',), ('B+19', 'Q+23')])):
         if obssets == ('B+19',):
-            obssel = isb19
+            obssel = np.logical_and(allsel, isb19)
         elif obssets == ('Q+23',):
-            obssel = isq23
+            obssel = np.logical_and(allsel, isq23)
         elif obssets == ('B+19', 'Q+23'):
             obssel = np.logical_or(isb19, isq23) 
+            obssel = np.logical_and(allsel, obssel)
+        print(np.sum(obssel))
+        _np_percul = npoints_percul[axi]
         xv_all = ipar_obs[obssel].copy()
-        yv_all = cd_obs.copy()
+        yv_all = cd_obs[obssel].copy()
         xp_allmed, yp_allmed = \
             runningpercentiles(xv_all, yv_all, 
                                 yperc=float(perc_mid), 
-                                npoints=npoints_percul[0])
+                                npoints=_np_percul[0])
         xp_allhi, yp_allhi = \
             runningpercentiles(xv_all, yv_all, 
                                 yperc=float(percs_shading[1]), 
-                                npoints=npoints_percul[1])
-        ax.plot(xp_allmed, yp_allmed, linestyle='dashed', 
-                color='black', zorder=6)
-        ax.plot(xp_allhi, yp_allhi, linestyle='dotted', 
-                color='black', zorder=6)
+                                npoints=_np_percul[1])
+        ax.plot(xp_allmed, yp_allmed, linestyle='solid', 
+                color=(0.35, 0.35, 0.35), linewidth=2.5, zorder=6)
+        ax.plot(xp_allhi, yp_allhi, linestyle='solid', 
+                color=(0.35, 0.35, 0.35), linewidth=1.8, zorder=6)
     # sync ax limits
     ylims = [ax.get_ylim() for ax in axes]
     ymax = max([yl[1] for yl in ylims])
@@ -469,15 +486,6 @@ def plot_obscomp_percul(massset='m12', physmodel='noBH',
     [ax.set_xlim((xmin, xmax)) for ax in axes]
     
     handles_obs, _ = axes[2].get_legend_handles_labels()
-    handlesl = [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
-                             color='black', 
-                             label= sl.plotlabel_from_physlabel[physmodel]
-                                    +' med.')]
-    leg0 = axes[0].legend(handles=handlesl,
-                          fontsize=fontsize - 3., loc='lower left',
-                          handlelength=1., ncol=1, handletextpad=0.3,
-                          columnspacing=1.0, labelspacing=0.3,
-                          borderaxespad=0.2)
     b19_hsel = [0, 2, 3]
     q23_hsel = [1, 4]
     axes[0].legend(handles=[handles_obs[hi] for hi in b19_hsel],
@@ -485,31 +493,65 @@ def plot_obscomp_percul(massset='m12', physmodel='noBH',
                    handlelength=1., ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
-    axes[0].add_artist(leg0)
     axes[1].legend(handles=[handles_obs[hi] for hi in q23_hsel],
                    fontsize=fontsize - 3., loc='upper right',
                    handlelength=1., ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
-    handles = [mlines.Line2D((), (), color='black',
-                            linestyle='dashed', 
-                            label=f'{float(perc_mid) * 100: .0f}%' 
-                                + f', {npoints_percul[0]} pts.'),
-               mlines.Line2D((), (), color='black',
-                             linestyle='dotted', 
+    handles = [mlines.Line2D((), (), color=(0.35, 0.35, 0.35),
+                             linestyle='solid', linewidth=2.5,
+                             label=f'{float(perc_mid) * 100: .0f}%' 
+                                  + f', {npoints_percul[2][0]} pts.'),
+               mlines.Line2D((), (), color=(0.35, 0.35, 0.35),
+                             linestyle='solid', linewidth=1.8,
                              label=f'{float(percs_shading[1]) * 100: .0f}%'
-                                 + f', {npoints_percul[1]} pts.')]
+                                 + f', {npoints_percul[2][1]} pts.')]
+    # copied legend defaults from docs
+    bbox_text = {'facecolor': 'white',
+                 'edgecolor': '0.8',
+                 'alpha': 0.8,
+                 'boxstyle': 'round'}
+    note0 = (f'{float(perc_mid) * 100: .0f}%: ' 
+             f'{npoints_percul[0][0]} pts., '
+             f'{float(percs_shading[1]) * 100: .0f}%: '
+             f'{npoints_percul[0][1]} pts.')
+    axes[0].text(0.035, 0.025, note0, color='black',
+                 fontsize=fontsize - 3., transform=axes[0].transAxes,
+                 horizontalalignment='left', verticalalignment='bottom',
+                 bbox=bbox_text)
+    note1 = (f'{float(perc_mid) * 100: .0f}%: ' 
+             f'{npoints_percul[1][0]} pts., '
+             f'{float(percs_shading[1]) * 100: .0f}%: '
+             f'{npoints_percul[1][1]} pts.')
+    axes[1].text(0.035, 0.025, note1, color='black',
+                 fontsize=fontsize - 3., transform=axes[1].transAxes,
+                 horizontalalignment='left', verticalalignment='bottom',
+                 bbox=bbox_text)
+    handlesl = [mlines.Line2D((), (), linewidth=1.5, linestyle='solid',
+                             color='black', 
+                             label= sl.plotlabel_from_physlabel[physmodel]
+                                    +' med.')]
+    leg2 = axes[2].legend(handles=handlesl,
+                          fontsize=fontsize - 3., loc='upper right',
+                          handlelength=1., ncol=1, handletextpad=0.3,
+                          columnspacing=1.0, labelspacing=0.3,
+                          borderaxespad=0.2)
     axes[2].legend(handles=handles, 
                    fontsize=fontsize - 3., loc='lower left',
                    handlelength=1.5, ncol=1, handletextpad=0.3,
                    columnspacing=1.0, labelspacing=0.3,
                    borderaxespad=0.2)
+    axes[2].add_artist(leg2)
 
-    perculstr = (f'_percUL_running_{perc_mid}_{npoints_percul[0]}pts'
-                 f'_{percs_shading[1]}_{npoints_percul[1]}pts')
-    perculstr = perculstr.replace('.', 'p')
-    outname = mdir + (f'coldenscomp_Ne8_obs_vs_{massset}_at_{zr}'
-                      f'_opt2_{physmodel}{perculstr}.pdf')
+    nplist0 = [pts[0] for pts in npoints_percul]
+    ptsstr0 = '_'.join([str(pts) for pts in nplist0])
+    nplist1 = [pts[1] for pts in npoints_percul]
+    ptsstr1 = '_'.join([str(pts) for pts in nplist1])
+    perculstr = (f'_percUL_running_{perc_mid}_{ptsstr0}pts'
+                 f'_{percs_shading[1]}_{ptsstr1}pts')
+    outname = (f'coldenscomp_Ne8_obs_vs_{massset}_at_{zr}'
+               f'_opt2_{physmodel}{perculstr}')
+    outname = mdir + outname.replace('.', 'p') + '.pdf'
     plt.savefig(outname, bbox_inches='tight')
 
 def runplots_obscomp():

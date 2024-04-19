@@ -140,6 +140,23 @@ def addobsdata_panel(ax, odata, mvir, colors):
                         markerfacecolor='none',
                         label=None)
 
+def get_explabel(exponent, base='r', ndec_max=2):
+    if exponent == 0.:
+        out = '\\mathrm{\\;const.}' 
+    elif np.round(exponent, ndec_max) == 1.:
+        out = f'\\propto {{{base}}}'
+    else:
+        # get desired precision string
+        fmtstr = f'{{exp:.{ndec_max}f}}'
+        exppart = fmtstr.format(exp=exponent)
+        # strip trailing zeros (and any decimal point left trailing)
+        if '.' in exppart:
+            while exppart.endswith('0'):
+                exppart = exppart[:-1]
+            if exppart.endswith('.'):
+                exppart = exppart[:-1]
+        out = f'\\propto {{{base}}}^{{{exppart}}}'
+    return out
 
 
 def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
@@ -155,7 +172,7 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
     plis_vc = [-0.1] #[0.0, -0.20]
     colors_vc = ['black'] #['black', 'blue']
     plis_k = [0.0, 2./3., 1., 1.2]
-    linestyles_k = ['dotted', 'dashed', 'dashdot', 'solid']
+    linestyles_k = ['dotted', 'dashed', 'solid', 'dashdot']
     
     if len(obsdata) == 1:
        _colors = {'1s': 'black', '2s': 'gray'}
@@ -240,7 +257,8 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
         handles2 = [mlines.Line2D(
                         (), (), color='black', linewidth=linewidth,
                         linestyle=ls,
-                        label=f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$')
+                        label=f'$\\mathrm{{K}}'
+                              f' {get_explabel(pli_k, base="r", ndec_max=2)}$')
                     for pli_k, ls in zip(plis_k, linestyles_k)]
         axes[-2].legend(handles=handles2, fontsize=fontsize - 1.,
                         loc='upper right', bbox_to_anchor=(0.93, 0.87),
@@ -348,7 +366,8 @@ def plot_plmodel_datacomp_parvar_old(obsdata=('Q+23', 'B+19')):
             pli_k = plis_k[ci]
             if ri == 1:
                 pli_k = plis_k[1]
-            axlabel = f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$'
+            rslope = get_explabel(pli_k, base='r', ndec_max=2)
+            axlabel = f'$\\mathrm{{K}} {rslope}$'
             ax.text(0.08, 0.95, axlabel,
                     transform=ax.transAxes, fontsize=fontsize,
                     verticalalignment='top', horizontalalignment='left')
@@ -389,8 +408,8 @@ def plot_plmodel_datacomp_parvar_old(obsdata=('Q+23', 'B+19')):
                 print(pli_vc, pli_k)
    
                 for plii, pli_vc in enumerate(plis_vc):
-                    labels_r.append('$v_{\\mathrm{c}} \\propto '
-                                     f'r^{{{pli_vc:.1f}}} $')
+                    rslope = get_explabel(pli_vc, base='r', ndec_max=2)
+                    labels_r.append(f'$v_{{\\mathrm{{c}}}} {rslope}$')
                     colors_r.append(colors_pli_vc[plii])
                     hmod = mip.PLmodel(10**logmvir_msun, redshift, fcgm, 
                                        z_sol, pli_vc, pli_entropy=pli_k)
@@ -529,7 +548,8 @@ def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
             pli_k = plis_k[ci]
             if ri == 1:
                 pli_k = plis_k[ci + 1]
-            axlabel = f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$'
+            rslope = get_explabel(pli_k, base='r', ndec_max=2)
+            axlabel = f'$\\mathrm{{K}} {rslope}$'
             ax.text(0.92, 0.92, axlabel,
                     transform=ax.transAxes, fontsize=fontsize,
                     verticalalignment='top', horizontalalignment='right')
@@ -570,8 +590,8 @@ def plot_plmodel_datacomp_parvar(obsdata=('Q+23', 'B+19')):
                 print(pli_vc, pli_k)
    
                 for plii, pli_vc in enumerate(plis_vc):
-                    labels_r.append('$v_{\\mathrm{c}} \\propto '
-                                     f'r^{{{pli_vc:.1f}}} $')
+                    rslope = get_explabel(pli_vc, base='r', ndec_max=2)
+                    labels_r.append(f'$v_{{\\mathrm{{c}}}} {rslope}$')
                     colors_r.append(colors_pli_vc[plii])
                     hmod = mip.PLmodel(10**logmvir_msun, redshift, fcgm, 
                                        z_sol, pli_vc, pli_entropy=pli_k)

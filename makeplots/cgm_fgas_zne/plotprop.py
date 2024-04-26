@@ -106,6 +106,9 @@ def addpanel_hist(ax, df, kwa_phys, panel='fgas', fontsize=12,
                   ' \\; [\\mathrm{M}_{\\odot}]$')
         df['Ne8mass'] = df['Ne8_numpart'] * c.atomw_Ne * c.u / c.solar_mass
         datakey = 'Ne8mass'
+    else:
+        datakey = panel
+        _xlabel = ''
     if xlabel is None:
         xlabel = _xlabel
     # somewhat iterative bin determination 
@@ -382,6 +385,139 @@ def plotoverviews_f3xtest():
                        xlabels=None, inclm12plus=False,
                        f3xset=True)
     
+def plotcustom_f3xtest(massset='m12', icset='all'):
+    kwa_phys = {key: {'color': val, 'linewidth': 1.5}
+                for key, val in sl.physcolors.items()}
+    kwa_phys['FIRE-3x-scmodules'] = kwa_phys['noBH'].copy()
+    kwa_phys['FIRE-3x-scmodules']['color'] = sl._physcolors.purple
+    kwa_phys['FIRE-3x-constpterm'] = kwa_phys['noBH'].copy()
+    kwa_phys['FIRE-3x-constpterm']['color'] = sl._physcolors.cyan
+
+    dat_cgm = rpr.readin_all_data(rrange_rvir=(0.1, 1.0), 
+                                  trange_logk=(-np.inf, np.inf),
+                                  massset=massset, 
+                                  f3xset_large=True)
+    dat_whcgm = rpr.readin_all_data(rrange_rvir=(0.1, 1.0), 
+                                    trange_logk=(5.0, np.inf),
+                                    f3xset_large=True,
+                                    massset=massset)
+    dat_halo = rpr.readin_all_data(rrange_rvir=(0.0, 1.0), 
+                                   trange_logk=(-np.inf, np.inf),
+                                   f3xset_large=True,
+                                   massset=massset)
+    dat_cen = rpr.readin_all_data(rrange_rvir=(0.0, 0.1), 
+                                  trange_logk=(-np.inf, np.inf),
+                                  f3xset_large=True,
+                                  massset=massset)
+    dat = dat_halo.copy()
+    mstar_cen = dat_halo['Mstarcen_g']
+    mstar_halo = dat_halo['Mstar_current_g']
+    mZ_halo = dat_halo['Ztot gasmass-wtd (mass fraction)'] \
+              * dat_halo['gasmass_g']
+    mZ_cgm = dat_cgm['Ztot gasmass-wtd (mass fraction)'] \
+              * dat_cgm['gasmass_g']
+    mZ_whcgm = dat_whcgm['Ztot gasmass-wtd (mass fraction)'] \
+              * dat_whcgm['gasmass_g']
+    mZ_ism = dat_cen['Ztot gasmass-wtd (mass fraction)'] \
+              * dat_cen['gasmass_g']
+    dat['Mzhalo_over_Mstar_cen'] = mZ_halo / mstar_cen
+    dat['Mzhalo_over_Mstar_halo'] = mZ_halo / mstar_halo
+    dat['Mzcgm_over_Mstar_cen'] = mZ_cgm / mstar_cen
+    dat['Mzcgm_over_Mstar_halo'] = mZ_cgm / mstar_halo
+    dat['Mzwhcgm_over_Mstar_cen'] = mZ_whcgm / mstar_cen
+    dat['Mzwhcgm_over_Mstar_halo'] = mZ_whcgm / mstar_halo
+    dat['Mzism_over_Mstar_cen'] = mZ_ism / mstar_cen
+    dat['Mzism_over_Mstar_halo'] = mZ_ism / mstar_halo
+
+    if icset == 'all':
+        title = 'all available ICs'
+    else:
+        dat = dat[dat['ic'].isin(icset)]
+        title = 'ICs: ' + ', '.join(icset)
+
+    metalcomps = ['halo', 'cgm', 'whcgm', 'ism']
+    starnorms = ['cen', 'halo']
+
+    xl1 = {'halo': '< \\mathrm{{R}}_{{\\mathrm{{vir}}}}',
+           'cgm': '0.1 \\endash 1 \\, \\mathrm{{R}}_{{\\mathrm{{vir}}}}',
+           'whcgm': '0.1 \\endash 1 \\, \\mathrm{{R}}_{{\\mathrm{{vir}}}}, '
+                    '> 10^{{5}} \\, \\mathrm{{K}}',
+           'ism': '< 0.1 \\, \\mathrm{{R}}_{{\\mathrm{{vir}}}}'
+           }
+
+    ncols = len(starnorms)
+    nrows = len(metalcomps)
+    panelsize = 2.5
+    laxheight = 1.5
+    hspace = 0.3
+    wspace = 0.0
+    height_ratios = [panelsize] * nrows + [laxheight]
+    height = sum(height_ratios) \
+             * (1. + hspace * (len(height_ratios) - 1.)
+                     / len(height_ratios))
+    width = ncols * panelsize * (1. + wspace * (ncols - 1.) / ncols)
+    fontsize = 12
+
+    fig = plt.figure(figsize=(width, height))
+    grid = gsp.GridSpec(nrows=nrows + 1, ncols=ncols, hspace=hspace,
+                        wspace=wspace, height_ratios=height_ratios)
+    axes = [[fig.add_subplot(grid[i, j]) 
+             for j in range(ncols)]
+             for i in range(nrows)]
+    lax = fig.add_subplot(grid[nrows, :])
+    fig.suptitle(title, fontsize=fontsize)
+    
+    ymin = np.inf
+    ymax = -np.inf
+    for ri, metalcomp in enumerate(metalcomps):
+        xmin = np.inf
+        xmax = -np.inf
+        for ci, starnorm in enumerate(starnorms):
+            doleft = ci == 0
+            ax = axes[ri][ci]
+            ax.tick_params(which='both', direction='in',
+                           right=True, top=True, labelbottom=True,
+                           labelleft=doleft)
+            if doleft: 
+                ax.set_ylabel('pdf', fontsize=fontsize)
+            datakey = f'Mz{metalcomp}_over_Mstar_{starnorm}'
+            xlabel = (f'$ \\mathrm{{M}}_{{\\mathrm{{Z, gas}}}}(' 
+                      + xl1[metalcomp] + ') \\, / \\, '
+                      f'\\mathrm{{M}}_{{*, \\mathrm{{{starnorm}}}}} $')
+            addpanel_hist(ax, dat, kwa_phys, panel=datakey, 
+                          fontsize=fontsize - 2, xlabel=xlabel)
+            
+            xlim = ax.get_xlim()
+            xmin = min(xmin, xlim[0])
+            xmax = max(xmax, xlim[1])
+            ylim = ax.get_ylim()
+            ymin = min(ymin, ylim[0])
+            ymax = max(ymax, ylim[1])
+        for ci in range(len(starnorms)):
+            axes[ri][ci].set_xlim(xmin, xmax)
+
+    for ri, metalcomp in enumerate(metalcomps):
+        for ci in range(len(starnorms)):
+            axes[ri][ci].set_ylim(ymin, ymax)
+    
+    handles = [mlines.Line2D((), (), label=sl.plotlabel_from_physlabel[key],
+                             **val)
+               for key, val in kwa_phys.items()]
+    lax.axis('off')
+    lax.legend(handles=handles, fontsize=fontsize - 2,
+               handlelength=1.2, ncols=2)
+    if icset == 'all':
+        icstr = icset
+    else:
+        icstr = '_'.join(icset)
+    outname = mdir + f'halo_effective_yields_{massset}_{icstr}.pdf'
+    plt.savefig(outname, bbox_inches='tight')
+
+
+
+
+    
+
 
         
         

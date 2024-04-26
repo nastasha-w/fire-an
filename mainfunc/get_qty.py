@@ -1,6 +1,5 @@
 
 
-from urllib.request import HTTPDigestAuthHandler
 import numpy as np
 import string
 import numbers as num

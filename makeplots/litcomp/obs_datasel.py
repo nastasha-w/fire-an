@@ -118,8 +118,11 @@ def plotMz_obs_fire(obsdata=('Q+23', 'B+19')):
    
     for obslabel, color in zip(obsdata, obscolors):     
         _data = plotdata_obs[obslabel]
-        noul_label = obslabel + ' (det.)'
-        ul_label = obslabel + ' (UL)'   
+        _obslabel = ('B+19' if obslabel == 'B+19'
+                     else 'Q+24' if obslabel == 'Q+23'
+                     else '')
+        noul_label = _obslabel + ' (det.)'
+        ul_label = _obslabel + ' (UL)'   
         noul = _data['noul']
         isul = _data['isul']
         ax.errorbar(_data['z'][noul], _data['mh'][noul],
@@ -299,15 +302,18 @@ def get_M_z_boxes_fire(sample='main'):
 def addobs_panel(ax, plotdata, obslabel, color, vlabel=True):
     _data = plotdata
     space = '\n' if vlabel else ' '
-    noul_mainlabel = obslabel + space + '(det.)'
-    ul_label = obslabel + space + '(UL)'   
+    _obslabel = ('B+19' if obslabel == 'B+19'
+                 else 'Q+24' if obslabel == 'Q+23'
+                 else '')
+    noul_mainlabel = _obslabel + space + '(det.)'
+    ul_label = _obslabel + space + '(UL)'   
     noul = _data['noul']
     isul = _data['isul']
     flag = _data['flag']
     noul_main = np.logical_and(noul, np.logical_not(flag))
     noul_flag = np.logical_and(noul, flag)
     if sum(noul_flag) > 0:
-        noul_flaglabel = obslabel + space + '(det., !)'
+        noul_flaglabel = _obslabel + space + '(det., !)'
     else:
         noul_flaglabel = None
     ax.errorbar(_data['z'][noul_main], _data['mh'][noul_main],

@@ -266,7 +266,10 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                         handletextpad=0.4)
     if len(obsdata) > 1:
         handles2 = [mlines.Line2D((), (), linestyle='none', marker='s',
-                                markersize=5, label=oset, 
+                                markersize=5, 
+                                label=(oset if oset == 'B+19'
+                                       else 'Q+24' if oset == 'Q+23'
+                                       else ''), 
                                 markeredgecolor='black',
                                 c=colors[oset]['1s'])
                     for oset in obsdata]

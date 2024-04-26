@@ -167,10 +167,13 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                                           (dsel_rest_ul, dsel_rest_noul, 
                                            color_rest)]:
             if not labelsdone:
-                ullabel = obssample + ' UL'
-                noul_mainlabel = obssample
+                _obssample = ('B+19' if obssample == 'B+19'
+                              else 'Q+24' if obssample == 'Q+23'
+                              else '')
+                ullabel = _obssample + ' UL'
+                noul_mainlabel = _obssample
                 if sum(flagged) > 0:
-                    noul_flaggedlabel = obssample + ' (!)'
+                    noul_flaggedlabel = _obssample + ' (!)'
                 else:
                     noul_flaggedlabel = None
             else:
@@ -418,10 +421,13 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
                 _fsel = np.logical_and(dsel_noul_flag, obssel)
                 _usel = np.logical_and(dsel_ul, obssel)
                 if axi == 2 and not labelsdone:
-                    ullabel = obsset + ' UL'
-                    noul_mainlabel = obsset
+                    _obsset = ('B+19' if obsset == 'B+19'
+                               else 'Q+24' if obsset == 'Q+23'
+                               else '')
+                    ullabel = _obsset + ' UL'
+                    noul_mainlabel = _obsset
                     if sum(_fsel) > 0:
-                        noul_flaggedlabel = obsset + ' (!)'
+                        noul_flaggedlabel = _obsset + ' (!)'
                     else:
                         noul_flaggedlabel = None
                 else:
@@ -610,6 +616,9 @@ def runplots_obscomp():
                  ricut_pkpc=ricut_pkpc, sample='main')
     # make sure mass selection is consisent
     ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc, sample='main') 
+    plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
+                        npoints_percul=((8, 15), (10, 20), (15, 30)),
+                        ricut_pkpc=ricut_pkpc, zr='z0.5-1.0')
 
 def runplots_appendix():
     ricut_pkpc = 450.
@@ -620,22 +629,22 @@ def runplots_appendix():
     ods.plotMz_obs_fire_2panel(ricut_pkpc=ricut_pkpc, 
                                sample='m12_f3nobh_comp') 
     
-def runplots_runningperc_ul():
-    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(5, 10))
-    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(7, 12))
-    plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(10, 15))
-    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(5, 10))
-    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(7, 12))
-    plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
-                 ricut_pkpc=450., sample='main',
-                 percentilesul=True, npoints_percul=(10, 15))
+#def runplots_runningperc_ul():
+    #plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(5, 10))
+    #plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(7, 12))
+    #plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(10, 15))
+    #plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(5, 10))
+    #plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(7, 12))
+    #plot_obscomp(massset='m12', obssample='Q+23', zr='z0.5-1.0',
+    #             ricut_pkpc=450., sample='main',
+    #             percentilesul=True, npoints_percul=(10, 15))

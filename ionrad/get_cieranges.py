@@ -23,6 +23,7 @@ def calc_cieranges(threshval, ions, zs, nHval_logpcm3=1.,
             mti = np.argmax(tab_T)
             maxlogTK = tab_logTK[mti]
             maxv = tab_T[mti]
+            print('max ion fraction: ', maxv)
             minr = maxv * threshval
             logTKrange = mu.find_intercepts(tab_T, tab_logTK, minr)
             if refmax is None:

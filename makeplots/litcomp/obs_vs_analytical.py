@@ -673,7 +673,7 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
     ion = 'Ne8'
     redshift_model = 0.75
 
-    impactpars_kpc = np.linspace(5., 450., 50)
+    impactpars_kpc = np.linspace(5., 465., 50)
     logmvir_msun = 12.2
     fcgms = [1.0, 0.3, 0.1]
     fcgm_def = 0.3
@@ -684,7 +684,7 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
     #plis_vc = [0.0, -0.2, -0.5]
     pli_vc_def = -0.1 
     #colors_pli_vc = [_colors.cyan, _colors.red, _colors.purple]
-    plis_k = [0.0, 2./3., 1.2]
+    plis_k = [0.0, 2./3., 1., 1.2]
     
     if len(obsdata) == 1:
        _colors = {'1s': 'black', '2s': 'gray'}
@@ -698,7 +698,7 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
     odata = get_obsdata(obsdata=(obsdata))
     
     panelsize = 1.8
-    ncols = 3
+    ncols = 4
     nrows = 1
     width_ratios = [panelsize] * ncols
     height_ratios = [panelsize] * nrows
@@ -733,7 +733,8 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
                            top=True, right=True, labelleft=doleft,
                            labelbottom=dobottom)
             pli_k = plis_k[ci]
-            axlabel = f'$\\mathrm{{K}} \\propto r^{{{pli_k:.2f}}}$'
+            rslope = get_explabel(pli_k, base='r', ndec_max=2)
+            axlabel = f'$\\mathrm{{K}} {rslope}$'
             ax.text(0.08, 0.95, axlabel,
                     transform=ax.transAxes, fontsize=fontsize,
                     verticalalignment='top', horizontalalignment='left')
@@ -744,7 +745,6 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
             cvs_r = []
             if ri == 0:
                 pli_vc = pli_vc_def
-                fcgm = fcgms[ci]
                 z_sol = z_sol_def
                 subtitle = (f'$\\mathrm{{Z}} = {z_sol:.1f} \\,'
                             '\\mathrm{Z}_{\\odot},\\;'
@@ -774,7 +774,7 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
                 ax.plot([rvir, rvir], [11., yvir_max + 0.2], color='gray',
                         linestyle='solid', alpha=0.3, linewidth=3)
             if ci == 0 and ri == 0:
-                ax.text(0.0, 1.02, subtitle, fontsize=fontsize - 1, 
+                ax.text(0.64, 1.02, subtitle, fontsize=fontsize - 1, 
                         horizontalalignment='left', 
                         verticalalignment='bottom',
                         transform=ax.transAxes)
@@ -787,12 +787,12 @@ def plot_plmodel_datacomp_parvar_talk(obsdata=('Q+23', 'B+19')):
     ymax = max([ylim[1] for ylim in ylims])
     #ymax = ymax + 0.5
     [ax.set_ylim((ymin, ymax)) for sub in axes for ax in sub]
-    [ax.set_xlim(0., 450.) for sub in axes for ax in sub]
+    [ax.set_xlim(0., 470.) for sub in axes for ax in sub]
 
     handles0, labels0 = axes[0][0].get_legend_handles_labels()
-    axes[0][1].legend(handles=handles0[:3], labels=labels0,
+    axes[0][2].legend(handles=handles0[:3], labels=labels0,
                       fontsize=fontsize - 1,
-                      loc='lower left', bbox_to_anchor=(0.49, 0.97),
+                      loc='lower left', bbox_to_anchor=(0.13, 0.963),
                       handlelength=1.0, labelspacing=0.0,
                       handletextpad=0.4, ncol=3, columnspacing=0.7,
                       frameon=False, borderpad=0.0)

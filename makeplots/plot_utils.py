@@ -144,9 +144,9 @@ def add_2dhist_contours(ax, bins, edges, toplotaxes,
     if dimlabels is None:
         dimlabels = [''] * len(edges)    
     if mins is None:
-        mins= (None,)*len(edges)
+        mins= (None,) * len(edges)
     if maxs is None:
-        maxs = (None,)*len(edges)
+        maxs = (None,) * len(edges)
     if dimshifts is None:
         dimshifts = (0.,) * len(edges)
 	
@@ -192,19 +192,35 @@ def add_2dhist_contours(ax, bins, edges, toplotaxes,
         
         # for sorting, normialise bins by bin size: peak finding depends on density, should not favour larger bins
         numdims = 2 # 2 axes not already summed over 
-        binsizes = [np.diff(edges[toplotaxes[0]]), np.diff(edges[toplotaxes[1]]) ] # if bins are log, the log sizes are used and the enclosed log density is minimised
-        baseinds = list((np.newaxis,)*numdims)
-        normmatrix = np.prod([(binsizes[ind])[tuple(baseinds[:ind] + [slice(None,None,None)] + baseinds[ind+1:])] for ind in range(numdims)])
+        # if bins are log, the log sizes are used
+        # and the enclosed log density is minimised
+        binsizes = [np.diff(edges[toplotaxes[0]]), 
+                    np.diff(edges[toplotaxes[1]]) ]
+        baseinds = (np.newaxis,) * numdims
+        for ind in range(numdims):
+            if ind == 0:
+                sel = (baseinds[:ind] 
+                       + (slice(None, None, None),)
+                       + baseinds[ind + 1:])
+                normmatrix = (binsizes[ind])[sel]
+            else:
+                sel = (baseinds[:ind] 
+                       + (slice(None, None, None),)
+                       + baseinds[ind + 1:])
+                temp = (binsizes[ind])[sel]
+                normmatrix = normmatrix * temp
 
         binsumcopy = binsum.copy() # copy to rework
-        bindens    = binsumcopy/normmatrix
+        bindens    = binsumcopy / normmatrix
         bindensflat= bindens.copy().reshape(np.prod(bindens.shape)) # reshape creates views; argsorting later will mess up the array we need for the plot
         binsumcopy = binsumcopy.reshape(np.prod(binsumcopy.shape))
         binsumcopy = binsumcopy[np.argsort(bindensflat)] # get all histogram values in order of histogram density (low to high)
         
         binsumcopy = np.flipud(binsumcopy) # flip to high-to-low
         cumul = np.cumsum(binsumcopy) # add values high-to-low 
-        wherelist = [[(np.where(cumul<=level))[0],(np.where(cumul>=level))[0]] for level in levels] # list of max-lower and min-higher indices
+        wherelist = [[(np.where(cumul <= level))[0],
+                      (np.where(cumul >= level))[0]]
+                      for level in levels] # list of max-lower and min-higher indices
 
         ### made for using bin counts -> binsumcopy is ordered y its own values
 	    # sort out list: where arrays may be empty -> levels outside 0,1 range, probabaly
@@ -216,8 +232,9 @@ def add_2dhist_contours(ax, bins, edges, toplotaxes,
 	    #print wherelist
 	    #return levels, cumul, binsumcopy, wherelist
         if np.all(normmatrix == normmatrix[0,0]): # all bins are the same size
-            valslist = [cumul[0]  if  wherelist[i][0].shape == (0,) else\
-	                    0.        if (wherelist[i][1].shape == (0,) or levels[i] == 1) else\
+            valslist = [cumul[0] if wherelist[i][0].shape == (0,) else
+	                    0. if (wherelist[i][1].shape == (0,) 
+                               or levels[i] == 1) else
 		                np.interp([levels[i]], np.array([      cumul[wherelist[i][0][-1]],      cumul[wherelist[i][1][0]] ]),\
                                                np.array([ binsumcopy[wherelist[i][0][-1]], binsumcopy[wherelist[i][1][0]] ]) )[0]\
 		                for i in range(len(levels))]
@@ -225,10 +242,15 @@ def add_2dhist_contours(ax, bins, edges, toplotaxes,
         else: # find a reasonable interpolation of bindens in stead; need to plot the contours in binsdens as well, in this case
             bindensflat.sort() # to match cumul array indices: sort, then make high to low
             bindensflat = bindensflat[::-1]
-            valslist = [bindensflat[0]  if  wherelist[i][0].shape == (0,) else\
-	                    0.        if (wherelist[i][1].shape == (0,) or levels[i] == 1) else\
-		                np.interp([levels[i]], np.array([      cumul[wherelist[i][0][-1]],      cumul[wherelist[i][1][0]] ]),\
-		                                                 np.array([ bindensflat[wherelist[i][0][-1]], bindensflat[wherelist[i][1][0]] ]))[0]\
+            valslist = [bindensflat[0] if wherelist[i][0].shape == (0,) else
+	                    0. if (wherelist[i][1].shape == (0,)
+                               or levels[i] == 1) else
+		                np.interp([levels[i]],
+                                   np.array([cumul[wherelist[i][0][-1]],
+                                             cumul[wherelist[i][1][0]]]),
+		                           np.array([bindensflat[wherelist[i][0][-1]],
+                                             bindensflat[wherelist[i][1][0]]])
+                                  )[0]
 		                for i in range(len(levels))]
             pltarr = bindens
         #print('min/max bindens: %.4e, %f, min/max flat: %.4e, %f'%(np.min(bindens),np.max(bindens),np.min(bindensflat),np.max(bindensflat)))
@@ -257,16 +279,30 @@ def add_2dhist_contours(ax, bins, edges, toplotaxes,
         uselevels = np.copy(valslist)
         # check for double values; fudge slightly if levels are the same
         anyequal = np.array([np.array(valslist) == val for val in valslist])
-        if np.sum(anyequal) > len(valslist): # any levels equal to a *different* level
-            eqvals = [np.where(anyequal[ind])[0] for ind in range(len(valslist))] # what levels any value is equal to
-            eqgroups = set([tuple(list(eq)) for eq in eqvals]) # get the sets of unique values
+        # any levels equal to a *different* level
+        if np.sum(anyequal) > len(valslist):
+            # what levels any value is equal to 
+            eqvals = [np.where(anyequal[ind])[0]
+                      for ind in range(len(valslist))]
+            # get the sets of unique values 
+            eqgroups = set([tuple(list(eq)) for eq in eqvals])
             eqgroups = list(eqgroups)
             fudgeby = 1.e-8
-            grouplist = [(np.where(np.array([ind in group for group in eqgroups]))[0])[0] for ind in range(len(valslist))] # which group is each uselevel index in
-            groupindlist = [(np.where(ind == np.array(eqgroups[grouplist[ind]]))[0])[0] for ind in range(len(valslist))] # which group index corresponds to a goven uselevel index
-            addto = [[valslist[group[0]]*fudgeby*ind for ind in range(len(group))] for group in eqgroups] #add nothing for single-element groups
+            # which group is each uselevel index in
+            grouplist = [(np.where(np.array([ind in group 
+                                             for group in eqgroups]))[0])[0]
+                          for ind in range(len(valslist))] 
+            # which group index corresponds to a given uselevel index
+            groupindlist = [(np.where(ind == np.array(eqgroups[grouplist[ind]])
+                                      )[0])[0]
+                            for ind in range(len(valslist))] 
+            #add nothing for single-element groups
+            addto = [[valslist[group[0]] * fudgeby * ind
+                      for ind in range(len(group))] for group in eqgroups]
                             
-            valslist = [uselevels[ind] + addto[grouplist[ind]][groupindlist[ind]] for ind in range(len(valslist))]
+            valslist = [uselevels[ind] 
+                        + addto[grouplist[ind]][groupindlist[ind]]
+                        for ind in range(len(valslist))]
             print('Desired cumulative fraction levels were %s; using value levels %s fudged from %s'%(levels, valslist, uselevels))
             uselevels = valslist
         else:

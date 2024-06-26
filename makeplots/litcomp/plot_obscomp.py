@@ -23,26 +23,6 @@ oddir = '/projects/b1026/nastasha/extdata/'
 q23filen = oddir + 'plotdata_q23_nsigmas_1_2.dat'
 b19filen = oddir + 'plotdata_b19_nsigmas_1_2.dat'
 
-def runningpercentiles(xvals, yvals, yperc=0.5, npoints=5):
-    xp = []
-    yp = []
-    _xvals = np.array(xvals)
-    _yvals = np.array(yvals)
-    xorder = np.argsort(_xvals)
-    #print('------ start ------')
-    #print('yperc: ', yperc)
-    #print(_xvals[xorder])
-    #print(_yvals[xorder])
-    for i in range(len(xvals) - npoints + 1):
-        sel = slice(i, i + npoints, None)
-        #print('x in: ', (_xvals[xorder])[sel])
-        #print('y in: ', (_yvals[xorder])[sel])
-        # median of x points
-        xp.append(np.quantile((_xvals[xorder])[sel], 0.5))
-        yp.append(np.quantile((_yvals[xorder])[sel], yperc))
-        #print('x, y calc: ', xp[-1], ', ', yp[-1])
-    #print('------ end ------')
-    return np.array(xp), np.array(yp)
 
 def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                  ricut_pkpc=450., sample='main',
@@ -210,13 +190,13 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                                                  dsel_main_noul)]).copy()
             #yv_all = cd_obs.copy()
             xp_goodmed, yp_goodmed = \
-                runningpercentiles(xv_goodmatch, yv_goodmatch, 
-                                   yperc=float(perc_mid), 
-                                   npoints=npoints_percul[0])
+                mu.runningpercentiles(xv_goodmatch, yv_goodmatch,
+                                      yperc=float(perc_mid), 
+                                      npoints=npoints_percul[0])
             xp_goodhi, yp_goodhi = \
-                runningpercentiles(xv_goodmatch, yv_goodmatch, 
-                                   yperc=float(percs_shading[1]), 
-                                   npoints=npoints_percul[1])
+                mu.runningpercentiles(xv_goodmatch, yv_goodmatch, 
+                                      yperc=float(percs_shading[1]), 
+                                      npoints=npoints_percul[1])
             #xp_allmed, yp_allmed = \
             #    runningpercentiles(xv_all, yv_all, 
             #                       yperc=float(perc_mid), 
@@ -474,13 +454,13 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
         xv_all = ipar_obs[obssel].copy()
         yv_all = cd_obs[obssel].copy()
         xp_allmed, yp_allmed = \
-            runningpercentiles(xv_all, yv_all, 
-                                yperc=float(perc_mid), 
-                                npoints=_np_percul[0])
+            mu.runningpercentiles(xv_all, yv_all, 
+                                  yperc=float(perc_mid), 
+                                  npoints=_np_percul[0])
         xp_allhi, yp_allhi = \
-            runningpercentiles(xv_all, yv_all, 
-                                yperc=float(percs_shading[1]), 
-                                npoints=_np_percul[1])
+            mu.runningpercentiles(xv_all, yv_all, 
+                                  yperc=float(percs_shading[1]), 
+                                  npoints=_np_percul[1])
         obsperccolor = (0.35, 0.35, 0.35)
         pe = pu.getoutline(2.)
         ax.plot(xp_allmed, yp_allmed, linestyle='solid', 

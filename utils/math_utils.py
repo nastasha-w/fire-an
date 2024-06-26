@@ -162,6 +162,27 @@ def percentiles_from_histogram(histogram, edgesaxis, axis=-1,
     outperc = outperc.reshape(outshape)
     return outperc
 
+def runningpercentiles(xvals, yvals, yperc=0.5, npoints=5):
+    xp = []
+    yp = []
+    _xvals = np.array(xvals)
+    _yvals = np.array(yvals)
+    xorder = np.argsort(_xvals)
+    #print('------ start ------')
+    #print('yperc: ', yperc)
+    #print(_xvals[xorder])
+    #print(_yvals[xorder])
+    for i in range(len(xvals) - npoints + 1):
+        sel = slice(i, i + npoints, None)
+        #print('x in: ', (_xvals[xorder])[sel])
+        #print('y in: ', (_yvals[xorder])[sel])
+        # median of x points
+        xp.append(np.quantile((_xvals[xorder])[sel], 0.5))
+        yp.append(np.quantile((_yvals[xorder])[sel], yperc))
+        #print('x, y calc: ', xp[-1], ', ', yp[-1])
+    #print('------ end ------')
+    return np.array(xp), np.array(yp)
+
 def getminmax2d(bins, edges, axis=None, log=True, pixdens=False): 
     # axis = axis to sum over; None -> don't sum over any axes 
     # now works for histgrams of general dimensions
@@ -461,7 +482,7 @@ def peakfinder1d(array3d, axisedges, axis=2,
 
     returns 3 3d arrays, with peak properties
     replacing weights in the selected axis. The inds array
-    has and extra dimension (last) for first/last inds.
+    has an extra dimension (last) for first/last inds.
 
     Returns:
     --------

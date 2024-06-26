@@ -152,10 +152,11 @@ def plot_obscomp(massset='m12', obssample='B+19', zr='z0.5-1.0',
                               else '')
                 ullabel = _obssample + ' UL'
                 noul_mainlabel = _obssample
-                if sum(flagged) > 0:
-                    noul_flaggedlabel = _obssample + ' (!)'
-                else:
-                    noul_flaggedlabel = None
+                ## removed 'flagged' indicator from legend 
+                #if sum(flagged) > 0:
+                #    noul_flaggedlabel = _obssample + ' (!)'
+                #else:
+                noul_flaggedlabel = None
             else:
                 ullabel = None
                 noul_mainlabel = None
@@ -406,10 +407,11 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
                                else '')
                     ullabel = _obsset + ' UL'
                     noul_mainlabel = _obsset
-                    if sum(_fsel) > 0:
-                        noul_flaggedlabel = _obsset + ' (!)'
-                    else:
-                        noul_flaggedlabel = None
+                    ## leave the 'flagged' label out of the legend 
+                    #if sum(_fsel) > 0:
+                    #    noul_flaggedlabel = _obsset + ' (!)'
+                    #else:
+                    noul_flaggedlabel = None
                 else:
                     ullabel = None
                     noul_mainlabel = None
@@ -508,8 +510,8 @@ def plot_obscomp_percul(massset='m12', physmodel='FIRE-2',
     [ax.set_xlim((xmin, xmax)) for ax in axes]
     
     handles_obs, _ = axes[2].get_legend_handles_labels()
-    b19_hsel = [0, 2, 3]
-    q23_hsel = [1, 4]
+    b19_hsel = [0, 2]
+    q23_hsel = [1, 3]
     leg0 = axes[0].legend(handles=[handles_obs[hi] for hi in b19_hsel],
                    fontsize=fontsize - 3., loc='upper right',
                    handlelength=1., ncol=1, handletextpad=0.3,

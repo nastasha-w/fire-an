@@ -22,8 +22,8 @@ def runplots():
     # and runs halo mass vs. redshift for sims and B+19 and Q+23
     # figs 6, 7, 8 (5 pdfs)
     poc.runplots_obscomp()
-    # running percentiles plots for FIRE-2 NoBH
-    poc.runplots_runningperc_ul()
+    ## running percentiles plots for FIRE-2 NoBH
+    #poc.runplots_runningperc_ul() # included in runplots_obscomp now
     # compares m12 FIRE-3 NoBH main sample to the higher halo and 
     # stellar mass sample
     # also runs halo mass vs. redshift for sims and B+19 and Q+23

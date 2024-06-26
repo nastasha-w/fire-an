@@ -312,10 +312,11 @@ def addobs_panel(ax, plotdata, obslabel, color, vlabel=True):
     flag = _data['flag']
     noul_main = np.logical_and(noul, np.logical_not(flag))
     noul_flag = np.logical_and(noul, flag)
-    if sum(noul_flag) > 0:
-        noul_flaglabel = _obslabel + space + '(det., !)'
-    else:
-        noul_flaglabel = None
+    ## remove 'flagged' label from legend
+    #if sum(noul_flag) > 0:
+    #    noul_flaglabel = _obslabel + space + '(det., !)'
+    #else:
+    noul_flaglabel = None
     ax.errorbar(_data['z'][noul_main], _data['mh'][noul_main],
                 yerr=_data['mherr'][:, noul_main], 
                 linestyle='None', elinewidth=1.5, marker='o', 

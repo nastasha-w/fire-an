@@ -250,7 +250,7 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
 
     handles1, _ = axes[0].get_legend_handles_labels()
     axes[-1].legend(handles=handles1[:4], fontsize=fontsize - 2,
-                    loc='upper right', bbox_to_anchor=(1.0, 0.86),
+                    loc='upper right', bbox_to_anchor=(0.98, 0.86),
                     handlelength=1.0, labelspacing=0.3,
                     handletextpad=0.4)
     if len(plis_k) > 1:
@@ -261,11 +261,11 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                               f' {get_explabel(pli_k, base="r", ndec_max=2)}$')
                     for pli_k, ls in zip(plis_k, linestyles_k)]
         axes[-2].legend(handles=handles2, fontsize=fontsize - 1.,
-                        loc='upper right', bbox_to_anchor=(0.93, 0.87),
+                        loc='upper right', bbox_to_anchor=(0.93, 0.86),
                         handlelength=2., labelspacing=0.1,
                         handletextpad=0.4)
     if len(obsdata) > 1:
-        handles2 = [mlines.Line2D((), (), linestyle='none', marker='s',
+        handles2 = [mlines.Line2D((), (), linestyle='none', marker='o',
                                 markersize=5, 
                                 label=(oset if oset == 'B+19'
                                        else 'Q+24' if oset == 'Q+23'
@@ -273,15 +273,16 @@ def plot_plmodel_datacomp_Kvar(obsdata=('B+19',)):
                                 markeredgecolor='black',
                                 c=colors[oset]['1s'])
                     for oset in obsdata]
-        if 'B+19' in obsdata:
-            handles2 += [mlines.Line2D((), (), linestyle='none', marker='s',
-                         markersize=5, label='B+19 (!)', 
-                         markeredgecolor=colors['B+19']['1s'],
-                         markeredgewidth=2.0, markerfacecolor='none',
-                         c=colors['B+19']['1s'])]
+        ## removed 'flagged' entry in legend
+        #if 'B+19' in obsdata:
+        #    handles2 += [mlines.Line2D((), (), linestyle='none', marker='s',
+        #                 markersize=5, label='B+19 (!)', 
+        #                 markeredgecolor=colors['B+19']['1s'],
+        #                 markeredgewidth=2.0, markerfacecolor='none',
+        #                 c=colors['B+19']['1s'])]
         axes[-3].legend(handles=handles2,
                         fontsize=fontsize - 2,
-                        loc='upper right', bbox_to_anchor=(1.0, 0.88),
+                        loc='upper right', bbox_to_anchor=(0.98, 0.86),
                         handlelength=1.0, labelspacing=0.3,
                         handletextpad=0.4)
     

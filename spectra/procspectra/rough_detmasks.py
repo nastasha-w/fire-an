@@ -8,7 +8,8 @@ import fire_an.utils.math_utils as mu
 def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
                      lsf_sigma_kmps: float = 30.,
                      coldetlim_logN_cm2: float = 14.,
-                     maxbpar_kmps: float = 100.):
+                     maxbpar_kmps: float = 100.,
+                     mincutfrac: float = 1e-2):
     '''
     untested draft
     '''
@@ -32,7 +33,8 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
                                np.array([0.]))
     minlevel = np.min(minspec)
 
-    # find min level crossings: candidate components lie between those
+    ## find min level crossings:
+    ## candidate components lie between those
     vcross = mu.find_intercepts(convflux, vvals, minlevel)
     # crosses minlevel between index and index + 1
     crossinds = np.searchsorted(vvals, vcross) - 1
@@ -48,13 +50,52 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
                     for i in range(numi)]
         if convflux[-1] < minlevel:
             enclinds.append([crossinds[-1], len(vvals)])
-    
+    ## extend regions to capture more of the absorbers
+    cutlevel = 1. - (1. - minlevel) * mincutfrac
+    cutinds = []
+    vcross = mu.find_intercepts(convflux, vvals, cutlevel)
+    # crosses cutnlevel between index and index + 1
+    crossinds = np.searchsorted(vvals, vcross) - 1
+    for ai, encli in enumerate(enclinds):
+        cuti = [None, None]
+        # first component: region starts at zero or first crossing
+        if ai == 0: 
+            if crossinds[0] < encli[0]:
+                cuti[0] = crossinds[0]
+            else:
+                cuti[0] = 0
+        # last component: region ends at array end or last crossing
+        if ai == len(enclinds) - 1: 
+            if crossinds[-1] > encli[1] - 1:
+                cuti[1] = crossinds[-1] + 1
+            else:
+                cuti[1] = len(vvals)
+        # if a start (end) is not set, there is a component before
+        # (after) this one
+        if cuti[0] is not None:
+            lastend = enclinds[ai - 1][1]
+            closestcross = np.max(crossinds[crossinds < encli[ai][0]])
+            # cutlevel crossing closest to component start
+            if closestcross > lastend: 
+                cuti[0] = closestcross
+            else: # minimum between components
+                cuti[0] = np.argmax(convflux[lastend : enclinds[ai][0]])
+                cuti[0] = cuti[0] + lastend
+        if cuti[1] is not None:
+            nextstart = enclinds[ai + 1][0]
+            closestcross = np.mix(crossinds[crossinds >= encli[ai][1]])
+            if closestcross < nextstart: 
+                cuti[1] = closestcross + 1
+            else:
+                cuti[1] = np.argmax(convflux[enclinds[ai][1] : nextstart])
+                cuti[1] = cuti[1] + enclinds[ai][1] 
+        cutinds.append(cuti)
     # check each 'component' for detectability (raw spectrum)
     enclinds_det = []
     cds = []
     mask = np.zeros(len(vvals), dtype=bool)
-    for imin, imax in enclinds:
-        sel = slice(imin, imax + 1, None)
+    for imin, imax in cutinds:
+        sel = slice(imin, imax, None)
         cd = line.tau_to_coldens(spectrum.tau_raw[sel], vvals[sel])
         if cd >= 10**coldetlim_logN_cm2:
             enclinds_det.append([imin, imax])

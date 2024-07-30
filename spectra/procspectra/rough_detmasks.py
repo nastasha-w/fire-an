@@ -1,3 +1,5 @@
+import glob
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -119,7 +121,8 @@ def get_roughdetmask(spectrum: fc.SpectrumFitBayes,
             cds.append(cd)
             mask[sel] = True
     return mask, cutinds_det, cds
-    
+
+
 def test_rough_detmasks(spectrum: fc.SpectrumFitBayes,
                         outname: str | None = None,
                         lsf_sigma_kmps: float = 30.,

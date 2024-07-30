@@ -48,12 +48,15 @@ def calc_vcen_sigmav_logN(specfilen: str,
     logN = np.log10(spec.line.tau_to_coldens(weight, vel))
     return vcen, sigma, sigma_gal, logN
 
-def calc_vcen_sigmav_logN_roughcomponents(specfilen: str, 
-                                          vcengal_kmps: float, 
-                                          line: fc.Line = fc.ne8_770,
-                                          mindetcomp_logN_cm2: float = 14.,
-                                          sigma_lsf_kmps: float = 30.,
-                                          maxbpar_kmps: float = 100.):
+def calc_vcen_sigmav_logN_roughcomponents(
+    specfilen: str, 
+    vcengal_kmps: float, 
+    line: fc.Line = fc.ne8_770,
+    mindetcomp_logN_cm2: float = 14.,
+    sigma_lsf_kmps: float = 30.,
+    maxbpar_kmps: float = 100.,
+    mincutfrac: float = 0.05,
+) -> tuple[float, float, float, float, float]:
     '''
     Returns:
     --------
@@ -73,7 +76,8 @@ def calc_vcen_sigmav_logN_roughcomponents(specfilen: str,
     mask, enclinds_det, cds = \
         rdm.get_roughdetmask(spec, lsf_sigma_kmps=sigma_lsf_kmps,
                              coldetlim_logN_cm2=mindetcomp_logN_cm2,
-                             maxbpar_kmps=maxbpar_kmps)
+                             maxbpar_kmps=maxbpar_kmps,
+                             mincutfrac=mincutfrac)
     logN_det = np.log10(np.sum(cds))
     vel = spec.vel_kmps
     weight = spec.tau_raw
@@ -91,14 +95,20 @@ def getdata_sigmav(infofilens: list[str],
                    simnames: list[str],
                    snapnums: list[str],
                    outname: str,
-                   line: fc.Line = fc.ne8_770):
+                   detectedonly: bool = True,
+                   line: fc.Line = fc.ne8_770,
+                   mindetcomp_logN_cm2: float = 14.,
+                   sigma_lsf_kmps: float = 30.,
+                   maxbpar_kmps: float = 100.,
+                   mincutfrac: float = 0.05) -> None:
     '''
     print info listed in `lineelts` for the lines of sight in
     `infofilens` and `filepatterns` 
     '''
     
     lineelts = ['simname', 'snapnum', 'los_axis',
-                'impactpar_kpc', 'Ntot_logcm2', 'vcen_Nwtd_kmps',
+                'impactpar_kpc', 'Ntot_logcm2', 'Ndet_logcm2',
+                'vcen_Nwtd_kmps',
                 'sigmav_kmps', 'sigmav_galv_kmps', 'vgal_kmps',
                 'Mstar_logMsun', 'Mvir_logMsun',
                 'Rvir_kpc']
@@ -107,6 +117,7 @@ def getdata_sigmav(infofilens: list[str],
                'los_axis': '{los_axis}',
                'impactpar_kpc': '{impactpar_kpc:.2f}',
                'Ntot_logcm2': '{Ntot_logcm2:.3f}',
+               'Ndet_logcm2': '{Ndet_logcm2:.3f}',
                'vcen_Nwtd_kmps': '{vcen_Nwtd_kmps:.2f}',
                'sigmav_kmps': '{sigmav_kmps:.2f}',
                'sigmav_galv_kmps': '{sigmav_galv_kmps:.2f}',
@@ -171,13 +182,26 @@ def getdata_sigmav(infofilens: list[str],
                 sli = sli.split('_')[-1]
                 sli = int(sli)
                 ipar_kpc = ipars_kpc[sli]
-
-                vcen_kmps, sigmav_kmps, sigma_gal, logN_cm2 = \
-                    calc_vcen_sigmav_logN(filen, vgal_kmps, line=line)
+                if detectedonly:
+                    vcen_kmps, sigmav_kmps, sigma_gal, logN_cm2, logNdet_cm2 = \
+                        calc_vcen_sigmav_logN_roughcomponents(
+                            filen,
+                            vgal_kmps,
+                            line=line,
+                            mindetcomp_logN_cm2=mindetcomp_logN_cm2,
+                            sigma_lsf_kmps=sigma_lsf_kmps,
+                            maxbpar_kmps=maxbpar_kmps,
+                            mincutfrac=mincutfrac,
+                            )
+                else:
+                    vcen_kmps, sigmav_kmps, sigma_gal, logN_cm2 = \
+                        calc_vcen_sigmav_logN(filen, vgal_kmps, line=line)
+                    logNdet_cm2 = logN_cm2
 
                 l2dct = l1dct.copy()
                 l2dct.update({'impactpar_kpc': ipar_kpc,
                               'Ntot_logcm2': logN_cm2,
+                              'Ndet_logcm2': logNdet_cm2,
                               'vcen_Nwtd_kmps': vcen_kmps,
                               'sigmav_kmps': sigmav_kmps,
                               'sigmav_galv_kmps': sigma_gal})
@@ -204,8 +228,52 @@ def getsigmav_set(testset=4):
         snapnums_arg = [snapnum 
                         for simname in simnames for snapnum in snapshots]
         line = fc.ne8_770
-    getdata_sigmav(infofiles, filepatterns, simnames_arg, snapnums_arg,
-                   outname, line=line)
+        getdata_sigmav(infofiles, filepatterns, simnames_arg, snapnums_arg,
+                       outname, line=line, detectedonly=False)
+    elif testset == '4a': 
+        ## vary some of the detection parameters, see effect
+        simnames = sl.m12_f2md
+        snapshots = [sl.snaps_f2md[0], sl.snaps_f2md[1]]
+        filedir = '/projects/b1026/nastasha/spectra/test4/'
+        outdir =  '/projects/b1026/nastasha/imgs/spectra/test4/'
+        # the one that worked the first time
+        #simnames = ['crheatfix_m12i_r7100', 'crheatfix_m12f_r7100']
+        #snapshots = [294, 277]
+        filepatterns = [filedir + f'/tridentray_{simname}_{snapnum}_*.txt'
+                       for simname in simnames for snapnum in snapshots]
+        infofiles = [filedir + f'/tridentray_{simname}_{snapnum}_info.hdf5'
+                       for simname in simnames for snapnum in snapshots]
+        simnames_arg = [simname 
+                        for simname in simnames for snapnum in snapshots]
+        snapnums_arg = [snapnum 
+                        for simname in simnames for snapnum in snapshots]
+        line = fc.ne8_770
+        # sigma LSF: 20 km/s FWHM for the CUBS spectra 
+        # -> ~10 km/s sigma (8.5 km/s)
+        detkw = [{'mindetcomp_logN_cm2': 14., 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.05},
+                 {'mindetcomp_logN_cm2': 13.75, 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.05},
+                 {'mindetcomp_logN_cm2': 13.5, 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.05},
+                 {'mindetcomp_logN_cm2': 14., 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.01},
+                 {'mindetcomp_logN_cm2': 14., 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.25},
+                 {'mindetcomp_logN_cm2': 13.5, 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.01},
+                 {'mindetcomp_logN_cm2': 13.5, 'sigma_lsf_kmps': 10.,
+                  'maxbpar_kmps': 100., 'mincutfrac': 0.25},
+                  ]
+        for kwargs in detkw:
+            outname = (outdir + 'sigmav_testset4_'
+                       f'minN{kwargs["mindetcomp_logN_cm2"]:.2f}_'
+                       f'lsf{kwargs["sigma_lsf_kmps"]:.1f}_'
+                       f'maxb{kwargs["maxbpar_kmps"]:.0f}_'
+                       f'cutf{kwargs["mincutfrac"]:.2f}.dat')
+            getdata_sigmav(infofiles, filepatterns, simnames_arg,
+                           snapnums_arg, outname, detectedonly=True, 
+                           line=line, **kwargs)
         
 
 

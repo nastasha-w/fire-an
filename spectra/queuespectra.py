@@ -49,11 +49,42 @@ def runtest4(ind):
     gs.runsightlines(simname, snapnum, outname_base=outbase,
                       settype='grid', skiprepeat=True, **setargs)
     
+def runtest5(ind):
+    '''
+    larger sample: multiple haloes,
+    only FIRE-2 core, all redshifts, all axes,
+    still using the FG09 UV/X-ray bkg, 
+    working on the yt dl fix branch
+    '''
+    # 180 indices
+    simnames = sl.m12_f2md # len 10
+    snapshots = sl.snaps_f2md
+    axes = ['x', 'y', 'z']
+
+    axi = ind % (len(snapshots) * len(axes))
+    snapi = (ind // len(axes)) % len(snapshots)
+    simi = ind // (len(snapshots) * len(axes))
+
+    simname = simnames[simi]
+    snapnum = snapshots[snapi]
+    axis = axes[axi]
+    outbase = f'/test5/tridentray_{simname}_{snapnum}_{axis}'
+    setargs = {'totlength': 4.,
+               'gridside': 4.,
+               'gridpoints_side': 40,
+               'axis': axis}
+    gs.runsightlines(simname, snapnum, outname_base=outbase,
+                     settype='grid', skiprepeat=True, 
+                     lines=['Ne VIII 770', 'O VI 1032'],
+                      **setargs)
+    
 def main(ind):
     if ind == 0:
         runtest2()
     elif ind >= 1 and ind < 21:
         runtest4(ind - 1)
+    elif ind >= 21 and ind < 201:
+        runtest5(ind - 21)
     else:
         raise ValueError(f'nothing specified for index {ind}')
     

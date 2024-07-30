@@ -108,7 +108,8 @@ def getsightlines_grid(cen, totlength=unyt.unyt_quantity(500., 'kpc'),
     return start_positions, end_positions
     
 def runsightlines(simname, snapnum, outname_base=None,
-                  settype='grid', skiprepeat=False, **setargs):
+                  settype='grid', skiprepeat=False,
+                  lines=['Ne VIII 770'], **setargs):
     '''
     seems to work somewhat
 
@@ -150,7 +151,6 @@ def runsightlines(simname, snapnum, outname_base=None,
     
     for ri, (_spos, _epos) in enumerate(zip(start_positions, end_positions)):
         outname = _outname + f'_{ri}.h5'
-        specname = outname[:-3] + '.txt'
         if skiprepeat and os.path.isfile(specname):
             continue
         # YTarray values don't work in make_simple_ray for some reason
@@ -164,11 +164,14 @@ def runsightlines(simname, snapnum, outname_base=None,
                                       fields=[('gas', 'temperature'), 
                                               ('gas', 'metallicity'),
                                               ('gas', 'density')])
-        sg = trident.spectrum_generator.SpectrumGenerator(
-            lambda_min='auto', lambda_max='auto', dlambda=2., 
-            bin_space='velocity')
-        sg.make_spectrum(ray, lines='Ne VIII 770')
-        sg.save_spectrum(specname)
+        for line in lines:
+            _line = line.replace(' ', '_')
+            specname = outname[:-3] + '_' + _line + '.txt'
+            sg = trident.spectrum_generator.SpectrumGenerator(
+                lambda_min='auto', lambda_max='auto', dlambda=2., 
+                bin_space='velocity')
+            sg.make_spectrum(ray, lines=line)
+            sg.save_spectrum(specname)
     
     with h5py.File(filen_info, 'a') as f:
         hed = f.create_group('Header')

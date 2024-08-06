@@ -93,9 +93,9 @@ class SpectrumFitFreq:
             self.readin_txtspectrum()
             self.set_fitdefaults()
     
-    def set_fitdefaults(self, 
-                        fitu_vcens_kmps: float =50.,
-                        fitu_bvals_kmps: float =10.,
+    def set_fitdefaults(self,
+                        fitu_vcens_kmps: float = 50.,
+                        fitu_bvals_kmps: float = 10.,
                         bounds_logN: tuple[float | None, float | None] 
                                      = (9., None),
                         bounds_bvals_kmps: tuple[float | None, float | None]
@@ -548,8 +548,8 @@ class SpectrumFitBayes:
         self._set_default_fitpars()
     
     def _set_default_fitpars(self):
-        self.fitrange_b_kmps = (10., 16.)
-        self.fitrange_logN_cm2 = (1., 200.)
+        self.fitrange_b_kmps = (1., 200.)
+        self.fitrange_logN_cm2 = (10., 16.)
         self.fitrange_v_kmps = (-500., 500.)
 
         self.fitunit_b_kmps = 40.

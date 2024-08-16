@@ -27,7 +27,7 @@ def checkvalsmatch(val1, val2, verbose=False):
                 print(f'Mismatch: {val1, val2}')
             return same
         else:
-            same = np.isclose(val2, val2)
+            same = np.isclose(val1, val2)
             if verbose and not same:
                 print(f'Mismatch: {val1, val2}')
             return same

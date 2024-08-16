@@ -71,10 +71,11 @@ class Line:
         return coldens
     
     def save(self, h5grp):
-        h5grp.attrs.create('name', np.string_(self.name))
         h5grp.attrs.create('wavelength_A', self.wavelength_A)
         h5grp.attrs.create('fosc', self.fosc)
         h5grp.attrs.create('atrans_Hz', self.atrans_Hz)
+        # latest h5py doesn't need np.string_, apparently
+        h5grp.attrs.create('name', self.name)
 
 # copied from Trident file
 # Verner, Verner, & Ferland (1996): 

@@ -6,9 +6,11 @@ from astropy.convolution import convolve, convolve_fft, Gaussian1DKernel
 import fire_an.spectra.findcomponents as fc
 import fire_an.utils.constants_and_units as c
 
+datadir =  ("/Users/nastasha/ciera/projects_lead/"
+            "ne8_velocities/fitting_ncomp_bias/")
 
-_bnorm_fit = 10.
-_vnorm_fit = 10.
+_bnorm_fit = 20.
+_vnorm_fit = 200.
 _bounds_logN_cm2 = (10., 16.)
 _bounds_vcen_kmps = (-500., 500.)
 _bounds_b_kmps = (1., 200.)
@@ -64,12 +66,17 @@ def getchisqfunc(nuspec_Hz: np.ndarray[float],
             # no negative widths
             if np.any(try_bvals_kmps) <= 0.:
                  return 1e30 
-            else:
-                try_normflux = line.getspectrum(
-                    nuspec_Hz, try_logcds_cm2, try_bvals_kmps,
-                    try_centers_kmps)
-                try_convflux = convgauss(vbins_kmps, try_normflux,
-                                         lsf_sigma_kmps)
+            # break component swap degeneracies
+            if len(try_centers_kmps) > 1:
+                if np.any(try_centers_kmps[:-1] >= try_centers_kmps[1:]):
+                    return 1e30
+            
+            try_normflux = line.getspectrum(
+                nuspec_Hz, try_logcds_cm2, try_bvals_kmps, try_centers_kmps,
+                )
+            try_convflux = convgauss(
+                vbins_kmps, try_normflux, lsf_sigma_kmps,
+                )
             sumsq = np.sum((try_convflux - specvals)**2)
             #print('try_notmflux: ', self.try_normflux)
             #print('try_convflux: ', self.try_convflux)
@@ -88,13 +95,16 @@ def fitnoisyspec(nuspec_Hz: np.ndarray[float],
                            lsf_sigma_kmps=lsf_sigma_kmps)
     rhobeg = 1.
     bounds = [_bounds_logN_cm2,
-              _bounds_b_kmps / _bnorm_fit, 
-              _bounds_vcen_kmps / _vnorm_fit] * ncomp
-    components_guess = [[14., 30. /  _bnorm_fit, 
-                         -20. + 40. * float(i) / ncomp] for i in ncomp]
+              tuple(_bb / _bnorm_fit for _bb in _bounds_b_kmps), 
+              tuple(_bv / _vnorm_fit for _bv in _bounds_vcen_kmps),
+              ] * ncomp
+    components_guess = [[14.,
+                         30. / _bnorm_fit, 
+                         (-20. + 40. * float(i) / ncomp ) / _vnorm_fit]
+                        for i in range(ncomp)]
     components_guess = np.array([v for l in components_guess for v in l])
-
-    minimizer_kwa = {'args': (lsf_sigma_kmps,), 
+    
+    minimizer_kwa = {'args': tuple(), 
                      'bounds': bounds,
                      'method': 'COBYLA',
                      'options': {'rhobeg': rhobeg}}
@@ -129,16 +139,21 @@ def runfits(logN_cm2: np.ndarray[float],
     nuspec_Hz, fitspec = noisyspectrum(logN_cm2, b_kmps, vcen_kmps, **speckw)
     comp_found = {}
     for ncomp in ncomp_fit:
-        res = fitnoisyspec(nuspec_Hz, fitspec, line=speckw["line"],
-                           ncomp=ncomp, 
-                           lsf_sigma_kmps=speckw["lsf_sigma_kmps"],
-                           )
+        try: 
+            res = fitnoisyspec(nuspec_Hz, fitspec, line=speckw["line"],
+                               ncomp=ncomp, 
+                               lsf_sigma_kmps=speckw["lsf_sigma_kmps"],
+                               )
+        except RuntimeError as err:
+            print(err)
+            res = "FAILED"
         comp_found[ncomp] = res
     if h5group is not None:
         h5group.attrs.create("lsf_sigma_kmps", speckw["lsf_sigma_kmps"])
         h5group.attrs.create("snr", speckw["snr"])
         _grp = h5group.create_group("line")
-        (speckw["line"]).save(_grp)
+        _line = speckw["line"]
+        _line.save(_grp)
         h5group.create_dataset("nu_Hz", data=nuspec_Hz)
         h5group.create_dataset("noisyspec", data=fitspec)
         h5group.attrs.create("logN_cm2_in", logN_cm2)
@@ -146,14 +161,24 @@ def runfits(logN_cm2: np.ndarray[float],
         h5group.attrs.create("vcen_kmps_in", vcen_kmps)
         for ncomp in ncomp_fit:
             sgrp = h5group.create_group(f"fit_{ncomp}comp")
+            if comp_found[ncomp] == "FAILED":
+                sgrp.attrs.create("fit_failed", True)
+                continue
+            else:
+                sgrp.attrs.create("fit_failed", False)
             sgrp.attrs.create("logN_cm2", comp_found[ncomp][0])
             sgrp.attrs.create("b_kmps", comp_found[ncomp][1])
             sgrp.attrs.create("vcen_kmps", comp_found[ncomp][2])
+    print(f"in: logN_cm2 = {logN_cm2}, b_kmps = {b_kmps},"
+          f" vcen_kmps = {vcen_kmps}")
+    print("out: ")
+    for k, v in comp_found.items():
+        print(f"{k}: \t{v}")
     return comp_found
 
         
 def runfitgrid():
-    h5filen = ""
+    h5filen = datadir + "fits_ncomp_set1.hdf5"
     c1_logN_cm2 = [14.5, 14.25, 14.0, 13.75, 13.5]
     c1_b_kmps = [120., 60., 30., 15.]
     c1_v_kmps = [0.]

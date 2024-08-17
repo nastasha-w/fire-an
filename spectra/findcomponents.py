@@ -77,6 +77,10 @@ class Line:
         # latest h5py doesn't need np.string_, apparently
         h5grp.attrs.create('name', self.name)
 
+def getline(h5group):
+    kwargs = dict(h5group.attrs.items())
+    return Line(**kwargs)
+
 # copied from Trident file
 # Verner, Verner, & Ferland (1996): 
 # lambda = 770.4089 A
